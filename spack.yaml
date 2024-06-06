@@ -1,0 +1,22 @@
+# This is a Spack Environment file.
+#
+# It describes the set of packages to be installed when developing,
+# along with configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - hermes-3%gcc
+  view:
+    gcc-hipsycl:
+      root: /home/oparry/code/hermes-3/views/gcc-hipsycl
+      select: ['%gcc']
+      link_type: symlink
+  concretizer:
+    unify: when_possible
+  repos:
+  - ./spack/repo
+  - $spack/var/spack/repos/builtin
+  packages:
+    all:
+      providers:
+        mpi: [mpich, openmpi]
