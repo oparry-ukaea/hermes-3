@@ -15,3 +15,4 @@ spack.lock
 views
 
 .vscode
+__pycache__
