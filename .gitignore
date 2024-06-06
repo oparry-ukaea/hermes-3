@@ -7,3 +7,5 @@ BOUT.settings
 *~
 .DS_Store
 /build*
+env
+example-runs
