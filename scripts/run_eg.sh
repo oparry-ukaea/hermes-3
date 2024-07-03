@@ -4,7 +4,7 @@
 # Helper functions
 echo_usage() {
     echo "Usage:"
-    echo "    $0 [example_name] <-n num_MPI> <-b build_dir>"
+    echo "    $0 [example_name] <-n num_MPI> <-b build_dir> <-s example_sub_dir>"
 }
 
 execute() {
@@ -43,6 +43,10 @@ parse_args() {
         build_dir=$(realpath "$2")
         shift 2
         ;;
+        -s|--eg-subdir)
+        eg_subdir="examples/$2"
+        shift 2
+        ;;
         -n|--num_mpi)
         nmpi="$2"
         shift 2
@@ -66,8 +70,9 @@ parse_args() {
 
 report_options() {
     echo "Options:"
-    echo "      e.g. : $eg_name"
-    echo "     n MPI : $nmpi"
+    echo "             e.g. name : $eg_name"
+    echo "       e.g. parent dir : $eg_subdir"
+    echo "                 n MPI : $nmpi"
     echo ""
 }
 
@@ -89,6 +94,7 @@ REPO_ROOT=$( cd -- "$(realpath $( dirname -- "${BASH_SOURCE[0]}" )/..)" &> /dev/
 
 # Default options
 eg_name='Not set'
+eg_subdir='examples'
 nmpi='4'
 build_dir='Not set'
 set_default_build_dir
@@ -99,7 +105,7 @@ report_options
 
 # Set paths to the executable and example directory
 h3_exec="$build_dir/hermes-3"
-eg_dir="$REPO_ROOT/examples/$eg_name"
+eg_dir="$REPO_ROOT/$eg_subdir/$eg_name"
 # Validate exec, examples paths
 validate_paths "$h3_exec" "$eg_dir"
 
