@@ -8,3 +8,4 @@ BOUT.settings
 .DS_Store
 /build*
 /docs/build/*
+runs
