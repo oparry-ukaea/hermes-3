@@ -8,3 +8,8 @@ BOUT.settings
 .DS_Store
 /build*
 /docs/build/*
+__pycache__
+spack-build*
+spack.lock
+.spack-env
+views
