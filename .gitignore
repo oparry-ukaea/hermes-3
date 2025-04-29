@@ -10,3 +10,4 @@ BOUT.settings
 /docs/build/*
 /docs/doxygen/*
 /docs/sphinx/_breathe*
+runs
