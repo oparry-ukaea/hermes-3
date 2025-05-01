@@ -11,8 +11,28 @@ project(hermes-3 LANGUAGES CXX C)
 # Extra CMake scripts in cmake/ subdirectory
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-option(HERMES_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
-# Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
+# Check and report build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
+set(validBuildTypes Debug Release RelWithDebInfo MinSizeRel Test)
+if(NOT CMAKE_BUILD_TYPE IN_LIST validBuildTypes)
+  message(
+    FATAL_ERROR
+      "${CMAKE_BUILD_TYPE} is not a valid CMAKE_BUILD_TYPE; must be one of ${validBuildTypes}"
+  )
+endif()
+message(STATUS "Build type is ${CMAKE_BUILD_TYPE}")
+
+# Explicitly disable optimisation in Debug
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+endif()
+
+option(HERMES_UPDATE_GIT_SUBMODULE
+       "Check submodules are up-to-date during build" ON)
+# Adapted from
+# https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(hermes_update_submodules)
   if(NOT HERMES_UPDATE_GIT_SUBMODULE)
@@ -21,11 +41,16 @@ function(hermes_update_submodules)
   find_package(Git QUIET)
   if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     message(STATUS "Submodule update")
-    execute_process(COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update --init --recursive
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update
+              --init --recursive
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       RESULT_VARIABLE GIT_SUBMOD_RESULT)
     if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+      message(
+        FATAL_ERROR
+          "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules"
+      )
     endif()
   endif()
 endfunction()
@@ -43,8 +68,11 @@ message(STATUS "Git revision: ${HERMES_REVISION}")
 option(HERMES_BUILD_BOUT "Build BOUT++ in external/BOUT-dev" ON)
 if(HERMES_BUILD_BOUT)
   set(BOUT_BUILD_EXAMPLES, OFF) # Don't create example makefiles
-  set(HERMES_BOUT_SRC "external/BOUT-dev" CACHE STRING "Directory of BOUT++ dir")
-  add_subdirectory(${HERMES_BOUT_SRC} ${CMAKE_CURRENT_BINARY_DIR}/external/BOUT-dev)
+  set(HERMES_BOUT_SRC
+      "external/BOUT-dev"
+      CACHE STRING "Directory of BOUT++ dir")
+  add_subdirectory(${HERMES_BOUT_SRC}
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/BOUT-dev)
 else()
   find_package(bout++ REQUIRED)
 endif()
@@ -158,59 +186,65 @@ set(HERMES_SOURCES
     include/zero_current.hxx
     include/transform.hxx
     include/fixed_fraction_radiation.hxx
-    include/simple_pump.hxx
-    )
+    include/simple_pump.hxx)
 
 # Compile Hermes sources into a library, which can be used for unit tests
 add_library(hermes-3-lib ${HERMES_SOURCES})
 
 target_link_libraries(hermes-3-lib PRIVATE bout++::bout++)
 
-target_include_directories(hermes-3-lib PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  )
+target_include_directories(
+  hermes-3-lib
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+         $<INSTALL_INTERFACE:include>)
 
 # The main executable target
-add_executable(hermes-3
-               hermes-3.cxx
-               ${CMAKE_CURRENT_BINARY_DIR}/include/revision.hxx)
+add_executable(hermes-3 hermes-3.cxx
+                        ${CMAKE_CURRENT_BINARY_DIR}/include/revision.hxx)
 
 target_link_libraries(hermes-3 PRIVATE bout++::bout++ hermes-3-lib)
 
-target_include_directories(hermes-3 PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  )
+target_include_directories(
+  hermes-3
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+         $<INSTALL_INTERFACE:include>)
 
-# Build the file containing just the commit hash
-# This will be rebuilt on every commit!
-configure_file(
-  "${PROJECT_SOURCE_DIR}/include/revision.hxx.in"
-  "${PROJECT_BINARY_DIR}/include/revision.hxx")
+# Build the file containing just the commit hash This will be rebuilt on every
+# commit!
+configure_file("${PROJECT_SOURCE_DIR}/include/revision.hxx.in"
+               "${PROJECT_BINARY_DIR}/include/revision.hxx")
 
 # Once built, copy the data and test directories
-option(HERMES_COPY_EXAMPLES_TO_BUILD "Copy the examples to the build directory" ON)
+option(HERMES_COPY_EXAMPLES_TO_BUILD "Copy the examples to the build directory"
+       ON)
 if(HERMES_COPY_EXAMPLES_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/examples $<TARGET_FILE_DIR:${PROJECT_NAME}>/examples)
+  add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/examples
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/examples)
 endif()
 
-option(HERMES_COPY_JSON_DATABASE_TO_BUILD "Copy the json database to the build directory" ON)
+option(HERMES_COPY_JSON_DATABASE_TO_BUILD
+       "Copy the json database to the build directory" ON)
 if(HERMES_COPY_JSON_DATABASE_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/json_database $<TARGET_FILE_DIR:${PROJECT_NAME}>/json_database)
+  add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND
+      ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/json_database
+      $<TARGET_FILE_DIR:${PROJECT_NAME}>/json_database)
 endif()
 
 option(HERMES_COPY_TESTS_TO_BUILD "Copy the tests to the build directory" ON)
 if(HERMES_COPY_TESTS_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/tests $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests)
+  add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/tests
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests)
 endif()
 
 # Tests
@@ -220,9 +254,10 @@ if(HERMES_TESTS)
 
   # Integrated tests
   function(hermes_add_integrated_test TESTNAME)
-    add_test(NAME ${TESTNAME}
-           WORKING_DIRECTORY tests/integrated/${TESTNAME}
-           COMMAND runtest)
+    add_test(
+      NAME ${TESTNAME}
+      WORKING_DIRECTORY tests/integrated/${TESTNAME}
+      COMMAND runtest)
   endfunction()
 
   hermes_add_integrated_test(1D-fluid)
@@ -240,42 +275,47 @@ if(HERMES_TESTS)
   option(HERMES_UNIT_TESTS "Build the unit tests" ON)
   if(HERMES_UNIT_TESTS)
     if(NOT PACKAGE_TESTS)
-      # Not running BOUT++ tests
-      # Since BOUT++ includes googletest, adding it again causes errors
+      # Not running BOUT++ tests Since BOUT++ includes googletest, adding it
+      # again causes errors
       set(CMAKE_CXX_STANDARD 14) # Needed to compile GoogleTest on Darwin
       add_subdirectory(external/googletest)
     endif()
     file(GLOB_RECURSE TEST_SOURCES tests/unit/test_*.cxx)
 
-    add_executable(hermes_unit_tests
-                   tests/unit/main.cxx
-                   ${TEST_SOURCES})
+    add_executable(hermes_unit_tests tests/unit/main.cxx ${TEST_SOURCES})
 
     add_test(NAME hermes_unit_tests COMMAND hermes_unit_tests)
-    target_link_libraries(hermes_unit_tests PRIVATE gtest bout++::bout++ hermes-3-lib)
+    target_link_libraries(hermes_unit_tests PRIVATE gtest bout++::bout++
+                                                    hermes-3-lib)
   endif()
 endif()
 
 # Compile-time options
 
 set(SLOPE_LIMITERS MinMod MC Upwind Superbee)
-set(HERMES_SLOPE_LIMITER MC CACHE STRING "Set advection slope limiter")
+set(HERMES_SLOPE_LIMITER
+    MC
+    CACHE STRING "Set advection slope limiter")
 set_property(CACHE HERMES_SLOPE_LIMITER PROPERTY STRINGS ${SLOPE_LIMITERS})
 message(STATUS "Slope limiter: ${HERMES_SLOPE_LIMITER}")
 
 # Generate the build config header
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/hermes_build_config.hxx")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/hermes_build_config.hxx")
   # If we do in source builds, this is fine
-  if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
-    message(FATAL_ERROR "Generated hermes_build_config.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/hermes_build_config.hxx' before continuing")
+  if(NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+    message(
+      FATAL_ERROR
+        "Generated hermes_build_config.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/hermes_build_config.hxx' before continuing"
+    )
   endif()
 endif()
 
-configure_file(include/hermes_build_config.hxx.in include/hermes_build_config.hxx)
+configure_file(include/hermes_build_config.hxx.in
+               include/hermes_build_config.hxx)
 
 # Installation
-if (BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS)
   install(TARGETS hermes-3 hermes-3-lib)
 else()
   install(TARGETS hermes-3)
