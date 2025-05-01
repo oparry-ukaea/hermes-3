@@ -16,3 +16,4 @@ spack-build*
 spack.lock
 .spack-env
 views
+.vscode
