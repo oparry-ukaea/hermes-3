@@ -110,9 +110,6 @@ set(HERMES_SOURCES
     src/anomalous_diffusion.cxx
     src/binormal_stpm.cxx
     src/recycling.cxx
-    src/amjuel_hyd_ionisation.cxx
-    src/amjuel_hyd_recombination.cxx
-    src/amjuel_helium.cxx
     src/adas_reaction.cxx
     src/noflow_boundary.cxx
     src/neutral_parallel_diffusion.cxx
