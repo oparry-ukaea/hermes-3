@@ -20,3 +20,6 @@ spack-build*
 spack.lock
 .spack-env
 views
+
+# Directory used by scripts/run_eg.sh
+runs
