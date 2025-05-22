@@ -43,17 +43,18 @@ protected:
   virtual Options generate_state() = 0;
 
   /**
-   * @brief Util to generate a 3D field with values that increase linearly along axis \p
-   * axis_str (which has \p axis_ngrid elements) from \p v_min to \p v_max.
+   * @brief Util to generate an appropriate string to initialise a field with values that
+   * increase linearly along axis \p axis_str (which has \p axis_ngrid elements) between
+   * \p v_min and \p v_max.
    *
    * @param v_min
    * @param v_max
    * @param axis_str
    * @param axis_ngrid
-   * @return Field3D
+   * @return std::string
    */
-  Field3D gen_lin_field(BoutReal v_min, BoutReal v_max, std::string axis_str,
-                        int axis_ngrid) {
+  std::string gen_lin_field_str(BoutReal v_min, BoutReal v_max, std::string axis_str,
+                                int axis_ngrid) {
 
     BoutReal axis_min = 0.0, axis_max(axis_ngrid);
     BoutReal axis_range = axis_max - axis_min;
@@ -61,7 +62,7 @@ protected:
     std::stringstream expression;
     expression << v_min << " + (" << axis_str << "-" << axis_min << ")/" << axis_range
                << "*" << v_range;
-    return FieldFactory::get()->create3D(expression.str(), &default_opts, mesh);
+    return expression.str();
   }
 
   std::filesystem::path ref_data_path() {
@@ -99,6 +100,8 @@ protected:
     // Run reaction
     component.transform(test_state);
 
+    const BoutReal tol = 1e-12;
+
     // Loop over all ref_state species, fields; check that corresponding test_state field
     // matches
     for (auto sp : ref_state["species"].getChildren()) {
@@ -107,8 +110,7 @@ protected:
         std::string sp_name = sp.first;
         std::string fld_name = fld.first;
 
-        if (std::strcmp)
-          Field3D test_field = test_state["species"][sp.first][fld.first].as<Field3D>();
+        Field3D test_field = test_state["species"][sp.first][fld.first].as<Field3D>();
         std::cout << "TEST " << sp_name << "/" << fld_name << " has dims ["
                   << test_field.getNx() << "," << test_field.getNy() << ","
                   << test_field.getNz() << "]" << std::endl;
@@ -116,7 +118,7 @@ protected:
         std::cout << "REF " << sp_name << "/" << fld_name << " has dims ["
                   << ref_field.getNx() << "," << ref_field.getNy() << ","
                   << ref_field.getNz() << "]" << std::endl;
-        ASSERT_TRUE(IsFieldEqual(test_field, ref_field, "RGN_ALL"));
+        ASSERT_TRUE(IsFieldEqual(test_field, ref_field, "RGN_ALL", tol));
       }
     }
   }
@@ -157,12 +159,6 @@ protected:
   Options generate_state() override {
     std::string ion = isotope + "+";
 
-    // Density and Temperature ranges (log vals)
-    constexpr BoutReal logn_min = 14, logn_max = 22;
-    constexpr BoutReal logT_min = -1, logT_max = 4;
-    Field3D nion = this->gen_lin_field(logn_min, logn_max, "x", this->nx);
-    Field3D ne = this->gen_lin_field(logn_min, logn_max, "y", this->ny);
-    Field3D Te = this->gen_lin_field(logT_min, logT_max, "z", this->nz);
     // Fix mass, charge for now
     const BoutReal atom_charge = 0.0;
     const BoutReal ion_charge = 1.0;
@@ -171,8 +167,8 @@ protected:
     Options state{{"species",
                    {{"e",
                      {{"AA", 1.0},
-                      {"density", ne},
-                      {"temperature", Te},
+                      {"density", 1.0},
+                      {"temperature", 1.0},
                       {"velocity", 1.0},
                       {"density_source", 1.0},
                       {"momentum_source", 1.0},
@@ -189,12 +185,25 @@ protected:
                     {ion,
                      {{"AA", 1.0},
                       {"charge", ion_charge},
-                      {"density", nion},
+                      {"density", 1.0},
                       {"temperature", 1.0},
                       {"velocity", 1.0},
                       {"density_source", 1.0},
                       {"momentum_source", 1.0},
                       {"energy_source", 1.0}}}}}};
+
+    // Overwrite n_e, n_T, n_ion with functions that vary linearly along one axis
+
+    // Density and Temperature ranges (log vals)
+    constexpr BoutReal logn_min = 14, logn_max = 22;
+    constexpr BoutReal logT_min = -1, logT_max = 4;
+
+    state["species"][ion]["density"] = FieldFactory::get()->create3D(
+        this->gen_lin_field_str(logn_min, logn_max, "x", this->nx), &state, mesh);
+    state["species"]["e"]["density"] = FieldFactory::get()->create3D(
+        this->gen_lin_field_str(logn_min, logn_max, "y", this->ny), &state, mesh);
+    state["species"]["e"]["temperature"] = FieldFactory::get()->create3D(
+        this->gen_lin_field_str(logT_min, logT_max, "z", this->nz), &state, mesh);
 
     return state;
   }
