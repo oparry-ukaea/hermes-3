@@ -69,21 +69,56 @@ protected:
   }
 
   void sources_regression_test() {
-    std::filesystem::path ref_path = ref_data_path();
-    Options ref_state = bout::OptionsIO::create(ref_path)->read();
+
+    // Read reference state
+    Options ref_state = bout::OptionsIO::create(ref_data_path())->read();
+
+    // const std::string sp_sec_name("species");
+    // if (!ref_state.isSection(sp_sec_name)) {
+    //   std::cout << "Ref data doesn't have a []" << sp_sec_name << "] section!"
+    //             << std::endl;
+    // }
+
+    // for (auto sp_name_opts : ref_state[sp_sec_name].getChildren()) {
+    //   std::string name = sp_name_opts.first;
+    //   auto sp = sp_name_opts.second;
+
+    //   // Collect field names
+    //   std::vector<std::string> fld_names;
+    //   for (auto fld : sp.getChildren()) {
+    //     fld_names.push_back(fld.first);
+    //   }
+    //   int foo = 1;
+    // }
 
     // TODO - check ref state mesh matches current mesh nx,ny,mz
 
-    // TODO extract test input from ref_state
-    Options test_state = ref_state.copy();
+    // Generate input state for test
+    Options test_state = generate_state();
 
     // Run reaction
     component.transform(test_state);
 
-    // // TODO
-    // // Check that test_state matches ref state for all species, sources
-    // ASSERT_TRUE(IsFieldEqual(get<Field3D>(test_state["species"][sp][source_type]),
-    //                          ref_state["species"][sp][source_type], "RGN_NOBNDRY"));
+    // Loop over all ref_state species, fields; check that corresponding test_state field
+    // matches
+    for (auto sp : ref_state["species"].getChildren()) {
+      for (auto fld : sp.second.getChildren()) {
+
+        std::string sp_name = sp.first;
+        std::string fld_name = fld.first;
+
+        if (std::strcmp)
+          Field3D test_field = test_state["species"][sp.first][fld.first].as<Field3D>();
+        std::cout << "TEST " << sp_name << "/" << fld_name << " has dims ["
+                  << test_field.getNx() << "," << test_field.getNy() << ","
+                  << test_field.getNz() << "]" << std::endl;
+        Field3D ref_field = fld.second.as<Field3D>();
+        std::cout << "REF " << sp_name << "/" << fld_name << " has dims ["
+                  << ref_field.getNx() << "," << ref_field.getNy() << ","
+                  << ref_field.getNz() << "]" << std::endl;
+        ASSERT_TRUE(IsFieldEqual(test_field, ref_field, "RGN_ALL"));
+      }
+    }
   }
 
   void generate_data() {
@@ -91,7 +126,7 @@ protected:
     Options state = generate_state();
 
     // Run reaction
-    component.transform(state);
+    // component.transform(state);
 
     // Write output state
     std::filesystem::path outpath = ref_data_path();
@@ -125,20 +160,41 @@ protected:
     // Density and Temperature ranges (log vals)
     constexpr BoutReal logn_min = 14, logn_max = 22;
     constexpr BoutReal logT_min = -1, logT_max = 4;
+    Field3D nion = this->gen_lin_field(logn_min, logn_max, "x", this->nx);
     Field3D ne = this->gen_lin_field(logn_min, logn_max, "y", this->ny);
     Field3D Te = this->gen_lin_field(logT_min, logT_max, "z", this->nz);
-
+    // Fix mass, charge for now
+    const BoutReal atom_charge = 0.0;
+    const BoutReal ion_charge = 1.0;
+    const BoutReal mass = 1.0;
     // Construct state
-    Options state{
-        {"species",
-         {{"e", {{"density", ne}, {"temperature", Te}}},
-          {"h", {{"AA", 1.0}, {"density", 1.0}, {"temperature", 1.0}, {"velocity", 1.0}}},
-          {"h+",
-           {{"AA", 1.0},
-            {"charge", 1.0},
-            {"density", 1.0},
-            {"temperature", 1.0},
-            {"velocity", 1.0}}}}}};
+    Options state{{"species",
+                   {{"e",
+                     {{"AA", 1.0},
+                      {"density", ne},
+                      {"temperature", Te},
+                      {"velocity", 1.0},
+                      {"density_source", 1.0},
+                      {"momentum_source", 1.0},
+                      {"energy_source", 1.0}}},
+                    {isotope,
+                     {{"AA", 1.0},
+                      {"charge", atom_charge},
+                      {"density", 1.0},
+                      {"temperature", 1.0},
+                      {"velocity", 1.0},
+                      {"density_source", 1.0},
+                      {"momentum_source", 1.0},
+                      {"energy_source", 1.0}}},
+                    {ion,
+                     {{"AA", 1.0},
+                      {"charge", ion_charge},
+                      {"density", nion},
+                      {"temperature", 1.0},
+                      {"velocity", 1.0},
+                      {"density_source", 1.0},
+                      {"momentum_source", 1.0},
+                      {"energy_source", 1.0}}}}}};
 
     return state;
   }
