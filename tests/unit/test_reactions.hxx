@@ -128,7 +128,7 @@ protected:
     Options state = generate_state();
 
     // Run reaction
-    // component.transform(state);
+    component.transform(state);
 
     // Write output state
     std::filesystem::path outpath = ref_data_path();
@@ -163,6 +163,9 @@ protected:
     const BoutReal atom_charge = 0.0;
     const BoutReal ion_charge = 1.0;
     const BoutReal mass = 1.0;
+
+    Field3D placeholder_fld =
+        FieldFactory::get()->create3D(std::string("1.0"), default_opts, mesh);
     // Construct state
     Options state{{"species",
                    {{"e",
@@ -170,27 +173,27 @@ protected:
                       {"density", 1.0},
                       {"temperature", 1.0},
                       {"velocity", 1.0},
-                      {"density_source", 1.0},
-                      {"momentum_source", 1.0},
-                      {"energy_source", 1.0}}},
+                      {"density_source", placeholder_fld},
+                      {"momentum_source", placeholder_fld},
+                      {"energy_source", placeholder_fld}}},
                     {isotope,
                      {{"AA", 1.0},
                       {"charge", atom_charge},
                       {"density", 1.0},
                       {"temperature", 1.0},
                       {"velocity", 1.0},
-                      {"density_source", 1.0},
-                      {"momentum_source", 1.0},
-                      {"energy_source", 1.0}}},
+                      {"density_source", placeholder_fld},
+                      {"momentum_source", placeholder_fld},
+                      {"energy_source", placeholder_fld}}},
                     {ion,
                      {{"AA", 1.0},
                       {"charge", ion_charge},
                       {"density", 1.0},
                       {"temperature", 1.0},
                       {"velocity", 1.0},
-                      {"density_source", 1.0},
-                      {"momentum_source", 1.0},
-                      {"energy_source", 1.0}}}}}};
+                      {"density_source", placeholder_fld},
+                      {"momentum_source", placeholder_fld},
+                      {"energy_source", placeholder_fld}}}}}};
 
     // Overwrite n_e, n_T, n_ion with functions that vary linearly along one axis
 
