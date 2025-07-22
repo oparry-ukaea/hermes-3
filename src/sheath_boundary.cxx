@@ -71,9 +71,9 @@ SheathBoundary::SheathBoundary(std::string name, Options &alloptions, Solver *) 
   sin_alpha = options["sin_alpha"]
                   .doc("Sin of the angle between magnetic field line and wall surface. "
                        "Should be between 0 and 1")
-                  .withDefault(1.0);
+    .withDefault(Field3D(1.0));
 
-  if ((sin_alpha < 0.0) or (sin_alpha > 1.0)) {
+  if ((min(sin_alpha) < 0.0) or (max(sin_alpha) > 1.0)) {
     throw BoutException("Range of sin_alpha must be between 0 and 1");
   }
 
@@ -211,7 +211,7 @@ void SheathBoundary::transform(Options &state) {
                 0, 100); // Limit for e.g. Ni zero gradient
 
             // Note: Vzi = C_i * sin(α)
-            ion_sum[i] += s_i * Zi * sin_alpha * sqrt(C_i_sq);
+            ion_sum[i] += s_i * Zi * sin_alpha[ip] * sqrt(C_i_sq);
           }
         }
       }
@@ -248,7 +248,7 @@ void SheathBoundary::transform(Options &state) {
                     / Mi,
                 0, 100); // Limit for e.g. Ni zero gradient
 
-            ion_sum[i] += s_i * Zi * sin_alpha * sqrt(C_i_sq);
+            ion_sum[i] += s_i * Zi * sin_alpha[im] * sqrt(C_i_sq);
           }
         }
       }
