@@ -14,7 +14,8 @@ typedef Options& (*OPTYPE)(Options&, Field3D);
  *
  */
 struct Reaction : public Component {
-  Reaction(std::string name, Options& alloptions);
+  Reaction(std::string name, Options& alloptions,
+           RateParamsTypes rate_params_type = RateParamsTypes::nT);
 
   static int get_instance_num() {
     static int instance_num{0};
@@ -46,6 +47,8 @@ protected:
   /// (Default to true as a reminder to override eval_sigma_v_E)
   bool includes_sigma_v_e = true;
 
+  const RateParamsTypes rate_params_type;
+
   /**
    * @brief Add a new entry in this Reaction's diagnostic (multi)map. The (non-unique) Key
    * is < \p sp_name, \p type >
@@ -66,6 +69,9 @@ protected:
                       const std::string& data_source,
                       DiagnosticTransformerType transformer = negate,
                       const std::string& standard_name = "");
+
+  void calc_Teff(const Options& state,
+                 const std::vector<std::string>& heavy_reactant_species, Field3D& Teff);
 
   /**
    * @brief Calculate weightsums used in transform(). Can't be done at construction

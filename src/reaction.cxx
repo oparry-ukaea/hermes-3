@@ -9,7 +9,8 @@
 
 #include "integrate.hxx"
 
-Reaction::Reaction(std::string name, Options& options) : name(name) {
+Reaction::Reaction(std::string name, Options& options, RateParamsTypes rate_params_type)
+    : name(name), rate_params_type(rate_params_type) {
 
   // Extract some relevant options, units to member vars for readability
   const auto& units = options["units"];
@@ -136,17 +137,22 @@ void Reaction::transform(Options& state) {
   Field3D n_e = get<Field3D>(electron["density"]);
   Field3D T_e = get<Field3D>(electron["temperature"]);
 
-  // Function passed to RateHelper to calculate reaction rate. Optionally scales by
-  // multiplier.
-  RateFunctionType calc_rate = [&](BoutReal mass_action, BoutReal ne, BoutReal te) {
-    BoutReal result = mass_action * eval_sigma_v(te * Tnorm, ne * Nnorm) * Nnorm
-                      / FreqNorm * rate_multiplier;
-    return result;
-  };
-
-  RateHelper rate_helper =
-      RateHelper(state, reactant_names, calc_rate, n_e.getRegion("RGN_NOBNDRY"));
-  Field3D reaction_rate = rate_helper.calc_rate();
+  // Create rate helper and compute reaction rate
+  Field3D reaction_rate;
+  if (this->rate_params_type == RateParamsTypes::ET) {
+    throw BoutException("RateParamsTypes::ET not implemented");
+  } else if (this->rate_params_type == RateParamsTypes::nT) {
+    RateFunctionType calc_rate = [&](BoutReal mass_action, BoutReal ne, BoutReal te) {
+      BoutReal result = mass_action * eval_sigma_v(te * Tnorm, ne * Nnorm) * Nnorm
+                        / FreqNorm * rate_multiplier;
+      return result;
+    };
+    auto rate_helper = RateHelper<RateParamsTypes::nT>(state, reactant_names, calc_rate,
+                                                       n_e.getRegion("RGN_NOBNDRY"));
+    reaction_rate = rate_helper.calc_rate();
+  } else if (this->rate_params_type == RateParamsTypes::T) {
+    throw BoutException("RateParamsTypes::T not implemented");
+  }
 
   // Subclasses perform any additional transform tasks
   transform_additional(state, reaction_rate);
