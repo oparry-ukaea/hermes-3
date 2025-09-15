@@ -10,9 +10,8 @@
  * @param coeff_table a table of polynomial fit coefficients (coefs[T][n])
  * @return BoutReal the fit in SI, units m^3/s, or eV m^3/s for energy loss
  */
-BoutReal
-AmjuelReaction::eval_amjuel_fit(BoutReal T, BoutReal n,
-                                const std::vector<std::vector<BoutReal>>& coeff_table) {
+BoutReal AmjuelReaction::eval_amjuel_n_T_fit(
+    BoutReal T, BoutReal n, const std::vector<std::vector<BoutReal>>& coeff_table) {
   // Enforce range of validity
   n = std::clamp(n, 1e14, 1e22); // 1e8 - 1e16 cm^-3
   T = std::clamp(T, 0.1, 1e4);
@@ -42,7 +41,7 @@ AmjuelReaction::eval_amjuel_fit(BoutReal T, BoutReal n,
  * @return BoutReal <sigma . v . E>(n, T)
  */
 BoutReal AmjuelReaction::eval_sigma_v_E(BoutReal T, BoutReal n) {
-  return eval_amjuel_fit(T, n, amjuel_data.sigma_v_E_coeffs);
+  return eval_amjuel_n_T_fit(T, n, amjuel_data.sigma_v_E_coeffs);
 }
 
 /**
@@ -54,7 +53,7 @@ BoutReal AmjuelReaction::eval_sigma_v_E(BoutReal T, BoutReal n) {
  * @return BoutReal <sigma . v . E>(n, T)
  */
 BoutReal AmjuelReaction::eval_sigma_v(BoutReal T, BoutReal n) {
-  return eval_amjuel_fit(T, n, amjuel_data.sigma_v_coeffs);
+  return eval_amjuel_n_T_fit(T, n, amjuel_data.sigma_v_coeffs);
 }
 
 void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate) {
