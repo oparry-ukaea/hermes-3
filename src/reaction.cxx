@@ -207,14 +207,10 @@ void Reaction::transform(Options& state) {
         // All consumed (net loss) reactants contribute
         int pop_change_r = pop_changes.at(rsp_name);
         if (pop_change_r < 0) {
-          BoutReal momentum_split = this->pfactors.at(sp_name)
-                                    * get<BoutReal>(state["species"][sp_name]["AA"])
-                                    / this->momentum_weightsum;
           momentum_source += -pop_change_r * pfactors.at(rsp_name) * momentum_split
                              * reaction_rate
                              * get<BoutReal>(state["species"][rsp_name]["AA"])
                              * get<Field3D>(state["species"][rsp_name]["velocity"]);
-          BoutReal energy_split = this->pfactors.at(sp_name) / this->energy_weightsum;
           energy_source += -pop_change_r * pfactors.at(rsp_name) * energy_split
                            * reaction_rate * (3. / 2)
                            * get<Field3D>(state["species"][rsp_name]["temperature"]);
