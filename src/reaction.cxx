@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <memory>
+#include <numeric>
 #include <regex>
 #include <utility>
 
@@ -45,10 +46,16 @@ Reaction::Reaction(std::string name, Options& options, RateParamsTypes rate_para
     this->pfactors[sp] = 1;
   }
 
-  // Initialise weight sums with dummy values. Real values are set on first call to
-  // transform().
-  this->momentum_weightsum = -1;
-  this->energy_weightsum = -1;
+  // Initialise momentum/energy channel maps
+  for (const std::string& reactant :
+       this->parser->get_species(species_filter::heavy, species_filter::reactants)) {
+    if (this->energy_channels.count(reactant) == 0) {
+      energy_channels[reactant] = std::map<std::string, BoutReal>();
+    }
+    if (this->momentum_channels.count(reactant) == 0) {
+      momentum_channels[reactant] = std::map<std::string, BoutReal>();
+    }
+  }
 }
 
 /**
@@ -81,25 +88,94 @@ void Reaction::add_diagnostic(const std::string& sp_name, const std::string& dia
 }
 
 /**
- * @brief Compute weight sums, if it hasn't been done already.
- *          Energy   : sum of (+ve pop change) participation factors
- *          Momentum : sum of (+ve pop change) participation factors, weighted by mass
+ * @brief Compute the effective temperature (in eV) of heavy reactants.
+ *
+ * @param[in] state
+ * @param[in] heavy_reactant_species names of heavy reactants
+ * @param[inout] Teff Field3D object in which to store the result
+ */
+void Reaction::calc_Teff(const Options& state,
+                         const std::vector<std::string>& heavy_reactant_species,
+                         Field3D& Teff) {
+
+  Teff = 0.0;
+  for (auto& sp : heavy_reactant_species) {
+    Teff += (get<Field3D>(state["species"][sp]["temperature"])
+             / get<Field3D>(state["species"][sp]["AA"]))
+            * this->Tnorm;
+  }
+
+  // Clamp values
+  constexpr BoutReal Teff_min = 0.01;
+  constexpr BoutReal Teff_max = 10000;
+  for (const auto& i : Teff.getRegion("RGN_NOBNDRY")) {
+    Teff[i] = std::clamp(Teff[i], Teff_min, Teff_max);
+  }
+}
+
+/**
+ * @brief Set weights for any reactant => product momentum / energy channel that hasn't
+ * already been specified via set_energy_channel_weight and set_momentum_channel_weight.
  *
  * @param state current simulation state
  */
-void Reaction::calc_weightsums(Options& state) {
-  if (this->energy_weightsum < 0 || this->momentum_weightsum < 0) {
-    this->momentum_weightsum = 0;
-    this->energy_weightsum = 0;
-    std::map<std::string, int> pop_changes = this->parser->get_stoich();
-    for (const std::string& sp :
-         this->parser->get_species(species_filter::heavy, species_filter::produced)) {
-      int num_produced = pop_changes.at(sp);
-      BoutReal pfac = pfactors.at(sp);
-      this->momentum_weightsum +=
-          num_produced * pfac * get<BoutReal>(state["species"][sp]["AA"]);
-      this->energy_weightsum += num_produced * pfac;
+void Reaction::init_channel_weights(Options& state) {
+  std::vector<std::string> heavy_reactants =
+      this->parser->get_species(species_filter::heavy, species_filter::reactants);
+  std::vector<std::string> heavy_products =
+      this->parser->get_species(species_filter::heavy, species_filter::products);
+
+  // If all channels already have values, bail out
+  int num_energy_channels_set = 0, num_momentum_channels_set = 0;
+  const int num_channels_expected = heavy_reactants.size() * heavy_products.size();
+  for (const auto& reactant : heavy_reactants) {
+    num_energy_channels_set += this->energy_channels[reactant].size();
+    num_momentum_channels_set += this->momentum_channels[reactant].size();
+  }
+  if (num_energy_channels_set == num_channels_expected
+      && num_momentum_channels_set == num_channels_expected) {
+    return;
+  }
+
+  // Compute total weights:
+  BoutReal momentum_weightsum = 0, energy_weightsum = 0;
+  for (const std::string& sp :
+       this->parser->get_species(species_filter::heavy, species_filter::produced)) {
+    int num_produced = this->parser->pop_change(sp);
+    BoutReal pfac = pfactors.at(sp);
+    momentum_weightsum += num_produced * pfac * get<BoutReal>(state["species"][sp]["AA"]);
+    energy_weightsum += num_produced * pfac;
+  }
+  // Set default values for any unset channels
+  for (const std::string& reactant : heavy_reactants) {
+    for (const std::string& product : heavy_products) {
+      if (this->energy_channels[reactant].count(product) == 0) {
+        this->energy_channels[reactant][product] = this->parser->pop_change(product)
+                                                   * this->pfactors.at(product)
+                                                   / energy_weightsum;
+      }
+      if (this->momentum_channels[reactant].count(product) == 0) {
+        this->momentum_channels[reactant][product] =
+            this->parser->pop_change(product) * this->pfactors.at(product)
+            * get<BoutReal>(state["species"][product]["AA"]) / momentum_weightsum;
+      }
     }
+  }
+
+  /* Make sure we're not trying to distribute < 0 or > 1 times total momentum/energy of
+   * each reactant. The total weights could be restricted to be exactly 1, but we want to
+   * allow momentum/energy contributions from certain species to be turned off.
+   */
+  for (const std::string& reactant : heavy_reactants) {
+    double total_energy_weight = std::accumulate(
+        this->energy_channels[reactant].begin(), this->energy_channels[reactant].end(),
+        0.0, [](double sum, const auto& pair) { return sum + pair.second; });
+    ASSERT0(total_energy_weight >= 0 && total_energy_weight <= 1);
+    double total_momentum_weight =
+        std::accumulate(this->momentum_channels[reactant].begin(),
+                        this->momentum_channels[reactant].end(), 0.0,
+                        [](double sum, const auto& pair) { return sum + pair.second; });
+    ASSERT0(total_momentum_weight >= 0 && total_momentum_weight <= 1);
   }
 }
 
@@ -117,6 +193,18 @@ void Reaction::outputVars(Options& state) {
   }
 }
 
+void Reaction::set_energy_channel_weight(const std::string& reactant_name,
+                                         const std::string& product_name,
+                                         BoutReal weight) {
+  this->energy_channels[reactant_name][product_name] = weight;
+}
+
+void Reaction::set_momentum_channel_weight(const std::string& reactant_name,
+                                           const std::string& product_name,
+                                           BoutReal weight) {
+  this->momentum_channels[reactant_name][product_name] = weight;
+}
+
 /**
  * @brief Add density, momentum and energy sources that apply to all reactions (e.g.
  * those driven by species population changes), then call transform_additional() to allow
@@ -129,13 +217,16 @@ void Reaction::transform(Options& state) {
   Field3D momentum_exchange, energy_exchange, energy_loss;
   zero_diagnostics(state);
 
+  // Get the species name(s) of reactants, heavy reactants and products
   std::vector<std::string> reactant_names =
       parser->get_species(species_filter::reactants);
+  std::vector<std::string> heavy_reactant_species =
+      parser->get_species(reactant_names, species_filter::heavy);
+  std::vector<std::string> heavy_product_species =
+      parser->get_species(species_filter::heavy, species_filter::products);
 
-  // Extract electron properties
-  Options& electron = state["species"]["e"];
-  Field3D n_e = get<Field3D>(electron["density"]);
-  Field3D T_e = get<Field3D>(electron["temperature"]);
+  // First reactant; just used to get region
+  Field3D first_reactant = get<Field3D>(state["species"][reactant_names[0]]["density"]);
 
   // Create rate helper and compute reaction rate
   Field3D reaction_rate;
@@ -147,19 +238,47 @@ void Reaction::transform(Options& state) {
                         / FreqNorm * rate_multiplier;
       return result;
     };
-    auto rate_helper = RateHelper<RateParamsTypes::nT>(state, reactant_names, calc_rate,
-                                                       n_e.getRegion("RGN_NOBNDRY"));
+    auto rate_helper = RateHelper<RateParamsTypes::nT>(
+        state, reactant_names, calc_rate, first_reactant.getRegion("RGN_NOBNDRY"));
     reaction_rate = rate_helper.calc_rate();
   } else if (this->rate_params_type == RateParamsTypes::T) {
-    throw BoutException("RateParamsTypes::T not implemented");
+    /**
+     * Scale to different isotope masses and finite neutral particle temperatures by using
+     * the effective temperature (Amjuel p43) T_eff = (M/M_1)T_1 + (M/M_2)T_2
+     */
+    Field3D Teff;
+    calc_Teff(state, heavy_reactant_species, Teff);
+    const Field3D lnT = log(Teff);
+
+    Field3D ln_sigmav = -18.5028;
+    Field3D lnT_n = lnT; // (lnT)^n
+    // b0 -1.850280000000E+01 b1 3.708409000000E-01 b2 7.949876000000E-03
+    // b3 -6.143769000000E-04 b4 -4.698969000000E-04 b5 -4.096807000000E-04
+    // b6 1.440382000000E-04 b7 -1.514243000000E-05 b8 5.122435000000E-07
+    for (BoutReal b : {0.3708409, 7.949876e-3, -6.143769e-4, -4.698969e-4, -4.096807e-4,
+                       1.440382e-4, -1.514243e-5, 5.122435e-7}) {
+      ln_sigmav += b * lnT_n;
+      lnT_n *= lnT;
+    }
+
+    // Get rate coefficient, convert cm^3/s to m^3/s then normalise
+    // Optionally multiply by arbitrary multiplier
+    const Field3D sigmav = exp(ln_sigmav) * (1e-6 * Nnorm / FreqNorm) * rate_multiplier;
+
+    Field3D mass_action_factor(1);
+    for (const auto& sp : heavy_reactant_species) {
+      mass_action_factor *= floor(get<Field3D>(state["species"][sp]["density"]), 1e-5);
+    }
+
+    reaction_rate = mass_action_factor * sigmav; // Rate coefficient in [m^-3 s^-1]
   }
 
   // Subclasses perform any additional transform tasks
   transform_additional(state, reaction_rate);
 
   // Use the stoichiometric values to set density sources for all species
-  auto pop_changes = parser->get_stoich();
-  for (const auto& [sp_name, pop_change] : pop_changes) {
+  for (const auto& sp_name : this->parser->get_species()) {
+    int pop_change = this->parser->pop_change(sp_name);
     if (pop_change != 0) {
       // Density sources
       Field3D density_source = pfactors.at(sp_name) * pop_change * reaction_rate;
@@ -168,17 +287,11 @@ void Reaction::transform(Options& state) {
     }
   }
 
-  // Get the species name(s) of heavy reactant, products
-  std::vector<std::string> heavy_reactant_species =
-      parser->get_species(reactant_names, species_filter::heavy);
-  std::vector<std::string> heavy_product_species =
-      parser->get_species(species_filter::heavy, species_filter::products);
-
-  // Momentum and energy sources
-  calc_weightsums(state);
+  // Population change-driven sources for all species other than electrons
+  init_channel_weights(state);
   momentum_exchange = 0.0;
   energy_exchange = 0.0;
-  for (const auto& [sp_name, pop_change_s] : pop_changes) {
+  for (const auto& [sp_name, pop_change_s] : this->parser->get_mom_energy_pop_changes()) {
     // No momentum, energy source for electrons due to pop change
     if (sp_name.compare("e") == 0) {
       continue;
@@ -194,25 +307,19 @@ void Reaction::transform(Options& state) {
                       * get<Field3D>(state["species"][sp_name]["temperature"]);
     } else if (pop_change_s > 0) {
       // Species with net gain receive a proportion of the momentum and energy lost by
-      // consumed reactants
+      // consumed reactants. See init_channel_weights() for default splitting factors.
       momentum_exchange = energy_exchange = 0;
-      // Splitting factors - fraction of the total momentum/energy lost by consumed
-      // species that will go to this product
-      BoutReal momentum_split = pop_change_s * this->pfactors.at(sp_name)
-                                * get<BoutReal>(state["species"][sp_name]["AA"])
-                                / this->momentum_weightsum;
-      BoutReal energy_split =
-          pop_change_s * this->pfactors.at(sp_name) / this->energy_weightsum;
       for (auto& rsp_name : heavy_reactant_species) {
-        // All consumed (net loss) reactants contribute
-        int pop_change_r = pop_changes.at(rsp_name);
+        // All consumed (net loss) reactants can contribute
+        int pop_change_r = this->parser->pop_change_reactant(rsp_name);
         if (pop_change_r < 0) {
-          momentum_source += -pop_change_r * pfactors.at(rsp_name) * momentum_split
-                             * reaction_rate
+          momentum_source += -pop_change_r * pfactors.at(rsp_name)
+                             * this->momentum_channels[rsp_name][sp_name] * reaction_rate
                              * get<BoutReal>(state["species"][rsp_name]["AA"])
                              * get<Field3D>(state["species"][rsp_name]["velocity"]);
-          energy_source += -pop_change_r * pfactors.at(rsp_name) * energy_split
-                           * reaction_rate * (3. / 2)
+          energy_source += -pop_change_r * pfactors.at(rsp_name)
+                           * this->energy_channels[rsp_name][sp_name] * reaction_rate
+                           * (3. / 2)
                            * get<Field3D>(state["species"][rsp_name]["temperature"]);
         }
       }

@@ -117,7 +117,7 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
   // Energy source for electrons due to pop change
   Options& electron = state["species"]["e"];
   Field3D T_e = get<Field3D>(electron["temperature"]);
-  const int e_pop_change = this->parser->get_stoich().at("e");
+  const int e_pop_change = this->parser->pop_change("e");
   if (e_pop_change != 0) {
     if (electron.isSet("velocity")) {
       // Transfer of electron kinetic to thermal energy due to density source

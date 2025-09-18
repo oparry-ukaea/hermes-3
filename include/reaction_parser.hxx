@@ -70,9 +70,6 @@ public:
   /// Public getter for underlying reaction string
   const std::string get_reaction_str() const { return this->reaction_str; }
 
-  /// Get the stoichiometric vector for this reaction (as a species_name=>pop_change map)
-  const std::map<std::string, int>& get_stoich() { return this->stoich; }
-
   /**
    * @brief Get the names of all species identified by the parser
    *
@@ -134,6 +131,44 @@ public:
     return get_species(get_species(), filters...);
   }
 
+  /**
+   * @brief Return a map of population changes to use when computing momentum and energy
+   * transfer. For non-symmetric reactions, this is the normal stoichiometry vector; for
+   * symmetric reactions, it returns the 'split' version, where species names are
+   * repeated, with -ve values for reactants and +ve values for products.
+   *
+   * @return const std::map<std::string, int>&
+   */
+  const std::multimap<std::string, int>& get_mom_energy_pop_changes() const;
+
+  /**
+   * @brief Get the overall population change of a species.
+   *
+   * @param sp_name the species name
+   * @return int the population change
+   */
+  int pop_change(const std::string sp_name) const;
+
+  /**
+   * @brief Get the population change of a product species.
+   * If the left and right sides of the reaction string are the same, return the change on
+   * the PRODUCT SIDE ONLY, otherwise return the usual net population change.
+   *
+   * @param sp_name the species name
+   * @return int the population change
+   */
+  int pop_change_product(const std::string sp_name) const;
+
+  /**
+   * @brief Get the population change of a reactant species.
+   * If the left and right sides of the reaction string are the same, return the change on
+   * the REACTANT SIDE ONLY, otherwise return the usual net population change.
+   *
+   * @param sp_name the species name
+   * @return int the population change
+   */
+  int pop_change_reactant(const std::string sp_name) const;
+
 private:
   /// The reaction string
   const std::string reaction_str;
@@ -143,26 +178,28 @@ private:
   std::map<std::string, int> products;
   /// Stoichiometric 'vector' (map of species name => population change)
   std::map<std::string, int> stoich;
+  /**
+   * 'Split' stoichiometric values. useful when dealing with symmetric reactions.
+   *   Species names appear twice, once with the -ve (reactant)
+   *   pop. change, once with the +ve (product) pop. change.
+   */
+  std::multimap<std::string, int> mom_energy_stoich;
+
+  /// Flag to identify reactions where LHS == RHS (e.g. symmetric CX)
+  bool is_symmetric;
 
   /**
    * @brief Util function to compute the stoichiometric 'vector' (map) by taking the
-   * difference between the reactant and product population changes.
+   * difference between the reactant and product population changes. Also computes a
+   * separate version used for momentum and energy sources. This second map differs from
+   * the first if the reaction is symmetric, in which case each species appear twice, once
+   * with the (-ve) reactant pop. change and once with the (+ve) product pop. change.
    *
    * @param R the reactant population changes
    * @param P the product population changes
    */
   void diff_reactants_products(const std::map<std::string, int>& R,
-                               const std::map<std::string, int>& P) {
-    this->stoich = std::map<std::string, int>(P);
-    for (const auto& [sp_name, pop_change] : R) {
-      auto it = P.find(sp_name);
-      if (it == P.end()) {
-        stoich[sp_name] = -pop_change;
-      } else {
-        stoich[sp_name] -= pop_change;
-      }
-    }
-  }
+                               const std::map<std::string, int>& P);
 };
 
 #endif

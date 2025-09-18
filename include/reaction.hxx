@@ -80,7 +80,7 @@ protected:
    *
    * @param state Current sim state
    */
-  void calc_weightsums(Options& state);
+  void init_channel_weights(Options& state);
 
   /**
    * @brief Evaluate <sigma . v . E> at a particular density and temperature
@@ -151,12 +151,32 @@ protected:
     }
   }
 
-private:
-  /// Sum of weights to use when calculating energy source due to population change
-  BoutReal energy_weightsum;
+  /**
+   * @brief Specify what fraction of a reactant's energy is transferred to a particular
+   * product.
+   *
+   * @param reactant_name Name of the reactant species.
+   * @param product_name Name of the product species.
+   * @param weight Fraction of the energy to transfer.
+   */
+  void set_energy_channel_weight(const std::string& reactant_name,
+                                 const std::string& product_name, BoutReal weight);
 
-  /// Sum of weights to use when calculating momentum source due to population change
-  BoutReal momentum_weightsum;
+  /**
+   * @brief Specify what fraction of a reactant's momentum is transferred to a particular
+   * product.
+   *
+   * @param reactant_name Name of the reactant species.
+   * @param product_name Name of the product species.
+   * @param weight Fraction of the momentum to transfer.
+   */
+  void set_momentum_channel_weight(const std::string& reactant_name,
+                                   const std::string& product_name, BoutReal weight);
+
+private:
+  // Channels to determine how momentum and energy are distributed to product species
+  std::map<std::string, std::map<std::string, BoutReal>> energy_channels;
+  std::map<std::string, std::map<std::string, BoutReal>> momentum_channels;
 
   /// Label to use for this reaction in a state / Options object
   const std::string name;
