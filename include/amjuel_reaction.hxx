@@ -36,12 +36,11 @@ static inline std::filesystem::path get_json_db_dir(Options& options) {
  */
 struct AmjuelReaction : public Reaction {
   AmjuelReaction(std::string name, std::string short_reaction_type,
-                 std::string amjuel_lbl, std::string from_species, std::string to_species,
-                 Options& alloptions)
+                 std::string amjuel_lbl, Options& alloptions)
       : Reaction(name, alloptions),
         amjuel_data(get_json_db_dir(alloptions), short_reaction_type, amjuel_lbl),
-        amjuel_src(std::string("Amjuel ") + amjuel_lbl), from_species(from_species),
-        short_reaction_type(short_reaction_type), to_species(to_species) {
+        amjuel_src(std::string("Amjuel ") + amjuel_lbl),
+        short_reaction_type(short_reaction_type) {
 
     this->includes_sigma_v_e = amjuel_data.includes_sigma_v_e;
   }
@@ -50,8 +49,6 @@ protected:
   // Store some strings for use in attribute docstrings
   const std::string amjuel_src;
   const std::string short_reaction_type;
-  const std::string from_species;
-  const std::string to_species;
 
   /// Functions to calculate Amjuel rates from underlying tables
   BoutReal eval_amjuel_n_T_fit(BoutReal T, BoutReal n,
