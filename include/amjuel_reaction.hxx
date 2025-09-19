@@ -51,13 +51,18 @@ protected:
   const std::string short_reaction_type;
 
   /// Functions to calculate Amjuel rates from underlying tables
-  BoutReal eval_amjuel_n_T_fit(BoutReal T, BoutReal n,
-                               const std::vector<std::vector<BoutReal>>& coeff_table);
-  virtual BoutReal eval_sigma_vE(BoutReal T, BoutReal n) override final;
-  virtual BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) override final;
+  BoutReal eval_amjuel_nT_fit(BoutReal T, BoutReal n,
+                              const std::vector<std::vector<BoutReal>>& coeff_table);
+  BoutReal eval_amjuel_T_fit(BoutReal T, const std::vector<BoutReal>& coeff_table);
 
-  virtual void transform_additional(Options& state,
-                                    Field3D& reaction_rate) override final;
+  /// Override the various rate-evaluator functions
+  virtual BoutReal eval_sigma_vE_nT(BoutReal T, BoutReal n) override final;
+  virtual BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) override final;
+  virtual BoutReal eval_sigma_v_T(BoutReal T) override final;
+
+  virtual RateParamsTypes get_rate_params_type() const override final;
+
+  virtual void transform_additional(Options& state, Field3D& reaction_rate) override;
 
 private:
   /// Data object

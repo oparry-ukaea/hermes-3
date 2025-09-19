@@ -13,7 +13,7 @@
 #include "hermes_utils.hxx"
 #include "integrate.hxx"
 
-enum class RateParamsTypes { T, ET, nT };
+BOUT_ENUM_CLASS(RateParamsTypes, T, ET, nT)
 
 /// Signatures for different rate calculations.
 /// N.B. one extra arg required for the mass action factor.

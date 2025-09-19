@@ -10,8 +10,7 @@
 
 #include "integrate.hxx"
 
-Reaction::Reaction(std::string name, Options& options, RateParamsTypes rate_params_type)
-    : name(name), rate_params_type(rate_params_type) {
+Reaction::Reaction(std::string name, Options& options) : name(name) {
 
   // Extract some relevant options, units to member vars for readability
   const auto& units = options["units"];
@@ -230,9 +229,10 @@ void Reaction::transform(Options& state) {
 
   // Create rate helper and compute reaction rate
   Field3D reaction_rate;
-  if (this->rate_params_type == RateParamsTypes::ET) {
+  RateParamsTypes rate_params_type = get_rate_params_type();
+  if (rate_params_type == RateParamsTypes::ET) {
     throw BoutException("RateParamsTypes::ET not implemented");
-  } else if (this->rate_params_type == RateParamsTypes::nT) {
+  } else if (rate_params_type == RateParamsTypes::nT) {
     TwoDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal ne, BoutReal te) {
       BoutReal result = mass_action * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm
                         / FreqNorm * rate_multiplier;
@@ -241,7 +241,7 @@ void Reaction::transform(Options& state) {
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
         state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
     reaction_rate = rate_helper.calc_rate(calc_rate);
-  } else if (this->rate_params_type == RateParamsTypes::T) {
+  } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
       BoutReal result = mass_action * 1e-6 * eval_sigma_v_T(Teff * Tnorm) * Nnorm
                         / FreqNorm * rate_multiplier;

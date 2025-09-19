@@ -14,8 +14,7 @@ typedef Options& (*OPTYPE)(Options&, Field3D);
  *
  */
 struct Reaction : public Component {
-  Reaction(std::string name, Options& alloptions,
-           RateParamsTypes rate_params_type = RateParamsTypes::nT);
+  Reaction(std::string name, Options& alloptions);
 
   static int get_instance_num() {
     static int instance_num{0};
@@ -44,10 +43,17 @@ protected:
       diagnostics;
 
   /// Whether or not reaction data includes <sigma v E>
-  /// (Default to true as a reminder to override eval_sigma_vE)
+  /// (Default to true as a reminder to override eval_sigma_vE_nT)
   bool includes_sigma_v_e = true;
 
-  const RateParamsTypes rate_params_type;
+  /**
+   * @brief Get the type of parameters expected by the rate calculation.
+   * @details Allow the rate parameter types to be provided after construction
+   * (e.g. after subclasses have read that information from file) by forcing subclasses to
+   * implement this function, rather than storing the types as a Reaction member variable.
+   * @return RateParamsTypes the rate params type
+   */
+  virtual RateParamsTypes get_rate_params_type() const = 0;
 
   /**
    * @brief Add a new entry in this Reaction's diagnostic (multi)map. The (non-unique) Key
@@ -90,13 +96,14 @@ protected:
    * @param n a density
    * @return BoutReal the electron energy loss rate
    */
-  virtual BoutReal eval_sigma_vE(BoutReal T, BoutReal n) {
+  virtual BoutReal eval_sigma_vE_nT(BoutReal T, BoutReal n) {
     if (this->includes_sigma_v_e) {
-      throw BoutException("eval_sigma_vE() needs to be implemented by Reaction instances "
-                          "which set includes_sigma_v_e=true");
+      throw BoutException(
+          "eval_sigma_vE_nT() needs to be implemented by Reaction instances "
+          "which set includes_sigma_v_e=true");
     } else {
       throw BoutException(
-          "eval_sigma_vE() was called despite having set includes_sigma_v_e=false!");
+          "eval_sigma_vE_nT() was called despite having set includes_sigma_v_e=false!");
     }
     return -1;
   };

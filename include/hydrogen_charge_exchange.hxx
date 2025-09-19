@@ -4,8 +4,8 @@
 
 #include <bout/constants.hxx>
 
+#include "amjuel_reaction.hxx"
 #include "component.hxx"
-#include "reaction.hxx"
 
 /**
  * @brief Reaction component to handle Hydrogen charge exchange.
@@ -82,9 +82,9 @@
 ///                                - Shd+_cx d/dt(Nd+) = ... + Shd+_cx
 
 template <char Isotope1, char Isotope2>
-struct HydrogenChargeExchange : public Reaction {
+struct HydrogenChargeExchange : public AmjuelReaction {
   HydrogenChargeExchange(std::string name, Options& alloptions, Solver*)
-      : Reaction(name, alloptions, RateParamsTypes::T) {
+      : AmjuelReaction(name, "cx", "H.2_3.1.8", alloptions) {
     this->includes_sigma_v_e = false;
     /* This is useful for testing the impact of enabling the neutral momentum equation.
      * When set to true, CX behaves as if using diffusive neutrals but the neutral
@@ -197,30 +197,6 @@ struct HydrogenChargeExchange : public Reaction {
   }
 
 protected:
-  /**
-   * @brief Compute <sigma.v>(T_effective).
-   *
-   * @param T The EFFECTIVE temperature
-   * @return BoutReal <sigma_v>
-   */
-  virtual BoutReal eval_sigma_v_T(BoutReal T) override final {
-
-    const BoutReal lnT = log(T);
-
-    BoutReal ln_sigmav = -18.5028;
-    BoutReal lnT_n = lnT; // (lnT)^n
-    // b0 -1.850280000000E+01 b1 3.708409000000E-01 b2 7.949876000000E-03
-    // b3 -6.143769000000E-04 b4 -4.698969000000E-04 b5 -4.096807000000E-04
-    // b6 1.440382000000E-04 b7 -1.514243000000E-05 b8 5.122435000000E-07
-    for (BoutReal b : {0.3708409, 7.949876e-3, -6.143769e-4, -4.698969e-4, -4.096807e-4,
-                       1.440382e-4, -1.514243e-5, 5.122435e-7}) {
-      ln_sigmav += b * lnT_n;
-      lnT_n *= lnT;
-    }
-
-    return exp(ln_sigmav);
-  }
-
   virtual void transform_additional(Options& state, Field3D& reaction_rate) override {
     std::vector<std::string> ion_reactant =
         this->parser->get_species(species_filter::reactants, species_filter::ion);
