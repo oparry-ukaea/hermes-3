@@ -226,28 +226,16 @@ protected:
     const BoutReal Aion = get<BoutReal>(ion1["AA"]);
     // ASSERT1(get<BoutReal>(atom2["AA"]) == Aion); // Check that the mass is consistent
 
-    /**
-     * Scale to different isotope masses and finite neutral particle temperatures by using
-     * the effective temperature (Amjuel p43) T_eff = (M/M_1)T_1 + (M/M_2)T_2
-     */
+    // Temporarily calculate sigmav here. Stop gap until collision_frequencies are
+    // calculated in Reaction::transform
     Field3D Teff;
     calc_Teff(state, heavy_reactant_species, Teff);
-    const Field3D lnT = log(Teff);
-
-    Field3D ln_sigmav = -18.5028;
-    Field3D lnT_n = lnT; // (lnT)^n
-    // b0 -1.850280000000E+01 b1 3.708409000000E-01 b2 7.949876000000E-03
-    // b3 -6.143769000000E-04 b4 -4.698969000000E-04 b5 -4.096807000000E-04
-    // b6 1.440382000000E-04 b7 -1.514243000000E-05 b8 5.122435000000E-07
-    for (BoutReal b : {0.3708409, 7.949876e-3, -6.143769e-4, -4.698969e-4, -4.096807e-4,
-                       1.440382e-4, -1.514243e-5, 5.122435e-7}) {
-      ln_sigmav += b * lnT_n;
-      lnT_n *= lnT;
+    const Field3D lnT;
+    Field3D sigmav(emptyFrom(Teff));
+    BOUT_FOR(i, Teff.getRegion("RGN_NOBNDRY")) {
+      sigmav[i] =
+          this->eval_sigma_v_T(Teff[i]) * (1e-6 * Nnorm / FreqNorm) * rate_multiplier;
     }
-
-    // Get rate coefficient, convert cm^3/s to m^3/s then normalise
-    // Optionally multiply by arbitrary multiplier
-    const Field3D sigmav = exp(ln_sigmav) * (1e-6 * Nnorm / FreqNorm) * rate_multiplier;
 
     const Field3D Natom = floor(get<Field3D>(atom1["density"]), 1e-5);
     const Field3D Nion = floor(get<Field3D>(ion1["density"]), 1e-5);
