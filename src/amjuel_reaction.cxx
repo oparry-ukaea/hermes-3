@@ -40,7 +40,7 @@ BoutReal AmjuelReaction::eval_amjuel_n_T_fit(
  * @param n number density
  * @return BoutReal <sigma . v . E>(n, T)
  */
-BoutReal AmjuelReaction::eval_sigma_v_E(BoutReal T, BoutReal n) {
+BoutReal AmjuelReaction::eval_sigma_vE(BoutReal T, BoutReal n) {
   return eval_amjuel_n_T_fit(T, n, amjuel_data.sigma_v_E_coeffs);
 }
 
@@ -138,7 +138,7 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
   Field3D n_e = get<Field3D>(electron["density"]);
   Field3D energy_loss = cellAverage(
       [&](BoutReal nrh, BoutReal ne, BoutReal te) {
-        return nrh * ne * eval_sigma_v_E(te * Tnorm, ne * Nnorm) * Nnorm
+        return nrh * ne * eval_sigma_vE(te * Tnorm, ne * Nnorm) * Nnorm
                / (Tnorm * FreqNorm) * radiation_multiplier;
       },
       n_e.getRegion("RGN_NOBNDRY"))(n_rh, n_e, T_e);

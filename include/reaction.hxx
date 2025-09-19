@@ -44,7 +44,7 @@ protected:
       diagnostics;
 
   /// Whether or not reaction data includes <sigma v E>
-  /// (Default to true as a reminder to override eval_sigma_v_E)
+  /// (Default to true as a reminder to override eval_sigma_vE)
   bool includes_sigma_v_e = true;
 
   const RateParamsTypes rate_params_type;
@@ -90,14 +90,13 @@ protected:
    * @param n a density
    * @return BoutReal the electron energy loss rate
    */
-  virtual BoutReal eval_sigma_v_E(BoutReal T, BoutReal n) {
+  virtual BoutReal eval_sigma_vE(BoutReal T, BoutReal n) {
     if (this->includes_sigma_v_e) {
-      throw BoutException(
-          "eval_sigma_v_E() needs to be implemented by Reaction instances "
-          "which set includes_sigma_v_e=true");
+      throw BoutException("eval_sigma_vE() needs to be implemented by Reaction instances "
+                          "which set includes_sigma_v_e=true");
     } else {
       throw BoutException(
-          "eval_sigma_v_E() was called despite having set includes_sigma_v_e=false!");
+          "eval_sigma_vE() was called despite having set includes_sigma_v_e=false!");
     }
     return -1;
   };

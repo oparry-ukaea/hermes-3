@@ -294,8 +294,8 @@ protected:
         0.5 * Aion * reaction_rate * SQ(atom2_velocity - ion1_velocity));
 
     // Update collision frequency for the two colliding species
-    atom_rate = Nion * sigmav; // [s^-1]
-    ion_rate = Natom * sigmav; // [s^-1]
+    Field3D atom_rate = Nion * sigmav; // [s^-1]
+    Field3D ion_rate = Natom * sigmav; // [s^-1]
 
     // Add to total collision frequency
     add(atom1["collision_frequency"], atom_rate);
@@ -311,10 +311,6 @@ protected:
   }
 
 private:
-  Field3D S;                   ///< Particle exchange, used if Isotope1 != Isotope2
-  Field3D F, F2;               ///< Momentum exchange
-  Field3D E, E2;               ///< Energy exchange
-  Field3D atom_rate, ion_rate; ///< Collision rates in s^-1
   bool no_neutral_cx_mom_gain; ///< Make CX behave as in diffusive neutrals?
 };
 
@@ -394,13 +390,6 @@ private:
 
 //   }
 // }
-
-// private:
-
-//   Field3D S;                   ///< Particle exchange, used if Isotope1 != Isotope2
-//   Field3D F, F2;               ///< Momentum exchange
-//   Field3D E, E2;               ///< Energy exchange
-//   Field3D atom_rate, ion_rate; ///< Collision rates in s^-1
 // };
 
 namespace {

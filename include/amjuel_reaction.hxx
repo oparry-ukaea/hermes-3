@@ -56,7 +56,7 @@ protected:
   /// Functions to calculate Amjuel rates from underlying tables
   BoutReal eval_amjuel_n_T_fit(BoutReal T, BoutReal n,
                                const std::vector<std::vector<BoutReal>>& coeff_table);
-  virtual BoutReal eval_sigma_v_E(BoutReal T, BoutReal n) override final;
+  virtual BoutReal eval_sigma_vE(BoutReal T, BoutReal n) override final;
   virtual BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) override final;
 
   virtual void transform_additional(Options& state,
