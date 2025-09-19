@@ -63,7 +63,7 @@ void ReactionParser::diff_reactants_products(const std::map<std::string, int>& R
 }
 
 std::vector<std::string> ReactionParser::get_species() const {
-  return get_str_keys(this->stoich);
+  return str_keys(this->stoich);
 }
 
 std::vector<std::string> ReactionParser::get_species(species_filter filter) const {
@@ -118,7 +118,7 @@ ReactionParser::get_species(std::vector<std::string> species_names,
     break;
   }
   case species_filter::products: {
-    std::vector<std::string> product_species = get_str_keys(this->products);
+    std::vector<std::string> product_species = str_keys(this->products);
     std::sort(product_species.begin(), product_species.end());
     std::sort(species_names.begin(), species_names.end());
     std::set_intersection(species_names.begin(), species_names.end(),
@@ -128,7 +128,7 @@ ReactionParser::get_species(std::vector<std::string> species_names,
   }
 
   case species_filter::reactants: {
-    std::vector<std::string> reactant_species = get_str_keys(this->reactants);
+    std::vector<std::string> reactant_species = str_keys(this->reactants);
     std::sort(reactant_species.begin(), reactant_species.end());
     std::sort(species_names.begin(), species_names.end());
     std::set_intersection(species_names.begin(), species_names.end(),

@@ -233,44 +233,28 @@ void Reaction::transform(Options& state) {
   if (this->rate_params_type == RateParamsTypes::ET) {
     throw BoutException("RateParamsTypes::ET not implemented");
   } else if (this->rate_params_type == RateParamsTypes::nT) {
-    RateFunctionType calc_rate = [&](BoutReal mass_action, BoutReal ne, BoutReal te) {
-      BoutReal result = mass_action * eval_sigma_v(te * Tnorm, ne * Nnorm) * Nnorm
+    TwoDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal ne, BoutReal te) {
+      BoutReal result = mass_action * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm
                         / FreqNorm * rate_multiplier;
       return result;
     };
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
-        state, reactant_names, calc_rate, first_reactant.getRegion("RGN_NOBNDRY"));
-    reaction_rate = rate_helper.calc_rate();
+        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
+    reaction_rate = rate_helper.calc_rate(calc_rate);
   } else if (this->rate_params_type == RateParamsTypes::T) {
-    /**
-     * Scale to different isotope masses and finite neutral particle temperatures by using
-     * the effective temperature (Amjuel p43) T_eff = (M/M_1)T_1 + (M/M_2)T_2
-     */
-    Field3D Teff;
-    calc_Teff(state, heavy_reactant_species, Teff);
-    const Field3D lnT = log(Teff);
+    OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
+      BoutReal result = mass_action * 1e-6 * eval_sigma_v_T(Teff * Tnorm) * Nnorm
+                        / FreqNorm * rate_multiplier;
+      return result;
+    };
 
-    Field3D ln_sigmav = -18.5028;
-    Field3D lnT_n = lnT; // (lnT)^n
-    // b0 -1.850280000000E+01 b1 3.708409000000E-01 b2 7.949876000000E-03
-    // b3 -6.143769000000E-04 b4 -4.698969000000E-04 b5 -4.096807000000E-04
-    // b6 1.440382000000E-04 b7 -1.514243000000E-05 b8 5.122435000000E-07
-    for (BoutReal b : {0.3708409, 7.949876e-3, -6.143769e-4, -4.698969e-4, -4.096807e-4,
-                       1.440382e-4, -1.514243e-5, 5.122435e-7}) {
-      ln_sigmav += b * lnT_n;
-      lnT_n *= lnT;
-    }
+    auto rate_helper = RateHelper<RateParamsTypes::T>(
+        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
-    // Get rate coefficient, convert cm^3/s to m^3/s then normalise
-    // Optionally multiply by arbitrary multiplier
-    const Field3D sigmav = exp(ln_sigmav) * (1e-6 * Nnorm / FreqNorm) * rate_multiplier;
-
-    Field3D mass_action_factor(1);
-    for (const auto& sp : heavy_reactant_species) {
-      mass_action_factor *= floor(get<Field3D>(state["species"][sp]["density"]), 1e-5);
-    }
-
-    reaction_rate = mass_action_factor * sigmav; // Rate coefficient in [m^-3 s^-1]
+    // reaction_rate = mass_action_factor * sigmav; // Rate coefficient in [m^-3 s^-1]
+    reaction_rate = rate_helper.calc_rate(calc_rate);
+  } else {
+    throw BoutException("Unhandled RateParamsTypes in Reaction::transform()");
   }
 
   // Subclasses perform any additional transform tasks

@@ -6,6 +6,7 @@
 #include <regex>
 
 #include "bout/utils.hxx"
+#include "hermes_utils.hxx"
 
 /// An enum class with which to identify various useful species subsets
 enum class species_filter {
@@ -40,21 +41,6 @@ static inline std::map<std::string, int> count_species(std::string expr) {
     }
   }
   return counts;
-}
-
-/**
- * @brief Util function to get the keys of a std::string => T map
- *
- * @tparam T the type of the map values
- * @param map the map
- * @return std::vector<std::string> vector of keys
- */
-template <typename T>
-static inline std::vector<std::string> get_str_keys(const std::map<std::string, T>& map) {
-  std::vector<std::string> keys;
-  std::transform(map.begin(), map.end(), std::back_inserter(keys),
-                 [](const std::pair<std::string, T>& pair) { return pair.first; });
-  return keys;
 }
 
 /**

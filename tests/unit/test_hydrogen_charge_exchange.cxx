@@ -45,7 +45,8 @@ TEST_F(HydrogenCXTest, RateAt1eV) {
                    {{"AA", 1.0},
                     {"density", 1.0},
                     {"temperature", 1.0}, // lnT = 0.0
-                    {"velocity", 0.0}}}}}};
+                    {"velocity", 0.0}}}}},
+                {"units", {{"eV", 1.0}}}};
 
   component.transform(state);
 

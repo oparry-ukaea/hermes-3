@@ -198,14 +198,12 @@ struct HydrogenChargeExchange : public Reaction {
 
 protected:
   /**
-   * @brief
-   * @todo BoutReal eval_sigma_v(BoutReal T) instead
+   * @brief Compute <sigma.v>(T_effective).
    *
-   * @param T Needs to be Teff!
-   * @param n
-   * @return BoutReal
+   * @param T The EFFECTIVE temperature
+   * @return BoutReal <sigma_v>
    */
-  virtual BoutReal eval_sigma_v(BoutReal T, BoutReal n) override final {
+  virtual BoutReal eval_sigma_v_T(BoutReal T) override final {
 
     const BoutReal lnT = log(T);
 

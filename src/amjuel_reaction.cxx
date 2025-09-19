@@ -52,7 +52,7 @@ BoutReal AmjuelReaction::eval_sigma_v_E(BoutReal T, BoutReal n) {
  * @param n a density
  * @return BoutReal <sigma . v . E>(n, T)
  */
-BoutReal AmjuelReaction::eval_sigma_v(BoutReal T, BoutReal n) {
+BoutReal AmjuelReaction::eval_sigma_v_nT(BoutReal T, BoutReal n) {
   return eval_amjuel_n_T_fit(T, n, amjuel_data.sigma_v_coeffs);
 }
 
@@ -156,7 +156,7 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
   // [s^-1]
   Field3D heavy_particle_frequency = cellAverage(
       [&](BoutReal ne, BoutReal te) {
-        return ne * eval_sigma_v(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
+        return ne * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
                * rate_multiplier;
       },
       n_e.getRegion("RGN_NOBNDRY"))(n_e, T_e);
@@ -165,7 +165,7 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
   // [s^-1]
   Field3D electron_frequency = cellAverage(
       [&](BoutReal ne, BoutReal n1, BoutReal te) {
-        return n1 * eval_sigma_v(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
+        return n1 * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
                * rate_multiplier;
       },
       n_e.getRegion("RGN_NOBNDRY"))(n_e, n_rh, T_e);

@@ -103,14 +103,44 @@ protected:
   };
 
   /**
-   * @brief Evaluate <sigma.v> at a particular density and temperature
-   * (Subclasses MUST define)
+   * @brief Evaluate <sigma.v> at a particular energy and temperature. Rate args are only
+   * known at runtime, so need to provide a default implementation that throws and let
+   * subclasses decide whether to override.
+   *
+   * @param E a density
+   * @param T a temperature
+   * @return BoutReal <sigma.v>(E,T)
+   */
+  virtual BoutReal eval_sigma_v_ET(BoutReal E, BoutReal T) {
+    throw BoutException("Trying to call eval_sigma_v_nT but the Reaction subclass hasn't "
+                        "implemented it!");
+  }
+  /**
+   * @brief Evaluate <sigma.v> at a particular density and temperature. Rate args are only
+   * known at runtime, so need to provide a default implementation that throws and let
+   * subclasses decide whether to override.
+   *
+   * @param T a temperature
+   * @return BoutReal <sigma.v>(T)
+   */
+  virtual BoutReal eval_sigma_v_T(BoutReal T) {
+    throw BoutException("Trying to call eval_sigma_v_T but the Reaction subclass hasn't "
+                        "implemented it!");
+  }
+
+  /**
+   * @brief Evaluate <sigma.v> at a particular density and temperature. Rate args are only
+   * known at runtime, so need to provide a default implementation that throws and let
+   * subclasses decide whether to override.
    *
    * @param T a temperature
    * @param n a density
    * @return BoutReal <sigma.v>(n,T)
    */
-  virtual BoutReal eval_sigma_v(BoutReal T, BoutReal n) = 0;
+  virtual BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) {
+    throw BoutException("Trying to call eval_sigma_v_nT but the Reaction subclass hasn't "
+                        "implemented it!");
+  }
 
   /**
    * @brief A hook with which subclasses can perform additional transform tasks, over and
