@@ -73,9 +73,13 @@ struct AmjuelHydIsotopeReaction : public AmjuelReaction {
   }
 
 protected:
+  const std::string& get_from_species() const { return this->from_species; }
+  const std::string& get_to_species() const { return this->to_species; }
+
+private:
   // Store some strings for use in attribute docstrings
-  const std::string from_species;
-  const std::string to_species;
+  std::string from_species;
+  std::string to_species;
 };
 
 /**
