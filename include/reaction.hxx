@@ -10,9 +10,12 @@
 typedef Options& (*OPTYPE)(Options&, Field3D);
 
 /**
- * @brief Temporary struct to use as a base class for all reactions components. Ensures
- * reaction strings are paired up correctly with component classes. Can be removed when
- * all reaction classes have been refactored to inherit from Reaction.
+ * @brief Temporary struct to use as a base class for all reactions components.
+ *
+ * @details Ensures reaction strings are paired up correctly with component classes.
+ *
+ * @todo Remove this when all reaction classes have been refactored to inherit from
+ * Reaction.
  */
 struct ReactionBase : public Component {
   ReactionBase() : inst_num(get_instance_num() + 1) {}
@@ -27,6 +30,12 @@ protected:
 
 /**
  * @brief Struct intended to act as a base for all reactions.
+ *
+ * @details Note that several parameterisations are possible when providing reaction rate
+ * data; subclasses are expected to (re-)implement one or more of eval_sigma_v_ET,
+ * eval_sigma_v_nT and eval_sigma_v_T. Subclasses that have an associated electron energy
+ * loss rate are expected to implement eval_sigma_vE_nT. Subclasses that DO NOT have an
+ * associated electron energy loss rate should set includes_sigma_v_e=false.
  *
  */
 struct Reaction : public ReactionBase {
