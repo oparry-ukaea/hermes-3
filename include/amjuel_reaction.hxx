@@ -56,13 +56,13 @@ protected:
   BoutReal eval_amjuel_T_fit(BoutReal T, const std::vector<BoutReal>& coeff_table);
 
   /// Override the various rate-evaluator functions
-  virtual BoutReal eval_sigma_vE_nT(BoutReal T, BoutReal n) override final;
-  virtual BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) override final;
-  virtual BoutReal eval_sigma_v_T(BoutReal T) override final;
+  BoutReal eval_sigma_vE_nT(BoutReal T, BoutReal n) final;
+  BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) final;
+  BoutReal eval_sigma_v_T(BoutReal T) final;
 
-  virtual RateParamsTypes get_rate_params_type() const override final;
+  RateParamsTypes get_rate_params_type() const final;
 
-  virtual void transform_additional(Options& state, Field3D& reaction_rate) override;
+  void transform_additional(Options& state, Field3D& reaction_rate) override;
 
 private:
   /// Data object

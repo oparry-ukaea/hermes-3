@@ -32,9 +32,9 @@ protected:
 struct Reaction : public ReactionBase {
   Reaction(std::string name, Options& alloptions);
 
-  void transform(Options& state) override final;
+  void transform(Options& state) final;
 
-  void outputVars(Options& state) override final;
+  void outputVars(Options& state) final;
 
 protected:
   /// Reaction string parser

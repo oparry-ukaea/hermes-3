@@ -197,7 +197,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
   }
 
 protected:
-  virtual void transform_additional(Options& state, Field3D& reaction_rate) override {
+  void transform_additional(Options& state, Field3D& reaction_rate) override {
     std::vector<std::string> ion_reactant =
         this->parser->get_species(species_filter::reactants, species_filter::ion);
     ASSERT1(ion_reactant.size() == 1);
