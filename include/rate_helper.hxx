@@ -65,8 +65,8 @@ struct RateHelper {
       // Field3D energy = ;
       // add_rate_param("e:energy", energy);
     } else if constexpr (RateParamsType == RateParamsTypes::nT) {
-      for (auto field_id : {"e:density", "e:temperature"}) {
-        add_rate_param(field_id, get<Field3D>(state["species"][field_id]));
+      for (auto field_lbl : {"e:density", "e:temperature"}) {
+        add_rate_param(field_lbl, get<Field3D>(state["species"][field_lbl]));
       }
     } else if constexpr (RateParamsType == RateParamsTypes::T) {
       Field3D Teff;
@@ -85,14 +85,6 @@ struct RateHelper {
           return make_pair(reactant_name,
                            get<Field3D>(state["species"][reactant_name]["density"]));
         });
-  }
-
-  void add_rate_param(const std::string& field_id, const Field3D& fld) {
-    this->rate_params.insert(std::make_pair(field_id, fld));
-  }
-
-  std::string freq_lbl(const std::string& reactant_name) {
-    return fmt::format("{:s}:collision_frequency,", reactant_name);
   }
 
   /**
@@ -206,6 +198,28 @@ struct RateHelper {
         rate_calc_func_variant);
   }
 
+private:
+  /// region in which to calculate the rate
+  const Region<Ind3D> region;
+  /// Function to calculate reaction rate as a function of n_e, T_e
+  RateFuncVariant rate_calc_func;
+
+  /// Reactant densities, keyed by species name
+  std::map<std::string, Field3D> reactant_densities;
+
+  // Rate parameter fields
+  std::map<std::string, Field3D> rate_params;
+
+  /**
+   * @brief Store a field associated with a rate parameter
+   *
+   * @param field_lbl Label/tag associated with the field
+   * @param fld the field object
+   */
+  void add_rate_param(const std::string& field_lbl, const Field3D& fld) {
+    this->rate_params.insert(std::make_pair(field_lbl, fld));
+  }
+
   /**
    * @brief Compute the effective temperature (in eV) of heavy reactants.
    *
@@ -240,6 +254,16 @@ struct RateHelper {
     for (const auto& i : Teff.getRegion("RGN_NOBNDRY")) {
       Teff[i] = std::clamp(Teff[i], Teff_min, Teff_max);
     }
+  }
+
+  /**
+   * @brief Function to get consistent labels for collision freqency variables.
+   *
+   * @param reactant_name Name of the reactant associated with this collision frequency.
+   * @return std::string The label
+   */
+  std::string freq_lbl(const std::string& reactant_name) {
+    return fmt::format("{:s}:collision_frequency,", reactant_name);
   }
 
   /**
@@ -281,18 +305,6 @@ struct RateHelper {
                                       this->rate_params[name][ym],
                                       this->rate_params[name][yp]);
   }
-
-private:
-  /// region in which to calculate the rate
-  const Region<Ind3D> region;
-  /// Function to calculate reaction rate as a function of n_e, T_e
-  RateFuncVariant rate_calc_func;
-
-  /// Reactant densities, keyed by species name
-  std::map<std::string, Field3D> reactant_densities;
-
-  // Rate parameter fields
-  std::map<std::string, Field3D> rate_params;
 
   /**
    * @brief Compute the product of all reactant densities at a cell centre, optionally
