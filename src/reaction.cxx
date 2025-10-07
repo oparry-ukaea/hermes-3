@@ -228,6 +228,7 @@ void Reaction::transform(Options& state) {
 
   // Create rate helper and compute reaction rate
   Field3D reaction_rate;
+  std::map<std::string, Field3D> rates;
   RateParamsTypes rate_params_type = get_rate_params_type();
   if (rate_params_type == RateParamsTypes::ET) {
     throw BoutException("RateParamsTypes::ET not implemented");
@@ -239,7 +240,7 @@ void Reaction::transform(Options& state) {
     };
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
         state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
-    reaction_rate = rate_helper.calc_rate(calc_rate);
+    rate_helper.calc_rates(calc_rate, rates);
   } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
       BoutReal result = mass_action * 1e-6 * eval_sigma_v_T(Teff * Tnorm) * Nnorm
@@ -250,11 +251,11 @@ void Reaction::transform(Options& state) {
     auto rate_helper = RateHelper<RateParamsTypes::T>(
         state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
-    // reaction_rate = mass_action_factor * sigmav; // Rate coefficient in [m^-3 s^-1]
-    reaction_rate = rate_helper.calc_rate(calc_rate);
+    rate_helper.calc_rates(calc_rate, rates);
   } else {
     throw BoutException("Unhandled RateParamsTypes in Reaction::transform()");
   }
+  reaction_rate = rates["rate"];
 
   // Subclasses perform any additional transform tasks
   transform_additional(state, reaction_rate);

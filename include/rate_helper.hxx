@@ -82,14 +82,19 @@ struct RateHelper {
    * @brief Compute the cell-averaged reaction rate, accounting for the mass action
    * factor (product of reactant densities)
    *
-   * @return Field3D the cell-averaged reaction rate
+   * @param rate_calc_func_variant a function that calculates the rate. Typed as
+   * std::variant to easily switch between different rate parameterisations.
+   * @param result a std::map containing the calculated rates and collision frequencies.
    */
-  Field3D calc_rate(const RateFuncVariant& rate_calc_func_variant) {
+  void calc_rates(const RateFuncVariant& rate_calc_func_variant,
+                  std::map<std::string, Field3D>& result) {
+    // Set up one collision rate per reactant, plus rate in map and return it
     std::string first_key = str_keys(this->rate_params)[0];
-    Field3D reaction_rate{emptyFrom(this->rate_params[first_key])};
+    result["rate"] = emptyFrom(this->rate_params[first_key]);
+
     std::visit(
-        [this, &reaction_rate](auto&& rate_calc_func) {
-          auto J = reaction_rate.getCoordinates()->J;
+        [this, &result](auto&& rate_calc_func) {
+          auto J = result["rate"].getCoordinates()->J;
           BOUT_FOR(i, region) {
 
             auto yp = i.yp();
@@ -135,13 +140,12 @@ struct RateHelper {
             }
 
             // Overall rate at this index
-            reaction_rate[i] = 4. / 6 * rate_central
-                               + (Ji + J[ym]) / (12. * Ji) * rate_left
-                               + (Ji + J[yp]) / (12. * Ji) * rate_right;
+            result["rate"][i] = 4. / 6 * rate_central
+                                + (Ji + J[ym]) / (12. * Ji) * rate_left
+                                + (Ji + J[yp]) / (12. * Ji) * rate_right;
           }
         },
         rate_calc_func_variant);
-    return reaction_rate;
   }
 
   /**
