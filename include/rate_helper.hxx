@@ -3,6 +3,7 @@
 #define RATE_HELPER_H
 
 #include <functional>
+#include <tuple>
 #include <variant>
 
 #include <bout/bout_types.hxx>
@@ -14,6 +15,12 @@
 #include "integrate.hxx"
 
 BOUT_ENUM_CLASS(RateParamsTypes, T, ET, nT)
+
+/// Struct to hold pre-averaged data for each cell
+struct CellData {
+  CellData() : centre(0), left(0), right(0) {}
+  BoutReal centre, left, right;
+};
 
 /// Signatures for different rate calculations.
 /// N.B. one extra arg required for the mass action factor.
@@ -28,6 +35,12 @@ constexpr bool dependent_false = false;
 // Name used to store effective temperature (RateParamsTypes::T)
 static const std::string Teff_name = "Teff";
 
+/**
+ * @brief Struct to encapsulate reaction rate and collision frequency calculations for a
+ * number of different parameterisations.
+ *
+ * @tparam RateParamsType type identifying the reaction rate function parameters.
+ */
 template <RateParamsTypes RateParamsType>
 struct RateHelper {
   /**
@@ -78,9 +91,13 @@ struct RateHelper {
     this->rate_params.insert(std::make_pair(field_id, fld));
   }
 
+  std::string freq_lbl(const std::string& reactant_name) {
+    return fmt::format("{:s}:collision_frequency,", reactant_name);
+  }
+
   /**
-   * @brief Compute the cell-averaged reaction rate, accounting for the mass action
-   * factor (product of reactant densities)
+   * @brief Compute the cell-averaged reaction rate and collision frequencies, accounting
+   * for reactant densities.
    *
    * @param rate_calc_func_variant a function that calculates the rate. Typed as
    * std::variant to easily switch between different rate parameterisations.
@@ -88,12 +105,23 @@ struct RateHelper {
    */
   void calc_rates(const RateFuncVariant& rate_calc_func_variant,
                   std::map<std::string, Field3D>& result) {
-    // Set up one collision rate per reactant, plus rate in map and return it
+
+    // Set up map to store results: one collision frequency per reactant + reaction rate
     std::string first_key = str_keys(this->rate_params)[0];
     result["rate"] = emptyFrom(this->rate_params[first_key]);
+    for (const std::string reactant_name : str_keys(this->reactant_densities)) {
+      result[freq_lbl(reactant_name)] = emptyFrom(this->rate_params[first_key]);
+    }
 
+    // Temporary storage for central,left,right vals of each property at each cell index
+    std::map<std::string, CellData> cell_data;
+    std::transform(result.begin(), result.end(),
+                   std::inserter(cell_data, cell_data.end()),
+                   [&](const auto& entry) { return make_pair(entry.first, CellData()); });
+
+    // Populate cell_data differently according to rate function type
     std::visit(
-        [this, &result](auto&& rate_calc_func) {
+        [this, &cell_data, &result](auto&& rate_calc_func) {
           auto J = result["rate"].getCoordinates()->J;
           BOUT_FOR(i, region) {
 
@@ -101,18 +129,30 @@ struct RateHelper {
             auto ym = i.ym();
             auto Ji = J[i];
 
-            // Calc rate_central, rate_left, rate_right at this index
-            BoutReal rate_central, rate_left, rate_right;
-
             using RateFuncType = std::decay_t<decltype(rate_calc_func)>;
             if constexpr (std::is_same_v<RateFuncType, OneDRateFunc>) {
               if constexpr (RateParamsType == RateParamsTypes::T) {
                 BoutReal T = get_rate_param(Teff_name, i);
                 BoutReal TL = get_rate_param_left(Teff_name, i, ym, yp);
                 BoutReal TR = get_rate_param_right(Teff_name, i, ym, yp);
-                rate_central = rate_calc_func(mass_action(i), T);
-                rate_left = rate_calc_func(mass_action_left(i, ym, yp), TL);
-                rate_right = rate_calc_func(mass_action_right(i, ym, yp), TR);
+
+                // reaction rates at centre, left, right
+                cell_data["rate"].centre = rate_calc_func(mass_action(i), T);
+                cell_data["rate"].left = rate_calc_func(mass_action_left(i, ym, yp), TL);
+                cell_data["rate"].right =
+                    rate_calc_func(mass_action_right(i, ym, yp), TR);
+
+                // collision freqs. at centre, left, right
+                for (const std::string reactant_name :
+                     str_keys(this->reactant_densities)) {
+                  std::string lbl = freq_lbl(reactant_name);
+                  BoutReal nprod = density_product(i, reactant_name);
+                  BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
+                  BoutReal nprodR = density_product_right(i, ym, yp, reactant_name);
+                  cell_data[lbl].centre = rate_calc_func(nprod, T);
+                  cell_data[lbl].left = rate_calc_func(nprodL, TL);
+                  cell_data[lbl].right = rate_calc_func(nprodR, TR);
+                }
               } else {
                 throw BoutException(
                     "Unhandled RateParamsType (1D rate function being passed)");
@@ -125,10 +165,26 @@ struct RateHelper {
                 BoutReal Te = get_rate_param("e:temperature", i);
                 BoutReal Te_left = get_rate_param_left("e:temperature", i, ym, yp);
                 BoutReal Te_right = get_rate_param_right("e:temperature", i, ym, yp);
-                rate_central = rate_calc_func(mass_action(i), ne, Te);
-                rate_left = rate_calc_func(mass_action_left(i, ym, yp), ne_left, Te_left);
-                rate_right =
+
+                // reaction rates at centre, left, right
+                cell_data["rate"].centre = rate_calc_func(mass_action(i), ne, Te);
+                cell_data["rate"].left =
+                    rate_calc_func(mass_action_left(i, ym, yp), ne_left, Te_left);
+                cell_data["rate"].right =
                     rate_calc_func(mass_action_right(i, ym, yp), ne_right, Te_right);
+
+                // collision freqs. at centre, left, right
+                for (const std::string reactant_name :
+                     str_keys(this->reactant_densities)) {
+                  std::string lbl = freq_lbl(reactant_name);
+                  BoutReal nprod = density_product(i, reactant_name);
+                  BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
+                  BoutReal nprodR = density_product_right(i, ym, yp, reactant_name);
+                  cell_data[lbl].centre = rate_calc_func(nprod, ne, Te);
+                  cell_data[lbl].left = rate_calc_func(nprodL, ne_left, Te_left);
+                  cell_data[lbl].right = rate_calc_func(nprodR, ne_right, Te_right);
+                }
+
               } else if constexpr (RateParamsType == RateParamsTypes::ET) {
                 static_assert(
                     dependent_false<RateParamsType>,
@@ -139,10 +195,12 @@ struct RateHelper {
               }
             }
 
-            // Overall rate at this index
-            result["rate"][i] = 4. / 6 * rate_central
-                                + (Ji + J[ym]) / (12. * Ji) * rate_left
-                                + (Ji + J[yp]) / (12. * Ji) * rate_right;
+            // Compute averages for each property and store in result map
+            for (const auto prop : str_keys(result)) {
+              result[prop][i] = 4. / 6 * cell_data[prop].centre
+                                + (Ji + J[ym]) / (12. * Ji) * cell_data[prop].left
+                                + (Ji + J[yp]) / (12. * Ji) * cell_data[prop].right;
+            }
           }
         },
         rate_calc_func_variant);

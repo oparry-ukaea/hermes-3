@@ -226,7 +226,7 @@ void Reaction::transform(Options& state) {
   // First reactant; just used to get region
   Field3D first_reactant = get<Field3D>(state["species"][reactant_names[0]]["density"]);
 
-  // Create rate helper and compute reaction rate
+  // Create rate helper and compute reaction rate, collision frequencies
   Field3D reaction_rate;
   std::map<std::string, Field3D> rates;
   RateParamsTypes rate_params_type = get_rate_params_type();
