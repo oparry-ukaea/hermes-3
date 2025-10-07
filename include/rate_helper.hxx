@@ -65,11 +65,13 @@ struct RateHelper {
     }
 
     // Extract and store reactant densities
-    std::transform(reactant_names.begin(), reactant_names.end(),
-                   std::back_inserter(this->n_reactants),
-                   [&](const std::string& reactant_name) {
-                     return get<Field3D>(state["species"][reactant_name]["density"]);
-                   });
+    std::transform(
+        reactant_names.begin(), reactant_names.end(),
+        std::inserter(this->reactant_densities, this->reactant_densities.end()),
+        [&](const auto& reactant_name) {
+          return make_pair(reactant_name,
+                           get<Field3D>(state["species"][reactant_name]["density"]));
+        });
   }
 
   void add_rate_param(const std::string& field_id, const Field3D& fld) {
@@ -100,29 +102,28 @@ struct RateHelper {
             using RateFuncType = std::decay_t<decltype(rate_calc_func)>;
             if constexpr (std::is_same_v<RateFuncType, OneDRateFunc>) {
               if constexpr (RateParamsType == RateParamsTypes::T) {
-                rate_central =
-                    rate_calc_func(mass_action(i), get_rate_param(Teff_name, i));
-                rate_left = rate_calc_func(mass_action_left(i, ym, yp),
-                                           get_rate_param_left(Teff_name, i, ym, yp));
-                rate_right = rate_calc_func(mass_action_right(i, ym, yp),
-                                            get_rate_param_right(Teff_name, i, ym, yp));
+                BoutReal T = get_rate_param(Teff_name, i);
+                BoutReal TL = get_rate_param_left(Teff_name, i, ym, yp);
+                BoutReal TR = get_rate_param_right(Teff_name, i, ym, yp);
+                rate_central = rate_calc_func(mass_action(i), T);
+                rate_left = rate_calc_func(mass_action_left(i, ym, yp), TL);
+                rate_right = rate_calc_func(mass_action_right(i, ym, yp), TR);
               } else {
                 throw BoutException(
                     "Unhandled RateParamsType (1D rate function being passed)");
               }
             } else if constexpr (std::is_same_v<RateFuncType, TwoDRateFunc>) {
               if constexpr (RateParamsType == RateParamsTypes::nT) {
-                rate_central =
-                    rate_calc_func(mass_action(i), get_rate_param("e:density", i),
-                                   get_rate_param("e:temperature", i));
-                rate_left =
-                    rate_calc_func(mass_action_left(i, ym, yp),
-                                   get_rate_param_left("e:density", i, ym, yp),
-                                   get_rate_param_left("e:temperature", i, ym, yp));
+                BoutReal ne = get_rate_param("e:density", i);
+                BoutReal ne_left = get_rate_param_left("e:density", i, ym, yp);
+                BoutReal ne_right = get_rate_param_right("e:density", i, ym, yp);
+                BoutReal Te = get_rate_param("e:temperature", i);
+                BoutReal Te_left = get_rate_param_left("e:temperature", i, ym, yp);
+                BoutReal Te_right = get_rate_param_right("e:temperature", i, ym, yp);
+                rate_central = rate_calc_func(mass_action(i), ne, Te);
+                rate_left = rate_calc_func(mass_action_left(i, ym, yp), ne_left, Te_left);
                 rate_right =
-                    rate_calc_func(mass_action_right(i, ym, yp),
-                                   get_rate_param_right("e:density", i, ym, yp),
-                                   get_rate_param_right("e:temperature", i, ym, yp));
+                    rate_calc_func(mass_action_right(i, ym, yp), ne_right, Te_right);
               } else if constexpr (RateParamsType == RateParamsTypes::ET) {
                 static_assert(
                     dependent_false<RateParamsType>,
@@ -225,34 +226,108 @@ private:
   /// Function to calculate reaction rate as a function of n_e, T_e
   RateFuncVariant rate_calc_func;
 
-  /// Reactant densities
-  std::vector<Field3D> n_reactants;
+  /// Reactant densities, keyed by species name
+  std::map<std::string, Field3D> reactant_densities;
 
   // Rate parameter fields
   std::map<std::string, Field3D> rate_params;
 
-  BoutReal mass_action(Ind3D i) {
+  /**
+   * @brief Compute the product of all reactant densities at a cell centre, optionally
+   * excluding \p exclude_sp.
+   *
+   * @param i cell index
+   * @param exclude_sp optional species name to exclude from the density product.
+   * @return BoutReal the density product
+   */
+  BoutReal density_product(Ind3D i, std::string exclude_sp = "") {
     BoutReal result = 1;
-    for (const auto& n : n_reactants) {
-      result *= n[i];
+    for (const auto& [sp_name, dens] : this->reactant_densities) {
+      if (sp_name.compare(exclude_sp) == 0) {
+        continue;
+      }
+      result *= dens[i];
     }
     return result;
   }
 
+  /**
+   * @brief Compute the product of all reactant densities at the left edge of a cell,
+   * optionally excluding \p exclude_sp.
+   *
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @param exclude_sp optional species name to exclude from the density product.
+   * @return BoutReal the density product
+   */
+  BoutReal density_product_left(Ind3D i, Ind3D ym, Ind3D yp,
+                                std::string exclude_sp = "") {
+    BoutReal result = 1;
+    for (const auto& [sp_name, dens] : this->reactant_densities) {
+      if (sp_name.compare(exclude_sp) == 0) {
+        continue;
+      }
+      result *= cellLeft<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
+    }
+    return result;
+  }
+
+  /**
+   * @brief Compute the product of all reactant densities at the right edge of a cell,
+   * optionally excluding \p exclude_sp.
+   *
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @param exclude_sp optional species name to exclude from the density product.
+   * @return BoutReal the density product
+   */
+  BoutReal density_product_right(Ind3D i, Ind3D ym, Ind3D yp,
+                                 std::string exclude_sp = "") {
+    BoutReal result = 1;
+    for (const auto& [sp_name, dens] : this->reactant_densities) {
+      if (sp_name.compare(exclude_sp) == 0) {
+        continue;
+      }
+      result *= cellRight<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
+    }
+    return result;
+  }
+
+  /**
+   * @brief Compute the mass action factor (product of all reactant densities) at a cell.
+   * centre.
+   *
+   * @param i cell index
+   * @return BoutReal the mass action factor
+   */
+  BoutReal mass_action(Ind3D i) { return density_product(i); }
+
+  /**
+   * @brief Compute the mass action factor (product of all reactant densities) at the left
+   * edge of a cell.
+   *
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @return BoutReal the mass action factor
+   */
   BoutReal mass_action_left(Ind3D i, Ind3D ym, Ind3D yp) {
-    BoutReal result = 1;
-    for (const auto& n : n_reactants) {
-      result *= cellLeft<hermes::Limiter>(n[i], n[ym], n[yp]);
-    }
-    return result;
+    return density_product_left(i, ym, yp);
   }
 
+  /**
+   * @brief Compute the mass action factor (product of all reactant densities) at the
+   * right edge of a cell.
+   *
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @return BoutReal the mass action factor
+   */
   BoutReal mass_action_right(Ind3D i, Ind3D ym, Ind3D yp) {
-    BoutReal result = 1;
-    for (const auto& n : n_reactants) {
-      result *= cellRight<hermes::Limiter>(n[i], n[ym], n[yp]);
-    }
-    return result;
+    return density_product_right(i, ym, yp);
   }
 };
 
