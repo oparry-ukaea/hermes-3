@@ -139,7 +139,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
 
         // Need F2 = -ion_mom - CHECK
         add_diagnostic(
-            atom_reactant, fmt::format("F{:s}{:s}+_cx", ion_product, atom_reactant),
+            atom_reactant, fmt::format("F{:s}{:s}_cx", ion_product, atom_reactant),
             fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
                         ion_product, atom_product, atom_reactant),
             ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange", identity,
@@ -147,14 +147,14 @@ struct HydrogenChargeExchange : public AmjuelReaction {
 
         // Need E2 = -ion_energy - CHECK
         add_diagnostic(
-            atom_reactant, fmt::format("E{:s}{:s}+_cx", ion_product, atom_reactant),
+            atom_reactant, fmt::format("E{:s}{:s}_cx", ion_product, atom_reactant),
             fmt::format("Energy transfer to {:s} from {:s} due to CX with {:s}",
                         ion_product, atom_product, atom_reactant),
             ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange", identity,
             "energy transfer");
 
         add_diagnostic(
-            atom_reactant, fmt::format("S{:s}{:s}+_cx", atom_reactant, ion_product),
+            atom_reactant, fmt::format("S{:s}{:s}_cx", atom_reactant, ion_product),
             fmt::format("Particle transfer to {:s} from {:s} due to CX with {:s}",
                         atom_reactant, ion_reactant, ion_product),
             ReactionDiagnosticType::density_src, "hydrogen_charge_exchange", identity,
@@ -166,7 +166,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
       // F = ion_mom - atom_mom for symmetric
       // F = -atom_mom for non-symmetric
       add_diagnostic(
-          atom_reactant, fmt::format("F{:s}{:s}+_cx", atom_reactant, ion_product),
+          atom_reactant, fmt::format("F{:s}{:s}_cx", atom_reactant, ion_product),
           fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
                       atom_reactant, ion_reactant, ion_product),
           ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange",
@@ -177,7 +177,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
       // E = ion_energy - atom_energy for symmetric
       // E = -atom_energy for non-symmetric
       add_diagnostic(atom_reactant,
-                     fmt::format("E{:s}{:s}+_cx", atom_reactant, ion_product),
+                     fmt::format("E{:s}{:s}_cx", atom_reactant, ion_product),
                      fmt::format("Energy transfer to {:s} from {:s} due to CX with {:s}",
                                  atom_reactant, ion_reactant, ion_product),
                      ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange",
@@ -187,7 +187,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
       // Need transform such that
       // K = atom_rate
       add_diagnostic(atom_reactant,
-                     fmt::format("K{:s}{:s}+_cx", atom_reactant, ion_product),
+                     fmt::format("K{:s}{:s}_cx", atom_reactant, ion_product),
                      fmt::format("Collision frequency of CX of {:s} and {:s} producing "
                                  "{:s} and {:s}. Note Kab != Kba",
                                  atom_reactant, ion_reactant, ion_product, atom_product),
