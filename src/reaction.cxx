@@ -257,6 +257,20 @@ void Reaction::transform(Options& state) {
   }
   reaction_rate = rates["rate"];
 
+  // Set collision frequencies
+  for (auto& [key, val] : rates) {
+    if (key.compare("rate") != 0) {
+      auto sp_typestr = strsplit(key, ':');
+      if (sp_typestr.size() > 1) {
+        std::string sp_name = trim(sp_typestr.front());
+        update_source<set<Field3D>>(state, sp_name,
+                                    ReactionDiagnosticType::collision_freq, val);
+      } else {
+        throw BoutException("Expected calc_rates results keys to be ':'-separated");
+      }
+    }
+  }
+
   // Subclasses perform any additional transform tasks
   transform_additional(state, reaction_rate);
 
