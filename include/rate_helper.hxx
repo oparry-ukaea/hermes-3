@@ -266,7 +266,7 @@ private:
    * @return std::string The label
    */
   std::string freq_lbl(const std::string& reactant_name) {
-    return fmt::format("{:s}:collision_frequency,", reactant_name);
+    return fmt::format("{:s}:collision_frequency", reactant_name);
   }
 
   /**
