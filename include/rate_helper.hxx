@@ -26,6 +26,7 @@ struct CellData {
 using OneDRateFunc = std::function<BoutReal(BoutReal, BoutReal)>;
 using TwoDRateFunc = std::function<BoutReal(BoutReal, BoutReal, BoutReal)>;
 using RateFuncVariant = std::variant<OneDRateFunc, TwoDRateFunc>;
+using RatesMap = std::map<std::string, Field3D>;
 
 // This is a workaround before CWG2518/P2593R1, taken from cppreference.com
 template <RateParamsTypes>
@@ -94,8 +95,8 @@ struct RateHelper {
    * std::variant to easily switch between different rate parameterisations.
    * @param result a std::map containing the calculated rates and collision frequencies.
    */
-  void calc_rates(const RateFuncVariant& rate_calc_func_variant,
-                  std::map<std::string, Field3D>& result, bool do_averaging = true) {
+  void calc_rates(const RateFuncVariant& rate_calc_func_variant, RatesMap& result,
+                  bool do_averaging = true) {
 
     // Set up map to store results: one collision frequency per reactant + reaction rate
     std::string first_key = str_keys(this->rate_params)[0];

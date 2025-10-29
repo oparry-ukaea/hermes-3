@@ -196,7 +196,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
   }
 
 protected:
-  void transform_additional(Options& state, Field3D& reaction_rate) override {
+  void transform_additional(Options& state, RatesMap& rate_calc_results) override {
     std::vector<std::string> ion_reactant =
         this->parser->get_species(species_filter::reactants, species_filter::ion);
     ASSERT1(ion_reactant.size() == 1);
@@ -250,23 +250,28 @@ protected:
 
     auto ion2_velocity = get<Field3D>(ion2["velocity"]);
     add(ion2["energy_source"],
-        0.5 * Aatom * reaction_rate * SQ(ion2_velocity - atom1_velocity));
+        0.5 * Aatom * rate_calc_results["rate"] * SQ(ion2_velocity - atom1_velocity));
 
     auto atom2_velocity = get<Field3D>(atom2["velocity"]);
     add(atom2["energy_source"],
-        0.5 * Aion * reaction_rate * SQ(atom2_velocity - ion1_velocity));
+        0.5 * Aion * rate_calc_results["rate"] * SQ(atom2_velocity - ion1_velocity));
 
     // Update collision frequency for the two colliding species
     Field3D atom_rate = Nion * sigmav; // [s^-1]
     Field3D ion_rate = Natom * sigmav; // [s^-1]
 
     // Set individual collision frequencies
+    std::string neutral_coll_freq_key =
+        fmt::format("{:s}:collision_frequency", neutral_reactant[0]);
     set(atom1["collision_frequencies"]
              [atom1.name() + std::string("_") + ion1.name() + std::string("_cx")],
-        atom_rate);
+        rate_calc_results[neutral_coll_freq_key]);
+
+    std::string ion_coll_freq_key =
+        fmt::format("{:s}:collision_frequency", ion_reactant[0]);
     set(ion1["collision_frequencies"]
             [ion1.name() + std::string("_") + atom1.name() + std::string("_cx")],
-        ion_rate);
+        rate_calc_results[ion_coll_freq_key]);
   }
 
 private:

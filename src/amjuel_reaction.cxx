@@ -103,7 +103,7 @@ RateParamsTypes AmjuelReaction::get_rate_params_type() const {
   return RateParamsTypesFromString(fit_type_lcase);
 }
 
-void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate) {
+void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_results) {
 
   // Amjuel-based reactions are assumed to have exactly 2 reactants, for now.
   std::vector<std::string> reactant_species =
@@ -159,7 +159,7 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
   // The greater the difference in velocities of the underlying species,
   // the wider the resultant distribution, which corresponds to an
   // increase in temperature and therefore internal energy.
-  add(ph["energy_source"], 0.5 * AA_rh * reaction_rate * SQ(v_rh - v_ph));
+  add(ph["energy_source"], 0.5 * AA_rh * rate_calc_results["rate"] * SQ(v_rh - v_ph));
 
   // Energy source for electrons due to pop change
   Options& electron = state["species"]["e"];
@@ -177,7 +177,8 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
       // kinetic energy converted to an internal energy source of that species.
       auto v_e = get<Field3D>(electron["velocity"]);
       auto m_e = get<BoutReal>(electron["AA"]);
-      add(electron["energy_source"], 0.5 * m_e * e_pop_change * reaction_rate * SQ(v_e));
+      add(electron["energy_source"],
+          0.5 * m_e * e_pop_change * rate_calc_results["rate"] * SQ(v_e));
     }
   }
 
@@ -191,8 +192,8 @@ void AmjuelReaction::transform_additional(Options& state, Field3D& reaction_rate
       n_e.getRegion("RGN_NOBNDRY"))(n_rh, n_e, T_e);
 
   // Loss is reduced by heating
-  energy_loss -=
-      (amjuel_data.electron_heating / Tnorm) * reaction_rate * radiation_multiplier;
+  energy_loss -= (amjuel_data.electron_heating / Tnorm) * rate_calc_results["rate"]
+                 * radiation_multiplier;
 
   update_source<subtract<Field3D>>(state, "e", ReactionDiagnosticType::energy_loss,
                                    energy_loss);

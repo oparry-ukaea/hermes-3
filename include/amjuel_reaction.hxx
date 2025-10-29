@@ -58,7 +58,7 @@ protected:
 
   RateParamsTypes get_rate_params_type() const final;
 
-  void transform_additional(Options& state, Field3D& reaction_rate) override;
+  void transform_additional(Options& state, RatesMap& rate_calc_results) override;
 
 private:
   /// Data object

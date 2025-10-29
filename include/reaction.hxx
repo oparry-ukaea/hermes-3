@@ -179,7 +179,7 @@ protected:
    * @param reaction_rate
    */
   virtual void transform_additional([[maybe_unused]] Options& state,
-                                    [[maybe_unused]] Field3D& reaction_rate) {}
+                                    [[maybe_unused]] RatesMap& rate_calc_results) {}
 
   /**
    * @brief Update both a species source term and the corresponding diagnostics (if any
