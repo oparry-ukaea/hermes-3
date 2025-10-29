@@ -96,12 +96,14 @@ void Reaction::calc_Teff(const Options& state,
                          const std::vector<std::string>& heavy_reactant_species,
                          Field3D& Teff) {
 
-  Teff = 0.0;
-  for (auto& sp : heavy_reactant_species) {
-    Teff += (get<Field3D>(state["species"][sp]["temperature"])
-             / get<Field3D>(state["species"][sp]["AA"]))
-            * this->Tnorm;
+  // Calculate effective T
+  Teff = get<Field3D>(state["species"][heavy_reactant_species[0]]["temperature"])
+         / get<BoutReal>(state["species"][heavy_reactant_species[0]]["AA"]);
+  for (auto ii = 1; ii < heavy_reactant_species.size(); ii++) {
+    Teff += get<Field3D>(state["species"][heavy_reactant_species[ii]]["temperature"])
+            / get<BoutReal>(state["species"][heavy_reactant_species[ii]]["AA"]);
   }
+  Teff *= Tnorm;
 
   // Clamp values
   constexpr BoutReal Teff_min = 0.01;
