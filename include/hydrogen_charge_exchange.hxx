@@ -260,10 +260,6 @@ protected:
     Field3D atom_rate = Nion * sigmav; // [s^-1]
     Field3D ion_rate = Natom * sigmav; // [s^-1]
 
-    // Add to total collision frequency
-    add(atom1["collision_frequency"], atom_rate);
-    add(ion1["collision_frequency"], ion_rate);
-
     // Set individual collision frequencies
     set(atom1["collision_frequencies"]
              [atom1.name() + std::string("_") + ion1.name() + std::string("_cx")],
