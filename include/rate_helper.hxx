@@ -3,7 +3,6 @@
 #define RATE_HELPER_H
 
 #include <functional>
-#include <tuple>
 #include <variant>
 
 #include <bout/bout_types.hxx>
