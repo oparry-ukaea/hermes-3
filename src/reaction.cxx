@@ -245,8 +245,8 @@ void Reaction::transform(Options& state) {
     rate_helper.calc_rates(calc_rate, rates);
   } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
-      BoutReal result = mass_action * 1e-6 * eval_sigma_v_T(Teff * Tnorm) * Nnorm
-                        / FreqNorm * rate_multiplier;
+      BoutReal result =
+          mass_action * 1e-6 * eval_sigma_v_T(Teff) * Nnorm / FreqNorm * rate_multiplier;
       return result;
     };
 
