@@ -253,7 +253,7 @@ void Reaction::transform(Options& state) {
     auto rate_helper = RateHelper<RateParamsTypes::T>(
         state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
-    rate_helper.calc_rates(calc_rate, rates);
+    rate_helper.calc_rates(calc_rate, rates, false);
   } else {
     throw BoutException("Unhandled RateParamsTypes in Reaction::transform()");
   }

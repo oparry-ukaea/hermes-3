@@ -96,7 +96,7 @@ struct RateHelper {
    * @param result a std::map containing the calculated rates and collision frequencies.
    */
   void calc_rates(const RateFuncVariant& rate_calc_func_variant,
-                  std::map<std::string, Field3D>& result) {
+                  std::map<std::string, Field3D>& result, bool do_averaging = true) {
 
     // Set up map to store results: one collision frequency per reactant + reaction rate
     std::string first_key = str_keys(this->rate_params)[0];
@@ -113,7 +113,7 @@ struct RateHelper {
 
     // Populate cell_data differently according to rate function type
     std::visit(
-        [this, &cell_data, &result](auto&& rate_calc_func) {
+        [this, &cell_data, &do_averaging, &result](auto&& rate_calc_func) {
           auto J = result["rate"].getCoordinates()->J;
           BOUT_FOR(i, region) {
 
@@ -189,9 +189,13 @@ struct RateHelper {
 
             // Compute averages for each property and store in result map
             for (const auto prop : str_keys(result)) {
-              result[prop][i] = 4. / 6 * cell_data[prop].centre
-                                + (Ji + J[ym]) / (12. * Ji) * cell_data[prop].left
-                                + (Ji + J[yp]) / (12. * Ji) * cell_data[prop].right;
+              if (do_averaging) {
+                result[prop][i] = 4. / 6 * cell_data[prop].centre
+                                  + (Ji + J[ym]) / (12. * Ji) * cell_data[prop].left
+                                  + (Ji + J[yp]) / (12. * Ji) * cell_data[prop].right;
+              } else {
+                result[prop][i] = cell_data[prop].centre;
+              }
             }
           }
         },
