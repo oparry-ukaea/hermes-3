@@ -116,7 +116,8 @@ protected:
    * @param n a density
    * @return BoutReal the electron energy loss rate
    */
-  virtual BoutReal eval_sigma_vE_nT(BoutReal T, BoutReal n) {
+  virtual BoutReal eval_sigma_vE_nT([[maybe_unused]] BoutReal T,
+                                    [[maybe_unused]] BoutReal n) {
     if (this->includes_sigma_v_e) {
       throw BoutException(
           "eval_sigma_vE_nT() needs to be implemented by Reaction instances "
@@ -137,7 +138,8 @@ protected:
    * @param T a temperature
    * @return BoutReal <sigma.v>(E,T)
    */
-  virtual BoutReal eval_sigma_v_ET(BoutReal E, BoutReal T) {
+  virtual BoutReal eval_sigma_v_ET([[maybe_unused]] BoutReal E,
+                                   [[maybe_unused]] BoutReal T) {
     throw BoutException("Trying to call eval_sigma_v_nT but the Reaction subclass hasn't "
                         "implemented it!");
   }
@@ -149,7 +151,7 @@ protected:
    * @param T a temperature
    * @return BoutReal <sigma.v>(T)
    */
-  virtual BoutReal eval_sigma_v_T(BoutReal T) {
+  virtual BoutReal eval_sigma_v_T([[maybe_unused]] BoutReal T) {
     throw BoutException("Trying to call eval_sigma_v_T but the Reaction subclass hasn't "
                         "implemented it!");
   }
@@ -163,7 +165,8 @@ protected:
    * @param n a density
    * @return BoutReal <sigma.v>(n,T)
    */
-  virtual BoutReal eval_sigma_v_nT(BoutReal T, BoutReal n) {
+  virtual BoutReal eval_sigma_v_nT([[maybe_unused]] BoutReal T,
+                                   [[maybe_unused]] BoutReal n) {
     throw BoutException("Trying to call eval_sigma_v_nT but the Reaction subclass hasn't "
                         "implemented it!");
   }
@@ -175,7 +178,8 @@ protected:
    * @param state
    * @param reaction_rate
    */
-  virtual void transform_additional(Options& state, Field3D& reaction_rate) {}
+  virtual void transform_additional([[maybe_unused]] Options& state,
+                                    [[maybe_unused]] Field3D& reaction_rate) {}
 
   /**
    * @brief Update both a species source term and the corresponding diagnostics (if any

@@ -6,49 +6,50 @@
 
 #include "amjuel_reaction.hxx"
 #include "component.hxx"
+#include "reaction.hxx"
 
 /**
- * @brief Reaction component to handle Hydrogen charge exchange.
- *        p + H(1s) -> H(1s) + p
- *        Templated on a char to allow 'h', 'd' and 't' to be treated with the same code
- *
- * @warning If this reaction is included then ion_neutral collisions should probably be
- disabled in the `collisions` component, to avoid double-counting.
+* @brief Reaction component to handle Hydrogen charge exchange.
+*        p + H(1s) -> H(1s) + p
+*        Templated on a char to allow 'h', 'd' and 't' to be treated with the same code
+*
+* @warning If this reaction is included then ion_neutral collisions should probably be
+disabled in the `collisions` component, to avoid double-counting.
 
- * @details Total rate coefficient is computed from: Reaction 3.1.8 from Amjuel (p43)
- *
- * Calculate the charge exchange cross-section for a reaction
- *   atom1 + ion1 -> atom2 + ion2
- *   and handle transfer of mass, momentum and energy from:
- *   atom1 -> ion2, ion1 -> atom2
- *
- * Assumes that both atom1 and ion1 have:
- *   - AA
- *   - density
- *   - velocity
- *   - temperature
- *
- * Sets in all species:
- *   - density_source     [If atom1 != atom2 or ion1 != ion2]
- *   - momentum_source
- *   - energy_source
- *
- * Modifies collision_frequency for atom1 and ion1
- *
- *  Diagnostic output (when diagnose = true is set in the options)
- *   R            Reaction rate, transfer of particles in case of different isotopes
- *   atom_mom     Momentum removed from atom1, added to ion2
- *   ion_mom      Momentum removed from ion1, added to atom2
- *   atom_energy  Energy removed from atom1, added to ion2
- *   ion_energy   Energy removed from ion1, added to atom2
- *
- * @tparam Isotope1 The isotope ('h', 'd' or 't') of the reactant atom
- * @tparam Isotope2 The isotope ('h', 'd' or 't') of the reactant ion
- *
- * i.e.
- * atom     +   ion     ->   ion      +    atom
- * Isotope1 + Isotope2+ -> Isotope1+  +  Isotope2
- */
+* @details Total rate coefficient is computed from: Reaction 3.1.8 from Amjuel (p43)
+*
+* Calculate the charge exchange cross-section for a reaction
+*   atom1 + ion1 -> atom2 + ion2
+*   and handle transfer of mass, momentum and energy from:
+*   atom1 -> ion2, ion1 -> atom2
+*
+* Assumes that both atom1 and ion1 have:
+*   - AA
+*   - density
+*   - velocity
+*   - temperature
+*
+* Sets in all species:
+*   - density_source     [If atom1 != atom2 or ion1 != ion2]
+*   - momentum_source
+*   - energy_source
+*
+* Modifies collision_frequency for atom1 and ion1
+*
+*  Diagnostic output (when diagnose = true is set in the options)
+*   R            Reaction rate, transfer of particles in case of different isotopes
+*   atom_mom     Momentum removed from atom1, added to ion2
+*   ion_mom      Momentum removed from ion1, added to atom2
+*   atom_energy  Energy removed from atom1, added to ion2
+*   ion_energy   Energy removed from ion1, added to atom2
+*
+* @tparam Isotope1 The isotope ('h', 'd' or 't') of the reactant atom
+* @tparam Isotope2 The isotope ('h', 'd' or 't') of the reactant ion
+*
+* i.e.
+* atom     +   ion     ->   ion      +    atom
+* Isotope1 + Isotope2+ -> Isotope1+  +  Isotope2
+*/
 
 // TODO: Add to docstring
 ///   - F<Isotope1><Isotope2>+_cx  (e.g. Fhd+_cx) the momentum added to Isotope1 atoms
@@ -83,7 +84,7 @@
 
 template <char Isotope1, char Isotope2>
 struct HydrogenChargeExchange : public AmjuelReaction {
-  HydrogenChargeExchange(std::string name, Options& alloptions, Solver*)
+  HydrogenChargeExchange([[maybe_unused]] std::string name, Options& alloptions, Solver*)
       : AmjuelReaction(name, "cx", "H.2_3.1.8", alloptions) {
     this->includes_sigma_v_e = false;
     /* This is useful for testing the impact of enabling the neutral momentum equation.
