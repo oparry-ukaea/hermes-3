@@ -130,13 +130,18 @@ struct HydrogenChargeExchange : public AmjuelReaction {
       DiagnosticTransformerType default_transformer = identity;
 
       if constexpr (Isotope1 != Isotope2) {
+        // Different isotope => particle source, second momentum & energy channel
+        add_diagnostic(
+            atom_reactant, fmt::format("S{:s}{:s}_cx", atom_reactant, ion_reactant),
+            fmt::format("Particle transfer to {:s} from {:s} due to CX with {:s}",
+                        atom_reactant, ion_product, ion_reactant),
+            ReactionDiagnosticType::density_src, "hydrogen_charge_exchange", identity,
+            "particle transfer");
+      } else {
         /*
          Simpler case of same isotopes  - No net particle source/sink; atoms lose
          * <atom_mom>, gain <ion_mom>
          */
-      } else {
-        // Different isotope => particle source, second momentum & energy channel
-
         // Need F2 = -ion_mom - CHECK
         add_diagnostic(
             atom_reactant, fmt::format("F{:s}{:s}_cx", ion_product, atom_reactant),
@@ -152,13 +157,6 @@ struct HydrogenChargeExchange : public AmjuelReaction {
                         ion_product, atom_product, atom_reactant),
             ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange", identity,
             "energy transfer");
-
-        add_diagnostic(
-            atom_reactant, fmt::format("S{:s}{:s}_cx", atom_reactant, ion_product),
-            fmt::format("Particle transfer to {:s} from {:s} due to CX with {:s}",
-                        atom_reactant, ion_reactant, ion_product),
-            ReactionDiagnosticType::density_src, "hydrogen_charge_exchange", identity,
-            "particle transfer");
       }
 
       // Always add atom1 momentum source
