@@ -105,7 +105,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
     std::string atom_reactant{Isotope1};
     std::string ion_product{Isotope1, '+'};
     std::string atom_product{Isotope2};
-    std::string ion_reactant{Isotope2, '+'}; // rename to ion_out
+    std::string ion_reactant{Isotope2, '+'};
 
     // Incoming neutral energy => outgoing ion
     this->set_energy_channel_weight(atom_reactant, ion_product, 1.0);
