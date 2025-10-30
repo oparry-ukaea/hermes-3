@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <regex>
 
-#include "bout/utils.hxx"
 #include "hermes_utils.hxx"
+#include "bout/utils.hxx"
 
 /// An enum class with which to identify various useful species subsets
 enum class species_filter {
