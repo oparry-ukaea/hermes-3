@@ -54,7 +54,7 @@ struct RateHelper {
    * @param region the region in which to calculate the rate
    */
   RateHelper(const Options& state, const std::vector<std::string>& reactant_names,
-             const Region<Ind3D> region)
+             const Region<Ind3D> region, const BoutReal density_floor = 0)
       : region(region) {
 
     // Compute / extract fields that are required as parameters for the rate calculations
@@ -77,13 +77,14 @@ struct RateHelper {
       static_assert(dependent_false<RateParamsType>, "Unhandled RateParamsType");
     }
 
-    // Extract and store reactant densities
+    // Extract and store reactant densities, applying the supplied density floor
     std::transform(
         reactant_names.begin(), reactant_names.end(),
         std::inserter(this->reactant_densities, this->reactant_densities.end()),
         [&](const auto& reactant_name) {
           return make_pair(reactant_name,
-                           get<Field3D>(state["species"][reactant_name]["density"]));
+                           floor(get<Field3D>(state["species"][reactant_name]["density"]),
+                                 density_floor));
         });
   }
 

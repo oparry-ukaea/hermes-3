@@ -250,7 +250,7 @@ void Reaction::transform(Options& state) {
     };
 
     auto rate_helper = RateHelper<RateParamsTypes::T>(
-        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
+        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"), 1e-5);
 
     rate_helper.calc_rates(calc_rate, rate_calc_results, false);
   } else {
