@@ -107,9 +107,7 @@ public:
    * @details Variadic so that it can be applied recursively.
    *
    * @tparam FilterTypes
-   * @param species_names the list of species names to filter
-   * @param first_filter the first filter
-   * @param other_filters other filters
+   * @param filters one or more instances of species_filter
    * @return std::vector<std::string> the filtered list of names
    */
   template <typename... FilterTypes>
