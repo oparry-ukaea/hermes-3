@@ -262,56 +262,6 @@ private:
   }
 
   /**
-   * @brief Function to get consistent labels for collision freqency variables.
-   *
-   * @param reactant_name Name of the reactant associated with this collision frequency.
-   * @return std::string The label
-   */
-  std::string freq_lbl(const std::string& reactant_name) {
-    return fmt::format("{:s}:collision_frequency", reactant_name);
-  }
-
-  /**
-   * @brief Extract the (cell-centre) value of a rate parameter.
-   *
-   * @param name name of the parameter (label in state["species"])
-   * @param i central index
-   * @return BoutReal
-   */
-  BoutReal get_rate_param(const std::string& name, Ind3D i) {
-    return this->rate_params[name][i];
-  }
-
-  /**
-   * @brief Extract the value of a rate parameter at the left of a cell.
-   *
-   * @param name name of the parameter (label in state["species"])
-   * @param i central index
-   * @param ym neighbour 1 index
-   * @param yp neighbour 2 index
-   * @return BoutReal
-   */
-  BoutReal get_rate_param_left(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
-    return cellLeft<hermes::Limiter>(this->rate_params[name][i],
-                                     this->rate_params[name][ym],
-                                     this->rate_params[name][yp]);
-  }
-
-  /**
-   * @brief Extract the value of a rate parameter at the right of a cell.
-   * @param name name of the parameter (label in state["species"])
-   * @param i central index
-   * @param ym neighbour 1 index
-   * @param yp neighbour 2 index
-   * @return BoutReal
-   */
-  BoutReal get_rate_param_right(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
-    return cellRight<hermes::Limiter>(this->rate_params[name][i],
-                                      this->rate_params[name][ym],
-                                      this->rate_params[name][yp]);
-  }
-
-  /**
    * @brief Compute the product of all reactant densities at a cell centre, optionally
    * excluding \p exclude_sp.
    *
@@ -372,6 +322,56 @@ private:
       result *= cellRight<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
     }
     return result;
+  }
+
+  /**
+   * @brief Function to get consistent labels for collision freqency variables.
+   *
+   * @param reactant_name Name of the reactant associated with this collision frequency.
+   * @return std::string The label
+   */
+  std::string freq_lbl(const std::string& reactant_name) {
+    return fmt::format("{:s}:collision_frequency", reactant_name);
+  }
+
+  /**
+   * @brief Extract the (cell-centre) value of a rate parameter.
+   *
+   * @param name name of the parameter (label in state["species"])
+   * @param i central index
+   * @return BoutReal
+   */
+  BoutReal get_rate_param(const std::string& name, Ind3D i) {
+    return this->rate_params[name][i];
+  }
+
+  /**
+   * @brief Extract the value of a rate parameter at the left of a cell.
+   *
+   * @param name name of the parameter (label in state["species"])
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @return BoutReal
+   */
+  BoutReal get_rate_param_left(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
+    return cellLeft<hermes::Limiter>(this->rate_params[name][i],
+                                     this->rate_params[name][ym],
+                                     this->rate_params[name][yp]);
+  }
+
+  /**
+   * @brief Extract the value of a rate parameter at the right of a cell.
+   * @param name name of the parameter (label in state["species"])
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @return BoutReal
+   */
+  BoutReal get_rate_param_right(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
+    return cellRight<hermes::Limiter>(this->rate_params[name][i],
+                                      this->rate_params[name][ym],
+                                      this->rate_params[name][yp]);
   }
 
   /**
