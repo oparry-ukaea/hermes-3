@@ -110,22 +110,20 @@ void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_re
       parser->get_species(species_filter::reactants);
   ASSERT1(reactant_species.size() == 2);
 
-  // Extract heavy reactant properties
-  std::vector<std::string> heavy_reactant_species =
-      parser->get_species(reactant_species, species_filter::heavy);
-  // Amjuel-based reactions are assumed to have exactly 1 heavy reactant, for now.
-  ASSERT1(heavy_reactant_species.size() == 1);
-  Options& rh = state["species"][heavy_reactant_species[0]];
+  // Amjuel-based reactions are assumed to have exactly 1 heavy reactant unless this
+  // function has been overridden
+  std::string heavy_reactant_species =
+      parser->get_single_species(reactant_species, species_filter::heavy);
+  Options& rh = state["species"][heavy_reactant_species];
   BoutReal AA_rh = get<BoutReal>(rh["AA"]);
   Field3D n_rh = get<Field3D>(rh["density"]);
   Field3D v_rh = get<Field3D>(rh["velocity"]);
 
-  // Extract heavy product properties
-  std::vector<std::string> heavy_product_species =
-      parser->get_species(species_filter::heavy, species_filter::products);
-  // Amjuel-based reactions are assumed to have exactly 1 heavy product, for now.
-  ASSERT1(heavy_product_species.size() == 1);
-  Options& ph = state["species"][heavy_product_species[0]];
+  // Amjuel-based reactions are assumed to have exactly 1 heavy product unless this
+  // function has been overridden
+  std::string heavy_product_species =
+      parser->get_single_species(species_filter::heavy, species_filter::products);
+  Options& ph = state["species"][heavy_product_species];
   Field3D v_ph = get<Field3D>(ph["velocity"]);
 
   // Kinetic energy transfer to thermal energy
@@ -218,11 +216,10 @@ void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_re
       },
       n_e.getRegion("RGN_NOBNDRY"))(n_e, n_rh, T_e);
 
-  // Set collision frequency on the neutral species (should be exactly 1 of them for
-  // Amjuel reactions)
-  std::vector<std::string> neutral_species = parser->get_species(species_filter::neutral);
-  ASSERT1(neutral_species.size() == 1);
-  set(state["species"][neutral_species[0]]["collision_frequencies"]
+  // Set collision frequency on the neutral species (must be exactly 1 of them if this
+  // function hasn't been overridden)
+  std::string neutral_species = parser->get_single_species(species_filter::neutral);
+  set(state["species"][neutral_species]["collision_frequencies"]
            [rh.name() + "_" + ph.name() + "_" + this->short_reaction_type],
       heavy_particle_frequency);
 }

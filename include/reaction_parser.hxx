@@ -57,6 +57,45 @@ public:
   const std::string get_reaction_str() const { return this->reaction_str; }
 
   /**
+   * @brief Apply one or more filters to a list of species names and return the one and
+   * only match.
+   *
+   * @details Variadic so that it can be applied recursively.
+   * @throw BoutException if there isn't exactly one match.
+   *
+   * @tparam FilterTypes
+   * @param species_names the list of species names to filter
+   * @param first_filter the first filter
+   * @param other_filters zero or more other filters
+   * @return std::string the matching species name
+   */
+  template <typename... FilterTypes>
+  std::string get_single_species(std::vector<std::string> species_names,
+                                 species_filter first_filter,
+                                 FilterTypes... other_filters) const {
+    std::vector<std::string> matches =
+        get_species(species_names, first_filter, other_filters...);
+    ASSERT0(matches.size() == 1);
+    return matches[0];
+  }
+
+  /**
+   * @brief Apply one or more filters to the list of species identified by the parser and
+   * return the one and only match.
+   * @throws BoutException if there is more than one match.
+   *
+   * @tparam FilterTypes
+   * @param filters one or more instances of species_filter
+   * @return std::string the matching species name
+   */
+  template <typename... FilterTypes>
+  std::string get_single_species(FilterTypes... filters) const {
+    std::vector<std::string> matches = get_species(filters...);
+    ASSERT0(matches.size() == 1);
+    return matches[0];
+  }
+
+  /**
    * @brief Get the names of all species identified by the parser
    *
    * @return std::vector<std::string> the list of species names

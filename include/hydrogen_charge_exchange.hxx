@@ -197,26 +197,19 @@ struct HydrogenChargeExchange : public AmjuelReaction {
 
 protected:
   void transform_additional(Options& state, RatesMap& rate_calc_results) override {
-    std::vector<std::string> ion_reactant =
-        this->parser->get_species(species_filter::reactants, species_filter::ion);
-    ASSERT1(ion_reactant.size() == 1);
-    std::vector<std::string> ion_product =
-        this->parser->get_species(species_filter::products, species_filter::ion);
-    ASSERT1(ion_product.size() == 1);
-    std::vector<std::string> heavy_reactant_species =
-        this->parser->get_species(species_filter::reactants, species_filter::heavy);
+    std::string ion_reactant =
+        this->parser->get_single_species(species_filter::reactants, species_filter::ion);
+    std::string ion_product =
+        this->parser->get_single_species(species_filter::products, species_filter::ion);
+    std::string neutral_reactant =
+        this->parser->get_single_species(species_filter::reactants, species_filter::neutral);
+    std::string neutral_product =
+        this->parser->get_single_species(species_filter::products, species_filter::neutral);
 
-    std::vector<std::string> neutral_reactant =
-        this->parser->get_species(species_filter::reactants, species_filter::neutral);
-    ASSERT1(neutral_reactant.size() == 1);
-    std::vector<std::string> neutral_product =
-        this->parser->get_species(species_filter::products, species_filter::neutral);
-    ASSERT1(neutral_product.size() == 1);
-
-    Options& atom1 = state["species"][neutral_reactant[0]];
-    Options& ion1 = state["species"][ion_reactant[0]];
-    Options& atom2 = state["species"][neutral_product[0]];
-    Options& ion2 = state["species"][ion_product[0]];
+    Options& atom1 = state["species"][neutral_reactant];
+    Options& ion1 = state["species"][ion_reactant];
+    Options& atom2 = state["species"][neutral_product];
+    Options& ion2 = state["species"][ion_product];
 
     // Masses of initial atom and ion
     const BoutReal Aatom = get<BoutReal>(atom1["AA"]);
@@ -247,7 +240,6 @@ protected:
     //
     // This handles the general case that ion1 != ion2
     // and atom1 != atom2
-
     auto ion2_velocity = get<Field3D>(ion2["velocity"]);
     add(ion2["energy_source"],
         0.5 * Aatom * rate_calc_results["rate"] * SQ(ion2_velocity - atom1_velocity));
@@ -256,19 +248,15 @@ protected:
     add(atom2["energy_source"],
         0.5 * Aion * rate_calc_results["rate"] * SQ(atom2_velocity - ion1_velocity));
 
-    // Update collision frequency for the two colliding species
-    Field3D atom_rate = Nion * sigmav; // [s^-1]
-    Field3D ion_rate = Natom * sigmav; // [s^-1]
-
     // Set individual collision frequencies
     std::string neutral_coll_freq_key =
-        fmt::format("{:s}:collision_frequency", neutral_reactant[0]);
+        fmt::format("{:s}:collision_frequency", neutral_reactant);
     set(atom1["collision_frequencies"]
              [atom1.name() + std::string("_") + ion1.name() + std::string("_cx")],
         rate_calc_results[neutral_coll_freq_key]);
 
     std::string ion_coll_freq_key =
-        fmt::format("{:s}:collision_frequency", ion_reactant[0]);
+        fmt::format("{:s}:collision_frequency", ion_reactant);
     set(ion1["collision_frequencies"]
             [ion1.name() + std::string("_") + atom1.name() + std::string("_cx")],
         rate_calc_results[ion_coll_freq_key]);

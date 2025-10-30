@@ -41,10 +41,8 @@ struct AmjuelHydIsotopeReaction : public AmjuelReaction {
         default_transformer = identity;
       }
 
-      auto heavy_products =
-          this->parser->get_species(species_filter::heavy, species_filter::products);
-      ASSERT1(heavy_products.size() == 1);
-      std::string heavy_product = heavy_products[0];
+      std::string heavy_product = this->parser->get_single_species(
+          species_filter::heavy, species_filter::products);
       std::string long_reaction_type = long_reaction_types_map.at(short_reaction_type);
       add_diagnostic(
           heavy_product, fmt::format("S{:s}", default_diag_suffix),
