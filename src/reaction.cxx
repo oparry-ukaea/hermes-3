@@ -86,34 +86,6 @@ void Reaction::add_diagnostic(const std::string& sp_name, const std::string& dia
 }
 
 /**
- * @brief Compute the effective temperature (in eV) of heavy reactants.
- *
- * @param[in] state
- * @param[in] heavy_reactant_species names of heavy reactants
- * @param[inout] Teff Field3D object in which to store the result
- */
-void Reaction::calc_Teff(const Options& state,
-                         const std::vector<std::string>& heavy_reactant_species,
-                         Field3D& Teff) {
-
-  // Calculate effective T
-  Teff = get<Field3D>(state["species"][heavy_reactant_species[0]]["temperature"])
-         / get<BoutReal>(state["species"][heavy_reactant_species[0]]["AA"]);
-  for (auto ii = 1; ii < heavy_reactant_species.size(); ii++) {
-    Teff += get<Field3D>(state["species"][heavy_reactant_species[ii]]["temperature"])
-            / get<BoutReal>(state["species"][heavy_reactant_species[ii]]["AA"]);
-  }
-  Teff *= Tnorm;
-
-  // Clamp values
-  constexpr BoutReal Teff_min = 0.01;
-  constexpr BoutReal Teff_max = 10000;
-  for (const auto& i : Teff.getRegion("RGN_NOBNDRY")) {
-    Teff[i] = std::clamp(Teff[i], Teff_min, Teff_max);
-  }
-}
-
-/**
  * @brief Set weights for any reactant => product momentum / energy channel that hasn't
  * already been specified via set_energy_channel_weight and set_momentum_channel_weight.
  *

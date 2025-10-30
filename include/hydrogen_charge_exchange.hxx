@@ -218,20 +218,6 @@ protected:
     const BoutReal Aion = get<BoutReal>(ion1["AA"]);
     // ASSERT1(get<BoutReal>(atom2["AA"]) == Aion); // Check that the mass is consistent
 
-    // Temporarily calculate sigmav here. Stop gap until collision_frequencies are
-    // calculated in Reaction::transform
-    Field3D Teff;
-    calc_Teff(state, heavy_reactant_species, Teff);
-    const Field3D lnT;
-    Field3D sigmav(emptyFrom(Teff));
-    BOUT_FOR(i, Teff.getRegion("RGN_NOBNDRY")) {
-      sigmav[i] =
-          this->eval_sigma_v_T(Teff[i]) * (1e-6 * Nnorm / FreqNorm) * rate_multiplier;
-    }
-
-    const Field3D Natom = floor(get<Field3D>(atom1["density"]), 1e-5);
-    const Field3D Nion = floor(get<Field3D>(ion1["density"]), 1e-5);
-
     auto atom1_velocity = get<Field3D>(atom1["velocity"]);
     auto ion1_velocity = get<Field3D>(ion1["velocity"]);
 
@@ -265,84 +251,6 @@ protected:
 private:
   bool no_neutral_cx_mom_gain; ///< Make CX behave as in diffusive neutrals?
 };
-
-// void outputVars(Options& state) override {
-//   AUTO_TRACE();
-//   // Normalisations
-//   auto Nnorm = get<BoutReal>(state["Nnorm"]);
-//   auto Tnorm = get<BoutReal>(state["Tnorm"]);
-//   BoutReal Pnorm = SI::qe * Tnorm * Nnorm; // Pressure normalisation
-//   auto Omega_ci = get<BoutReal>(state["Omega_ci"]);
-//   auto Cs0 = get<BoutReal>(state["Cs0"]);
-
-//   if (diagnose) {
-//     // Save particle, momentum and energy channels
-
-//     std::string atom1{Isotope1};
-//     std::string ion1{Isotope1, '+'};
-//     std::string atom2{Isotope2};
-//     std::string ion2{Isotope2, '+'};
-
-//     set_with_attrs(state[{'F', Isotope1, Isotope2, '+', '_', 'c', 'x'}], // e.g Fhd+_cx
-//                    F,
-//                    {{"time_dimension", "t"},
-//                     {"units", "kg m^-2 s^-2"},
-//                     {"conversion", SI::Mp * Nnorm * Cs0 * Omega_ci},
-//                     {"standard_name", "momentum transfer"},
-//                     {"long_name", (std::string("Momentum transfer to ") + atom1
-//                                    + " from " + ion1 + " due to CX with " + ion2)},
-//                     {"source", "hydrogen_charge_exchange"}});
-
-//     set_with_attrs(state[{'E', Isotope1, Isotope2, '+', '_', 'c', 'x'}], // e.g Edt+_cx
-//                    E,
-//                    {{"time_dimension", "t"},
-//                     {"units", "W / m^3"},
-//                     {"conversion", Pnorm * Omega_ci},
-//                     {"standard_name", "energy transfer"},
-//                     {"long_name", (std::string("Energy transfer to ") + atom1 + " from
-//                     "
-//                                    + ion1 + " due to CX with " + ion2)},
-//                     {"source", "hydrogen_charge_exchange"}});
-
-//     set_with_attrs(state[{'K', Isotope1, Isotope2, '+', '_', 'c', 'x'}], // e.g Kdt+_cx
-//                    atom_rate,
-//                    {{"time_dimension", "t"},
-//                     {"units", "s^-1"},
-//                     {"conversion", Omega_ci},
-//                     {"standard_name", "collision frequency"},
-//                     {"long_name", (std::string("Collision frequency of CX of ") + atom1
-//                                    + " and " + ion1 + " producing " + ion2 + " and "
-//                                    + atom2 + ". Note Kab != Kba")},
-//                     {"source", "hydrogen_charge_exchange"}});
-
-//     if (Isotope1 != Isotope2) {
-//       // Different isotope => particle source, second momentum & energy channel
-//       set_with_attrs(
-//           state[{'F', Isotope2, '+', Isotope1, '_', 'c', 'x'}], // e.g Fd+h_cx
-//           F2,
-//           {{"time_dimension", "t"},
-//            {"units", "kg m^-2 s^-2"},
-//            {"conversion", SI::Mp * Nnorm * Cs0 * Omega_ci},
-//            {"standard_name", "momentum transfer"},
-//            {"long_name", (std::string("Momentum transfer to ") + ion2 + " from " +
-//            atom2
-//                           + " due to CX with " + atom1)},
-//            {"source", "hydrogen_charge_exchange"}});
-
-//       set_with_attrs(
-//           state[{'E', Isotope2, '+', Isotope1, '_', 'c', 'x'}], // e.g Et+d_cx
-//           E2,
-//           {{"time_dimension", "t"},
-//            {"units", "W / m^3"},
-//            {"conversion", Pnorm * Omega_ci},
-//            {"standard_name", "energy transfer"},
-//            {"long_name", (std::string("Energy transfer to ") + ion2 + " from " + atom2
-//                           + " due to CX with " + atom1)},
-//            {"source", "hydrogen_charge_exchange"}});
-
-//   }
-// }
-// };
 
 namespace {
 /// Register three components, one for each hydrogen isotope

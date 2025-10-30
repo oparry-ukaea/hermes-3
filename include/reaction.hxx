@@ -96,9 +96,6 @@ protected:
                       DiagnosticTransformerType transformer = negate,
                       const std::string& standard_name = "");
 
-  void calc_Teff(const Options& state,
-                 const std::vector<std::string>& heavy_reactant_species, Field3D& Teff);
-
   /**
    * @brief Calculate weightsums used in transform(). Can't be done at construction
    * because the species masses may not be set.
