@@ -31,17 +31,20 @@ def check_value(name, val, target, **kws):
         )
     return success
 
-def check_ULPs_diff(name,val,target, **kws):
-    kws["maxulp"] = kws.pop("maxulp",4)
+
+def check_ULPs_diff(name, val, target, **kws):
+    kws["maxulp"] = kws.pop("maxulp", 4)
     success = False
     try:
-        numpy.testing.assert_array_max_ulp(val,target,**kws)
+        numpy.testing.assert_array_max_ulp(val, target, **kws)
         success = True
     except AssertionError as e:
         print(
-            f'{name} differs from reference data by > {kws["maxulp"]} ULPs\n Value = {val}\n Reference = {target}')
-        
+            f'{name} differs from reference data by > {kws["maxulp"]} ULPs\n Value = {val}\n Reference = {target}'
+        )
+
     return success
+
 
 def end_test(success):
     if success:

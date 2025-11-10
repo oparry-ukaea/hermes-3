@@ -201,10 +201,10 @@ protected:
         this->parser->get_single_species(species_filter::reactants, species_filter::ion);
     std::string ion_product =
         this->parser->get_single_species(species_filter::products, species_filter::ion);
-    std::string neutral_reactant =
-        this->parser->get_single_species(species_filter::reactants, species_filter::neutral);
-    std::string neutral_product =
-        this->parser->get_single_species(species_filter::products, species_filter::neutral);
+    std::string neutral_reactant = this->parser->get_single_species(
+        species_filter::reactants, species_filter::neutral);
+    std::string neutral_product = this->parser->get_single_species(
+        species_filter::products, species_filter::neutral);
 
     Options& atom1 = state["species"][neutral_reactant];
     Options& ion1 = state["species"][ion_reactant];
@@ -241,8 +241,7 @@ protected:
              [atom1.name() + std::string("_") + ion1.name() + std::string("_cx")],
         rate_calc_results[neutral_coll_freq_key]);
 
-    std::string ion_coll_freq_key =
-        fmt::format("{:s}:collision_frequency", ion_reactant);
+    std::string ion_coll_freq_key = fmt::format("{:s}:collision_frequency", ion_reactant);
     set(ion1["collision_frequencies"]
             [ion1.name() + std::string("_") + atom1.name() + std::string("_cx")],
         rate_calc_results[ion_coll_freq_key]);
