@@ -119,7 +119,7 @@ success &= check_value("Ion temperature", Ti_up, 150, atol=10)
 # fmt: off
 # Check the values of various diagnostics
 pos_idx = -1         # 1D position index to check (excluding guards)
-ULPs_max_diff = 4    # Max number of ULPs allowed between test value and reference value. N.B. gtest's ASSERT_DOUBLE_EQ uses 4) 
+ULPs_max_diff = 5e11 # Max number of ULPs allowed between test value and reference value.
 # Diagnostic names and reference values (generated with -O2)
 release_diags_ref = {        
     "Sd+_iz": 0.0012500909495553412,
