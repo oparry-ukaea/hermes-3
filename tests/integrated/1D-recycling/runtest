@@ -70,6 +70,16 @@ def fail_on_missing_exec():
 def fail_test():
     end_test(False)
 
+def optimisation_level(run_output):
+    comp_flags_line=[l for l in run_output.split('\n') if l.startswith("\tCompiled with flags")]
+    if len(comp_flags_line)==1:
+        comp_flags = comp_flags_line[0].split()
+        for opt_level in range(4):
+            if f"-O{opt_level}" in comp_flags:
+                return opt_level
+        # No optimisation flag found; assume -O0
+        return 0
+    raise RuntimeError("Failed to find compile flags in run output")
 
 # =============================================================================
 
@@ -83,11 +93,11 @@ fail_on_missing_exec()
 output_path.unlink(missing_ok=True)
 
 # Use Bout wrapper to run exec
-s, out = launch(f"{hermes_exec} -d {data_dir}", nproc=1, pipe=True)
+s, run_stdout = launch(f"{hermes_exec} -d {data_dir}", nproc=1, pipe=True)
 
 # Save output to log file
 with open("run.log", "w") as f:
-    f.write(out)
+    f.write(run_stdout)
 
 # Check that the run produced output
 fail_on_missing_data()
@@ -110,7 +120,8 @@ success &= check_value("Ion temperature", Ti_up, 150, atol=10)
 # Check the values of various diagnostics
 pos_idx = -1         # 1D position index to check (excluding guards)
 ULPs_max_diff = 4    # Max number of ULPs allowed between test value and reference value. N.B. gtest's ASSERT_DOUBLE_EQ uses 4) 
-diags_ref = {        # Diagnostic names and reference values (generated with -O2)
+# Diagnostic names and reference values (generated with -O2)
+release_diags_ref = {        
     "Sd+_iz": 0.0012500909495553412,
     "Fd+_iz": 5.027068667820757e-05,
     "Ed+_iz": 0.000886755705516266,
@@ -123,7 +134,24 @@ diags_ref = {        # Diagnostic names and reference values (generated with -O2
     "Fdd+_cx": 0.0003583556988699099,
     "Edd+_cx": 0.0007151459741692755,
 }
+# Store separate values to accommodate changes due to lack of optimisation in Debug
+debug_diags_ref = {
+    "Sd+_iz": 0.0012500735313762568,
+    "Fd+_iz": 5.02717560389327e-05,
+    "Ed+_iz": 0.000886723905748805,
+    "Rd+_ex": -0.0002980794264560838,
+    "Sd+_rec": -3.4799501270106546e-09,
+    "Fd+_rec": -1.052540890652335e-09,
+    "Ed+_rec": -4.289620508224417e-09,
+    "Rd+_rec": -7.859637620094049e-10,
+    "Kdd+_cx": 0.00621882891858038,
+    "Fdd+_cx": 0.00035834961120024964,
+    "Edd+_cx": 0.0007151177865694317,
+}
 # fmt: on
+
+# Check 
+diags_ref = debug_diags_ref if optimisation_level(run_stdout) < 2 else release_diags_ref
 
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
