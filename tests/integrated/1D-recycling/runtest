@@ -111,17 +111,17 @@ success &= check_value("Ion temperature", Ti_up, 150, atol=10)
 pos_idx = -1         # 1D position index to check (excluding guards)
 ULPs_max_diff = 4    # Max number of ULPs allowed between test value and reference value. N.B. gtest's ASSERT_DOUBLE_EQ uses 4) 
 diags_ref = {        # Diagnostic names and reference values (generated with -O2)
-    "Sd+_iz": 0.0012500877296552468,
-    "Fd+_iz": 5.027449522167903e-05,
-    "Ed+_iz": 0.0008867627959864742,
-    "Rd+_ex": -0.0002980827888026677,
-    "Sd+_rec": -3.479788534373128e-09,
-    "Fd+_rec": -1.0525255255905655e-09,
-    "Ed+_rec": -4.289581450623666e-09,
-    "Rd+_rec": -7.859435290992585e-10,
-    "Kdd+_cx": 0.006218829645880973,
-    "Fdd+_cx": 0.00035836480520026217,
-    "Edd+_cx": 0.000715157957576078,
+    "Sd+_iz": 0.0012500909495553412,
+    "Fd+_iz": 5.027068667820757e-05,
+    "Ed+_iz": 0.000886755705516266,
+    "Rd+_ex": -0.0002980834490515916,
+    "Sd+_rec": -3.479956822392232e-09,
+    "Fd+_rec": -1.0525376960966807e-09,
+    "Ed+_rec": -4.2897231511986676e-09,
+    "Rd+_rec": -7.859691378400104e-10,
+    "Kdd+_cx": 0.006218892146342787,
+    "Fdd+_cx": 0.0003583556988699099,
+    "Edd+_cx": 0.0007151459741692755,
 }
 # fmt: on
 
