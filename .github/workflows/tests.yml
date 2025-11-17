@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - '*'  # This will trigger for PRs against any branch
+  workflow_dispatch:
 
 defaults:
   run:
