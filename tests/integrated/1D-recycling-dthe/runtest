@@ -115,8 +115,30 @@ ds_last = ds.isel(t=-1)
 # Check the values of various diagnostics
 pos_idx = -1         # 1D position index to check (excluding guards)
 ULPs_max_diff = 2e11    # Max number of ULPs allowed between test value and reference value.
-# Diagnostic names and reference values (generated with -O2)
-release_diags_ref = {
+
+# Diagnostic names and reference values, keyed by compiler optimisation levels to avoid large tolerances!
+diags_ref={}
+diags_ref[3] = {
+    "Ed+t_cx": -0.00037808814404508294,
+    "Edd+_cx": 2.576374602192554e-05,
+    "Edt+_cx": -0.0003961069983461613,
+    "Et+d_cx": -0.00041622346399714536,
+    "Etd+_cx": -0.0003481055390725704,
+    "Ett+_cx": 2.4343032391554846e-05,
+    "Fd+t_cx": -5.107405202981645e-05,
+    "Fdd+_cx": 7.114986010503732e-05,
+    "Fdt+_cx": 1.0184080098078047e-05,
+    "Ft+d_cx": -9.019017607699241e-05,
+    "Ftd+_cx": -9.364075779902633e-07,
+    "Ftt+_cx": 7.431665022354409e-05,
+    "Kdd+_cx": 0.012135716330638079,
+    "Kdt+_cx": 0.011422426139796786,
+    "Ktd+_cx": 0.01149215060554102,
+    "Ktt+_cx": 0.010651118409766624,
+    "Sdt+_cx": -0.0006460548277955353,
+    "Std+_cx": -0.0005810917611832868,
+}
+diags_ref[2] = {
     "Ed+t_cx": -0.0003780784397774263,
     "Edd+_cx": 2.5763856667059763e-05,
     "Edt+_cx": -0.0003960955510911949,
@@ -136,8 +158,7 @@ release_diags_ref = {
     "Sdt+_cx": -0.0006460382116199536,
     "Std+_cx": -0.0005810776433149236,
 }
-# Store separate values to accommodate changes due to lack of optimisation in Debug
-debug_diags_ref = {
+diags_ref[0] = {
     "Ed+t_cx": -0.0003780775858155187,
     "Edd+_cx": 2.5763819051965943e-05,
     "Edt+_cx": -0.0003960947180212758,
@@ -157,14 +178,15 @@ debug_diags_ref = {
     "Sdt+_cx": -0.0006460366409916579,
     "Std+_cx": -0.0005810761110783696,
 }
+diags_ref[1] = diags_ref[0]
 # fmt: on
 
-# Extract compiler flags from stdout and select debug or release data accordingly 
-diags_ref = debug_diags_ref if optimisation_level(run_stdout) < 2 else release_diags_ref
+# Extract compiler flags from stdout and determine optimisation level
+opt_level = optimisation_level(run_stdout)
 
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
-for name, target in diags_ref.items():
+for name, target in diags_ref[opt_level].items():
     try:
         val = ds_diags[name].values[pos_idx]
         if gen_data:
