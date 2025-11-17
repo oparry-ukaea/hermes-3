@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+
+# Test that a 1D-recyling-D-T-He example produces expected results
+
+from __future__ import division
+from __future__ import print_function
+
+from boututils.run_wrapper import launch
+import numpy
+import pathlib
+import xhermes
+
+this_dir = pathlib.Path(__file__).parent
+data_dir = this_dir / "data"
+hermes_exec = this_dir.parent.parent.parent / "hermes-3"
+output_path = data_dir / "BOUT.dmp.0.nc"
+# Set to true to generate new regression data (outputs to test stdout)
+gen_data = False
+
+# ============================= Helper functions ==============================
+def check_value(name, val, target, **kws):
+    # override default tolerances to get desired behaviour
+    kws["atol"] = kws.pop("atol", 0.0)
+    kws["rtol"] = kws.pop("rtol", 0.0)
+
+    success = numpy.isclose(val, target, **kws)
+    if not success:
+        # On failure, report the effective abs tolerance used by isclose
+        atol_eff = kws["atol"] + kws["rtol"] * abs(target)
+        print(
+            f"Expected\n {target-atol_eff} < {name} < {target+atol_eff}\nBut actual value was\n {val}"
+        )
+    return success
+
+
+def check_ULPs_diff(name, val, target, **kws):
+    kws["maxulp"] = kws.pop("maxulp", 4)
+    success = False
+    try:
+        numpy.testing.assert_array_max_ulp(val, target, **kws)
+        success = True
+    except AssertionError as e:
+        print(
+            f'{name} differs from reference data by > {kws["maxulp"]} ULPs\n Value = {val}\n Reference = {target}'
+        )
+
+    return success
+
+
+def end_test(success):
+    if success:
+        print(" => Test passed")
+        exit(0)
+    else:
+        print(" => Test failed")
+        exit(1)
+
+
+def fail_on_missing_data():
+    if not output_path.is_file():
+        print(f"No data at {output_path}")
+        fail_test()
+
+
+def fail_on_missing_exec():
+    if not hermes_exec.is_file():
+        print(f"No executable found at {hermes_exec}")
+        fail_test()
+
+
+def fail_test():
+    end_test(False)
+
+def optimisation_level(run_output):
+    comp_flags_line=[l for l in run_output.split('\n') if l.startswith("\tCompiled with flags")]
+    if len(comp_flags_line)==1:
+        comp_flags = comp_flags_line[0].split()
+        for opt_level in range(4):
+            if f"-O{opt_level}" in comp_flags:
+                return opt_level
+        # No optimisation flag found; assume -O0
+        return 0
+    raise RuntimeError("Failed to find compile flags in run output")
+
+# =============================================================================
+
+if gen_data:
+    print("Generating test data (test will register failure!)")
+    success = False
+else:
+    success = True
+
+
+# Make sure the executable is where it should be
+fail_on_missing_exec()
+
+# Remove existing output
+output_path.unlink(missing_ok=True)
+
+# Use Bout wrapper to run exec
+s, run_stdout = launch(f"{hermes_exec} -d {data_dir}", nproc=1, pipe=True)
+
+# Save output to log file
+with open("run.log", "w") as f:
+    f.write(run_stdout)
+
+# Check that the run produced output
+fail_on_missing_data()
+
+# Examine last output
+ds = xhermes.open(data_dir, unnormalise=False).hermes.extract_1d_tokamak_geometry()
+ds_last = ds.isel(t=-1)
+
+# fmt: off
+# Check the values of various diagnostics
+pos_idx = -1         # 1D position index to check (excluding guards)
+ULPs_max_diff = 4    # Max number of ULPs allowed between test value and reference value.
+# Diagnostic names and reference values (generated with -O2)
+release_diags_ref = {
+    "Ed+t_cx": -0.00038404847535216004,
+    "Edd+_cx": 4.509830803958015e-05,
+    "Edt+_cx": -0.00036860092840466165,
+    "Et+d_cx": -0.00039497695025507906,
+    "Etd+_cx": -0.00033892658842685826,
+    "Ett+_cx": 2.7316747392195544e-05,
+    "Fd+t_cx": -5.1657384544718913e-05,
+    "Fdd+_cx": 0.00011379776533366413,
+    "Fdt+_cx": 5.789757361079371e-05,
+    "Ft+d_cx": -9.479396763146992e-05,
+    "Ftd+_cx": 1.9337942346964317e-05,
+    "Ftt+_cx": 0.00010535800341242956,
+    "Kdd+_cx": 0.012288267121705172,
+    "Kdt+_cx": 0.01225923124404529,
+    "Ktd+_cx": 0.011665867711024005,
+    "Ktt+_cx": 0.011448276627725006,
+    "Sdt+_cx": -0.000671759780315099,
+    "Std+_cx": -0.0006237739102036336,
+}
+# Store separate values to accommodate changes due to lack of optimisation in Debug
+debug_diags_ref = {
+    "Ed+t_cx": -0.00038404958463801744,
+    "Edd+_cx": 4.509835931244702e-05,
+    "Edt+_cx": -0.0003686023174549658,
+    "Et+d_cx": -0.0003949776416648582,
+    "Etd+_cx": -0.00033892741255060326,
+    "Ett+_cx": 2.7316373291120773e-05,
+    "Fd+t_cx": -5.1657310732500566e-05,
+    "Fdd+_cx": 0.0001137985380721386,
+    "Fdt+_cx": 5.789820195025689e-05,
+    "Ft+d_cx": -9.479414207062762e-05,
+    "Ftd+_cx": 1.933827016625664e-05,
+    "Ftt+_cx": 0.00010535825436183859,
+    "Kdd+_cx": 0.012288359882519527,
+    "Kdt+_cx": 0.012259302224080627,
+    "Ktd+_cx": 0.011665954499967405,
+    "Ktt+_cx": 0.011448340614526004,
+    "Sdt+_cx": -0.0006717613655728937,
+    "Std+_cx": -0.0006237751311853375,
+}
+# fmt: on
+
+# Extract compiler flags from stdout and select debug or release data accordingly 
+diags_ref = debug_diags_ref if optimisation_level(run_stdout) < 2 else release_diags_ref
+
+# Do the diagnostic checks
+ds_diags = ds_last.isel(pos=slice(2, -2))
+for name, target in diags_ref.items():
+    val = ds_diags[name].values[pos_idx]
+    if gen_data:
+        print(f'"{name}": {val},')
+    else:
+        success &= check_ULPs_diff(name, val, target, maxulp=ULPs_max_diff)
+
+end_test(success)
