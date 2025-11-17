@@ -241,6 +241,8 @@ if(HERMES_TESTS)
 
   # Integrated tests
   function(hermes_add_integrated_test TESTNAME)
+    set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME)
+    cmake_parse_arguments(HERMES_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     if(HERMES_COPY_TESTS_TO_BUILD)
       set(INT_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/tests/integrated/${TESTNAME})
       set(INT_TEST_DEST
@@ -257,6 +259,20 @@ if(HERMES_TESTS)
       WORKING_DIRECTORY ${INT_TEST_DEST}
       COMMAND runtest)
     set_tests_properties(${TESTNAME} PROPERTIES LABELS integration)
+
+    if (HERMES_TEST_OPTIONS_DOWNLOAD)
+      if (NOT HERMES_TEST_OPTIONS_DOWNLOAD_NAME)
+	message(FATAL_ERROR "We need DOWNLOAD_NAME if we should DOWNLOAD!")
+      endif()
+      set(output )
+      add_custom_command(OUTPUT ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+	COMMAND wget ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/integrated/${TESTNAME}
+	COMMENT "Downloading ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}"
+      )
+      add_custom_target(download_test_data DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME})
+      add_dependencies(${TESTNAME} download_test_data)
+    endif()
   endfunction()
 
   hermes_add_integrated_test(1D-fluid)
