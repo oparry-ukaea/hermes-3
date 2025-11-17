@@ -165,10 +165,14 @@ diags_ref = debug_diags_ref if optimisation_level(run_stdout) < 2 else release_d
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
 for name, target in diags_ref.items():
-    val = ds_diags[name].values[pos_idx]
-    if gen_data:
-        print(f'"{name}": {val},')
-    else:
-        success &= check_ULPs_diff(name, val, target, maxulp=ULPs_max_diff)
+    try:
+        val = ds_diags[name].values[pos_idx]
+        if gen_data:
+            print(f'"{name}": {val},')
+        else:
+            success &= check_ULPs_diff(name, val, target, maxulp=ULPs_max_diff)
+    except KeyError:
+        print(f" *** Diagnostic '{name}' missing from test data ***")
+        end_test(False)
 
 end_test(success)
