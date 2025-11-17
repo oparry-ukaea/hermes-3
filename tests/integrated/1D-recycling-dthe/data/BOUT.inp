@@ -212,6 +212,16 @@ function = `Pd+:function`    # Same as ion pressure initially
 source = `Pd+:source`        # Same as ion pressure source
 
 ################################################################################
+[collisions]
+diagnose=true
+electron_electron = true
+electron_ion = true
+electron_neutral = true
+ion_ion = true
+ion_neutral = true
+neutral_neutral = true
+
+################################################################################
 [neutral_parallel_diffusion]
 dneut = 10    # (B / Bpol)^2 in neutral diffusion terms
 
