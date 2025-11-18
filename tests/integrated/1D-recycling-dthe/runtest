@@ -125,7 +125,7 @@ ds_last = ds.isel(t=-1)
 # fmt: off
 # Check the values of various diagnostics
 pos_idx = -1         # 1D position index to check (excluding guards)
-ULPs_max_diff = 2e11    # Max number of ULPs allowed between test value and reference value.
+ULPs_max_diff = 4    # Max number of ULPs allowed between test value and reference value.
 
 # Diagnostic names and reference values, keyed by compiler optimisation levels to avoid large tolerances!
 diags_ref={}
