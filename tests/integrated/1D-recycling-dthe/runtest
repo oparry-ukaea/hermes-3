@@ -127,9 +127,8 @@ ds_last = ds.isel(t=-1)
 pos_idx = -1         # 1D position index to check (excluding guards)
 ULPs_max_diff = 4    # Max number of ULPs allowed between test value and reference value.
 
-# Diagnostic names and reference values, keyed by compiler optimisation levels to avoid large tolerances!
-diags_ref={}
-diags_ref[3] = {
+# Diagnostic names and reference values (generated with -O2)
+release_diags_ref = {
     "Ed+t_cx": -0.00037808814404508294,
     "Edd+_cx": 2.576374602192554e-05,
     "Edt+_cx": -0.0003961069983461613,
@@ -149,27 +148,8 @@ diags_ref[3] = {
     "Sdt+_cx": -0.0006460548277955353,
     "Std+_cx": -0.0005810917611832868,
 }
-diags_ref[2] = {
-    "Ed+t_cx": -0.0003780784397774263,
-    "Edd+_cx": 2.5763856667059763e-05,
-    "Edt+_cx": -0.0003960955510911949,
-    "Et+d_cx": -0.0004162123641362163,
-    "Etd+_cx": -0.000348096458218669,
-    "Ett+_cx": 2.4342646360298297e-05,
-    "Fd+t_cx": -5.107316213723479e-05,
-    "Fdd+_cx": 7.11477199333433e-05,
-    "Fdt+_cx": 1.0183012678762808e-05,
-    "Ft+d_cx": -9.018822954420803e-05,
-    "Ftd+_cx": -9.372312429717318e-07,
-    "Ftt+_cx": 7.431423895175184e-05,
-    "Kdd+_cx": 0.012135698717703326,
-    "Kdt+_cx": 0.011422388534304533,
-    "Ktd+_cx": 0.011492136158510016,
-    "Ktt+_cx": 0.010651086061282072,
-    "Sdt+_cx": -0.0006460382116199536,
-    "Std+_cx": -0.0005810776433149236,
-}
-diags_ref[0] = {
+# Store separate values to accommodate changes due to lack of optimisation in Debug
+debug_diags_ref = {
     "Ed+t_cx": -0.0003780775858155187,
     "Edd+_cx": 2.5763819051965943e-05,
     "Edt+_cx": -0.0003960947180212758,
@@ -189,16 +169,16 @@ diags_ref[0] = {
     "Sdt+_cx": -0.0006460366409916579,
     "Std+_cx": -0.0005810761110783696,
 }
-diags_ref[1] = diags_ref[0]
 # fmt: on
 
-# Extract compiler flags from stdout and determine optimisation level
+# Extract compiler flags from stdout and select debug or release data accordingly
 opt_level = optimisation_level(run_stdout)
 print(f"Using data for -O{opt_level}")
+diags_ref = debug_diags_ref if opt_level < 2 else release_diags_ref
 
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
-for name, target in diags_ref[opt_level].items():
+for name, target in diags_ref.items():
     try:
         val = ds_diags[name].values[pos_idx]
         if gen_data:
