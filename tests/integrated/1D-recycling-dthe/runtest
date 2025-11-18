@@ -82,6 +82,14 @@ def optimisation_level(run_output):
         return 0
     raise RuntimeError("Failed to find compile flags in run output")
 
+def extract_data_dir(run_output):
+    datadir_line=[l for l in run_output.split('\n') if l.startswith("\tOption datadir")]
+    if len(datadir_line)>1:
+        data_dir = datadir_line[0].split()[3]
+    else:
+        raise RuntimeError("Failed to find datadir in run output")
+    return data_dir
+
 # =============================================================================
 
 if gen_data:
@@ -99,6 +107,9 @@ output_path.unlink(missing_ok=True)
 
 # Use Bout wrapper to run exec
 s, run_stdout = launch(f"{hermes_exec} -d {data_dir}", nproc=1, pipe=True)
+
+print(f"Actual run directory was {extract_data_dir(run_stdout)}")
+print(f"Data will be read from {data_dir}")
 
 # Save output to log file
 with open("run.log", "w") as f:
