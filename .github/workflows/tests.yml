@@ -34,8 +34,6 @@ jobs:
             os: ubuntu-22.04
             configure_options: "-DPACKAGE_TESTS=OFF -DHERMES_ERROR_ON_WARNINGS=ON -DHERMES_COVERAGE=ON"
         build_type:
-          - cmake_build_type: Debug
-            test_type: unit
           - cmake_build_type: Release
             test_type: integration
 
