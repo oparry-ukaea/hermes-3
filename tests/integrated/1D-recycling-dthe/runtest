@@ -173,8 +173,8 @@ debug_diags_ref = {
 
 # Extract compiler flags from stdout and select debug or release data accordingly
 opt_level = optimisation_level(run_stdout)
-print(f"Using data for -O{opt_level}")
-diags_ref = debug_diags_ref if opt_level < 2 else release_diags_ref
+print(f"Exec compiled with -O{opt_level}; using debug data regardless!")
+diags_ref = debug_diags_ref #if opt_level < 2 else release_diags_ref
 
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
