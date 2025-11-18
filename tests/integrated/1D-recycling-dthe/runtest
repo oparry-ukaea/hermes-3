@@ -194,6 +194,7 @@ diags_ref[1] = diags_ref[0]
 
 # Extract compiler flags from stdout and determine optimisation level
 opt_level = optimisation_level(run_stdout)
+print(f"Using data for -O{opt_level}")
 
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
