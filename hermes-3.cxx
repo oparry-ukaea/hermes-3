@@ -167,6 +167,13 @@ private:
 
 int Hermes::init(bool restarting) {
 
+
+#if __OPTIMIZE__
+  std::cout << "OPT ON" << std::endl;
+#else
+  std::cout << "OPT OFF" << std::endl;
+#endif
+
   auto &options = Options::root()["hermes"];
   
   output.write("\nGit Version of Hermes: {:s}\n", hermes::version::revision);
