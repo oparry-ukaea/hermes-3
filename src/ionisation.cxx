@@ -7,23 +7,17 @@ namespace {
 // Hydrogen rates, fitted by Hannah Willett May 2015
 // University of York
 BoutReal ionisation_rate(BoutReal T) {
-  double fION; // Rate coefficient
-  double TT;
+  constexpr std::array ioncoeffs = {-3.271397E1,  1.353656E1,   -5.739329,
+                                    1.563155,     -2.877056E-1, 3.482560e-2,
+                                    -2.631976E-3, 1.119544E-4,  -2.039150E-6};
 
-  TT = T;
-
-  double ioncoeffs[9] = {-3.271397E1,  1.353656E1,   -5.739329,
-                         1.563155,     -2.877056E-1, 3.482560e-2,
-                         -2.631976E-3, 1.119544E-4,  -2.039150E-6};
-
+  const auto log_T = log(T);
   double lograte = 0.0;
-  for (int i = 0; i <= 8; i++) {
-    lograte = lograte + ioncoeffs[i] * pow(log(TT), i);
+  for (std::size_t i = 0; i < ioncoeffs.size(); i++) {
+    lograte = lograte + ioncoeffs[i] * pow(log_T, i);
   }
 
-  fION = exp(lograte) * 1.0E-6;
-
-  return fION;
+  return exp(lograte) * 1.0E-6;
 }
 } // namespace
 
