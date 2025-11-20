@@ -68,7 +68,7 @@ jobs:
 
       - name: Build
         run: cmake . -B build.$BUILD_TYPE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BOUT_CONFIGURE_OPTIONS &&
-             cmake --build build.$BUILD_TYPE --config $BUILD_TYPE -j4 &&
+             cmake --build build.$BUILD_TYPE -j4 &&
              grep -e CXX_DEFINES -e CXX_FLAGS ./build.$BUILD_TYPE/CMakeFiles/hermes-3-lib.dir/flags.make &&
              grep command ./build.$BUILD_TYPE/compile_commands.json -m 1
 
@@ -79,7 +79,7 @@ jobs:
           echo ~/.local/bin >> $GITHUB_PATH
       - name: Run tests
         run: cd build.$BUILD_TYPE &&
-             ctest --output-on-failure --timeout 300 -L $TEST_TYPE --build-config $BUILD_TYPE
+             ctest --output-on-failure --timeout 300 -L $TEST_TYPE
       - name: Upload test coverage data
         uses: codecov/codecov-action@v5
         with:
