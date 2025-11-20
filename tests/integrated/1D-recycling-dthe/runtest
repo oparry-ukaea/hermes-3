@@ -189,7 +189,4 @@ for name, target in diags_ref.items():
         print(f" *** Diagnostic '{name}' missing from test data ***")
         end_test(False)
 
-if not success:
-    print(run_stdout)
-
 end_test(success)
