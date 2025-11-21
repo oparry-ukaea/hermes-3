@@ -14,8 +14,17 @@ this_dir = pathlib.Path(__file__).parent
 data_dir = this_dir / "data"
 hermes_exec = this_dir.parent.parent.parent / "hermes-3"
 output_path = data_dir / "BOUT.dmp.0.nc"
-# Set to true to generate new regression data (outputs to test stdout)
-gen_data = False
+
+# Test settings
+# N.B. If hermes was compiled with optimisation -O2 or greater, the tolerance is set to `ULPs_tolerance_opt`
+#      Otherwise (or if strict=True is set), the tolerance is set to 4 ULPs
+gen_data = False  # Set to True to generate new regression data (outputs to test stdout)
+pos_idx = -1  # 1D position index at which diagnostics are compared (excludes guards)
+ULPs_tolerance_opt = 2e13  # Max number of ULPs allowed between test value and reference value for optimised (-02 and greater) builds
+strict = (
+    False  # Set to True to require results to match reference data to within 4 ULPs
+)
+
 
 # ============================= Helper functions ==============================
 def check_value(name, val, target, **kws):
@@ -71,16 +80,22 @@ def fail_on_missing_exec():
 def fail_test():
     end_test(False)
 
+
 def optimisation_level(run_output):
-    comp_flags_line=[l for l in run_output.split('\n') if l.startswith("\tCompiled with flags")]
-    if len(comp_flags_line)==1:
+    comp_flags_line = [
+        l for l in run_output.split("\n") if l.startswith("\tCompiled with flags")
+    ]
+    if len(comp_flags_line) == 1:
         comp_flags = comp_flags_line[0].split()
         for opt_level in range(4):
             if f"-O{opt_level}" in comp_flags:
                 return opt_level
+        if "-Ofast" in comp_flags:
+            return 4
         # No optimisation flag found; assume -O0
         return 0
     raise RuntimeError("Failed to find compile flags in run output")
+
 
 # =============================================================================
 
@@ -113,31 +128,8 @@ ds_last = ds.isel(t=-1)
 
 # fmt: off
 # Check the values of various diagnostics
-pos_idx = -1         # 1D position index to check (excluding guards)
-ULPs_max_diff = 2e11    # Max number of ULPs allowed between test value and reference value.
-# Diagnostic names and reference values (generated with -O2)
-release_diags_ref = {
-    "Ed+t_cx": -0.0003780784397774263,
-    "Edd+_cx": 2.5763856667059763e-05,
-    "Edt+_cx": -0.0003960955510911949,
-    "Et+d_cx": -0.0004162123641362163,
-    "Etd+_cx": -0.000348096458218669,
-    "Ett+_cx": 2.4342646360298297e-05,
-    "Fd+t_cx": -5.107316213723479e-05,
-    "Fdd+_cx": 7.11477199333433e-05,
-    "Fdt+_cx": 1.0183012678762808e-05,
-    "Ft+d_cx": -9.018822954420803e-05,
-    "Ftd+_cx": -9.372312429717318e-07,
-    "Ftt+_cx": 7.431423895175184e-05,
-    "Kdd+_cx": 0.012135698717703326,
-    "Kdt+_cx": 0.011422388534304533,
-    "Ktd+_cx": 0.011492136158510016,
-    "Ktt+_cx": 0.010651086061282072,
-    "Sdt+_cx": -0.0006460382116199536,
-    "Std+_cx": -0.0005810776433149236,
-}
-# Store separate values to accommodate changes due to lack of optimisation in Debug
-debug_diags_ref = {
+# Diagnostic names and reference values (generated with -O1)
+diags_ref = {
     "Ed+t_cx": -0.0003780775858155187,
     "Edd+_cx": 2.5763819051965943e-05,
     "Edt+_cx": -0.0003960947180212758,
@@ -159,8 +151,13 @@ debug_diags_ref = {
 }
 # fmt: on
 
-# Extract compiler flags from stdout and select debug or release data accordingly 
-diags_ref = debug_diags_ref if optimisation_level(run_stdout) < 2 else release_diags_ref
+# Extract compiler flags from stdout and determine optimisation level
+opt_level = optimisation_level(run_stdout)
+# Set tolerance
+if strict or opt_level < 2:
+    ULPs_tolerance = 4
+else:
+    ULPs_tolerance = ULPs_tolerance_opt
 
 # Do the diagnostic checks
 ds_diags = ds_last.isel(pos=slice(2, -2))
@@ -170,7 +167,7 @@ for name, target in diags_ref.items():
         if gen_data:
             print(f'"{name}": {val},')
         else:
-            success &= check_ULPs_diff(name, val, target, maxulp=ULPs_max_diff)
+            success &= check_ULPs_diff(name, val, target, maxulp=ULPs_tolerance)
     except KeyError:
         print(f" *** Diagnostic '{name}' missing from test data ***")
         end_test(False)
