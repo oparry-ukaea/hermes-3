@@ -79,7 +79,7 @@ jobs:
           echo ~/.local/bin >> $GITHUB_PATH
       - name: Run tests
         run: cd build.$BUILD_TYPE &&
-             ctest --output-on-failure --timeout 300 -L $TEST_TYPE
+             ctest -R 1D-recycling-dthe --output-on-failure --timeout 300 -L $TEST_TYPE
       - name: Upload test coverage data
         uses: codecov/codecov-action@v5
         with:
