@@ -67,7 +67,7 @@ jobs:
           submodules: true
 
       - name: Build
-        run: /usr/bin/c++ -O3 -DNDEBUG -fPIC -Q -v --help=target && cmake . -B build.$BUILD_TYPE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BOUT_CONFIGURE_OPTIONS &&
+        run: head -30 /proc/cpuinfo && /usr/bin/c++ -O3 -DNDEBUG -fPIC -Q -v --help=target && cmake . -B build.$BUILD_TYPE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BOUT_CONFIGURE_OPTIONS &&
              cmake --build build.$BUILD_TYPE -j4 &&
              grep -e CXX_DEFINES -e CXX_FLAGS ./build.$BUILD_TYPE/CMakeFiles/hermes-3-lib.dir/flags.make &&
              grep command ./build.$BUILD_TYPE/compile_commands.json -m 1
