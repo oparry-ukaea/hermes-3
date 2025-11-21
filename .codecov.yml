@@ -32,4 +32,4 @@ flags:
       - "src"
       - "integration"
       - "hermes-3.cxx"
-      - "hermes-3,hxx"
+      - "hermes-3.hxx"
