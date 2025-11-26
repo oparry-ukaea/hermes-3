@@ -96,6 +96,7 @@ in_h3env() {
 }
 
 
+
 # Update spack build links for a dev package
 # usage: updatelinks [package name] [directory containing spack builds] [directory in which to create build links]
 #        where the directory paths are relative to the repository root
@@ -130,7 +131,7 @@ updatelinks() {
     fi
   done
 
-  # Also clean up top-level build links created by spack install
+  # Also clean up old build links created by spack install and git ignore valid links in submodules
   spack_link_paths=$(find "$builds_dir" -type l -regextype posix-egrep -regex "${builds_dir}/build-.*-[a-z0-9]{7}$")
   for link_path in $spack_link_paths; do
       local hash="${link_path:(-7)}"
@@ -138,6 +139,17 @@ updatelinks() {
       then
           echo "    Removing stale spack link at ${link_path}"
           rm -Rf "$link_path" > /dev/null
+      else
+        # Hack to avoid having to mark submodule as ignore=untracked
+        submodule_exclude_file="$REPO_ROOT/.git/modules/$2/info/exclude"
+        if [ -f "$submodule_exclude_file" ]; then
+          link_file=$(basename "$link_path")
+          ignore_pattern="${link_file::-8}"\*
+          if grep -vwq "$ignore_pattern" "$submodule_exclude_file"; then 
+            echo >> "$submodule_exclude_file"
+            echo "$ignore_pattern" >> "$submodule_exclude_file"
+          fi
+        fi
       fi
   done
   
