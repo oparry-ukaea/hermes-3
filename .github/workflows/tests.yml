@@ -52,6 +52,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt update &&
              sudo apt install -y
+                 lcov
                  libfftw3-dev
                  libnetcdf-dev
                  libnetcdf-c++4-dev
