@@ -11,8 +11,6 @@ project(hermes-3 LANGUAGES CXX C)
 # Extra CMake scripts in cmake/ subdirectory
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-option(HERMES_COVERAGE "Compile with coverage flags for testing purposes" OFF)
-
 option(HERMES_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
@@ -50,6 +48,8 @@ if(HERMES_BUILD_BOUT)
 else()
   find_package(bout++ REQUIRED)
 endif()
+
+include("./cmake/Sanitizers.cmake")
 
 set(HERMES_SOURCES
     src/amjuel_reaction.cxx
@@ -178,6 +178,8 @@ target_include_directories(hermes-3-lib PUBLIC
 # Have hermes-3-lib look for dynamic libs in ./ before searching elsewhere
 set_target_properties(hermes-3-lib PROPERTIES BUILD_RPATH "$ORIGIN")
 
+enable_sanitizers(hermes-3-lib)
+
 # The main executable target
 add_executable(hermes-3
                hermes-3.cxx
@@ -191,12 +193,6 @@ target_include_directories(hermes-3 PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-if(HERMES_COVERAGE)
-  target_compile_options(hermes-3-lib PRIVATE --coverage)
-  target_compile_options(hermes-3 PRIVATE --coverage)
-  target_link_options(hermes-3-lib PRIVATE --coverage)
-  target_link_options(hermes-3 PRIVATE --coverage)
-endif()
 # Have hermes-3 look for dynamic libs in ./ before searching elsewhere
 set_target_properties(hermes-3 PROPERTIES BUILD_RPATH "$ORIGIN")
 
