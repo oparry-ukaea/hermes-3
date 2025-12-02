@@ -44,7 +44,7 @@ ixseps2 = -1
 # Evolve ion density, ion and electron pressure, then calculate force on ions due
 # to electron pressure by using electron force balance.
 components = (d+, d, t+, t, he+, he, e,
-              sheath_boundary, collisions, recycling, reactions,
+              sheath_boundary, collisions, recycling, reactions, thermal_force,
               electron_force_balance, neutral_parallel_diffusion, ion_viscosity)
 
 Nnorm = 1e19
@@ -249,3 +249,6 @@ species = d+, t+, he+
 [sheath_boundary]
 lower_y = false
 upper_y = true
+
+[thermal_force]
+override_ion_mass_restrictions = true
