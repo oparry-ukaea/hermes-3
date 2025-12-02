@@ -13,24 +13,31 @@
 /// in a D-T plasma, for example. For this reason only collisions
 /// where one ion has an atomic mass < 4, and the other an atomic mass > 10
 /// are considered. Warning messages will be logged for species combinations
-/// which are not calculated.
+/// which are not calculated. The restrictions can be overridden by setting the
+/// override_ion_mass_restrictions=true.
 ///
 /// Options used:
 ///
 /// - <name>
 ///   - electron_ion  : bool   Include electron-ion collisions?
 ///   - ion_ion       : bool   Include ion-ion elastic collisions?
-/// 
+///
 struct ThermalForce : public Component {
   ThermalForce(std::string name, Options& alloptions, Solver*) {
     Options& options = alloptions[name];
-    electron_ion = options["electron_ion"]
+    this->electron_ion = options["electron_ion"]
                        .doc("Include electron-ion collisions?")
                        .withDefault<bool>(true);
 
-    ion_ion = options["ion_ion"]
+    this->ion_ion = options["ion_ion"]
                   .doc("Include ion-ion elastic collisions?")
                   .withDefault<bool>(true);
+
+    this->override_ion_mass_restrictions =
+        options["override_ion_mass_restrictions"]
+            .doc("Override the default mass restrictions for ion-ion thermal "
+                 "force calculations?")
+            .withDefault<bool>(false);
   }
 
   /// Inputs
@@ -56,6 +63,8 @@ struct ThermalForce : public Component {
 private:
   bool electron_ion; ///< Include electron-ion collisions?
   bool ion_ion; ///< Include ion-ion elastic collisions?
+  bool override_ion_mass_restrictions; ///< Ignore default mass restrictions when
+                                       ///< calculating thermal force between ions?
 
   bool first_time{true}; ///< True the first time transform() is called
 };
