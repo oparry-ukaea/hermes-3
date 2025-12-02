@@ -259,13 +259,32 @@ add_custom_command(TARGET setup-test PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/tests $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests)
 
+
 if(HERMES_TESTS)
   enable_testing()
 
   # Integrated tests
   function(hermes_add_integrated_test TESTNAME)
-    set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME)
+    set(oneValueArgs DOWNLOAD DOWNLOAD_NAME)
+    set(multiValueArgs REQUIRES CONFLICTS)
     cmake_parse_arguments(HERMES_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    foreach (REQUIREMENT IN LISTS HERMES_TEST_OPTIONS_REQUIRES)
+      if (NOT ${REQUIREMENT})
+	message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
+	return()
+      endif()
+    endforeach()
+
+    foreach (CONFLICT IN LISTS HERMES_TEST_OPTIONS_CONFLICTS)
+      if (${CONFLICT})
+	message(STATUS "Not building test ${TESTNAME}, conflicts with: ${CONFLICT}")
+	return()
+      endif()
+      message(STATUS "CONFLICT ${CONFLICT} ${${CONFLICT}}")
+    endforeach()
+
+
     if(HERMES_COPY_TESTS_TO_BUILD)
       set(INT_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/tests/integrated/${TESTNAME})
       set(INT_TEST_DEST
