@@ -13,7 +13,7 @@
 
 
 nout = 3
-timestep = 5000
+timestep = 2500
 
 MXG = 0  # No guard cells in X
 
