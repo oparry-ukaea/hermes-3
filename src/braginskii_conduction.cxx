@@ -25,8 +25,8 @@
 
 using bout::globals::mesh;
 
-BraginskiiConduction::BraginskiiConduction([[maybe_unused]] const std::string& name, Options& alloptions,
-                                           [[maybe_unused]] Solver* solver) {
+BraginskiiConduction::BraginskiiConduction(const std::string&, Options& alloptions,
+                                           Solver*) {
   AUTO_TRACE();
 
   // Get settings for each species
