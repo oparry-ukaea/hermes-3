@@ -1,10 +1,14 @@
 #pragma once
-#ifndef THERMAL_FORCE_H
-#define THERMAL_FORCE_H
+#ifndef BRAGINSKII_THERMAL_FORCE_H
+#define BRAGINSKII_THERMAL_FORCE_H
+
+#include <string>
+
+#include <bout/options.hxx>
 
 #include "component.hxx"
 
-/// Simple calculation of the thermal force
+/// Simple calculation of the thermal force for the Braginskii closure
 ///
 /// Important: This implements a quite crude approximation,
 /// which is intended for initial development and testing.
@@ -22,16 +26,16 @@
 ///   - electron_ion  : bool   Include electron-ion collisions?
 ///   - ion_ion       : bool   Include ion-ion elastic collisions?
 ///
-struct ThermalForce : public Component {
-  ThermalForce(std::string name, Options& alloptions, Solver*) {
+struct BraginskiiThermalForce : public Component {
+  BraginskiiThermalForce(const std::string& name, Options& alloptions, Solver*) {
     Options& options = alloptions[name];
     this->electron_ion = options["electron_ion"]
-                       .doc("Include electron-ion collisions?")
-                       .withDefault<bool>(true);
+                             .doc("Include electron-ion collisions?")
+                             .withDefault<bool>(true);
 
     this->ion_ion = options["ion_ion"]
-                  .doc("Include ion-ion elastic collisions?")
-                  .withDefault<bool>(true);
+                        .doc("Include ion-ion elastic collisions?")
+                        .withDefault<bool>(true);
 
     this->override_ion_mass_restrictions =
         options["override_ion_mass_restrictions"]
@@ -58,11 +62,11 @@ struct ThermalForce : public Component {
   ///   - <species>          [ if AA < 4 ("light") or AA > 10 ("heavy") ]
   ///     - momentum_source
   ///
-  void transform(Options &state) override;
+  void transform(Options& state) override;
 
 private:
-  bool electron_ion; ///< Include electron-ion collisions?
-  bool ion_ion; ///< Include ion-ion elastic collisions?
+  bool electron_ion;                   ///< Include electron-ion collisions?
+  bool ion_ion;                        ///< Include ion-ion elastic collisions?
   bool override_ion_mass_restrictions; ///< Ignore default mass restrictions when
                                        ///< calculating thermal force between ions?
 
@@ -70,7 +74,8 @@ private:
 };
 
 namespace {
-RegisterComponent<ThermalForce> registercomponentthermalforce("thermal_force");
+RegisterComponent<BraginskiiThermalForce>
+    registercomponentbraginskiithermalforce("thermal_force");
 }
 
-#endif // THERMAL_FORCE_H
+#endif // BRAGINSKII_THERMAL_FORCE_H

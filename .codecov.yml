@@ -1,16 +1,8 @@
-comment: false
-
 ignore:
   - "tests"
   - "external"
+  - "hermes-3.cxx"
+  - "hermes-3.hxx"
 
 codecov:
   branch: master
-
-coverage:
-  status:
-    project:
-      default:
-        target: auto
-        flags:
-          - unit
