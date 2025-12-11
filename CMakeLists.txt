@@ -214,36 +214,26 @@ configure_file(
 
 # Once built, copy the data and test directories
 option(HERMES_COPY_EXAMPLES_TO_BUILD "Copy the examples to the build directory" ON)
-if(HERMES_COPY_EXAMPLES_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/examples $<TARGET_FILE_DIR:${PROJECT_NAME}>/examples)
-endif()
 
 option(HERMES_COPY_JSON_DATABASE_TO_BUILD "Copy the json database to the build directory" ON)
-if(HERMES_COPY_JSON_DATABASE_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/json_database $<TARGET_FILE_DIR:${PROJECT_NAME}>/json_database)
+
+if(HERMES_COPY_EXAMPLES_TO_BUILD OR HERMES_COPY_JSON_DATABASE_TO_BUILD)
+  add_custom_target(setup-examples ALL)
+else()
+  add_custom_target(setup-examples)
 endif()
+
 
 
 # Tests
 option(HERMES_COPY_TESTS_TO_BUILD "Copy the tests to the build directory" ON)
-if(HERMES_COPY_TESTS_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/tests $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests)
-endif()
-
 option(HERMES_TESTS "Build the tests" ON)
-if (HERMES_TESTS)
-  add_custom_target(setup-test)
+if(HERMES_COPY_TESTS_TO_BUILD OR HERMES_TESTS)
+  add_custom_target(setup-test ALL)
 else()
   add_custom_target(setup-test)
 endif()
 
-add_custom_target(setup-examples)
 
 
 # copy the data and test directories
