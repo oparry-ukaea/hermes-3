@@ -44,7 +44,8 @@ ixseps2 = -1
 # Evolve ion density, ion and electron pressure, then calculate force on ions due
 # to electron pressure by using electron force balance.
 components = (d+, d, t+, t, he+, he, e,
-              sheath_boundary, braginskii_collisions, recycling, reactions, thermal_force,
+              sheath_boundary, braginskii_collisions, recycling, reactions,
+              braginskii_thermal_force, braginskii_conduction,
               electron_force_balance, neutral_parallel_diffusion, braginskii_ion_viscosity)
 
 Nnorm = 1e19
@@ -53,10 +54,7 @@ Tnorm = 100
 
 ################################################################################
 [solver]
-type = pvode    # Backward Euler steady-state solver
 mxstep = 50000
-atol = 1e-7
-rtol = 1e-5
 
 ################################################################################
 [d+]  # Deuterium ions
@@ -250,5 +248,5 @@ species = d+, t+, he+
 lower_y = false
 upper_y = true
 
-[thermal_force]
+[braginskii_thermal_force]
 override_ion_mass_restrictions = true
