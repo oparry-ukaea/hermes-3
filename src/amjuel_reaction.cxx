@@ -47,7 +47,7 @@ BoutReal AmjuelReaction::eval_amjuel_T_fit(BoutReal T,
   BoutReal ln_sigmav = coeff_table[0];
   BoutReal lnT_n = lnT; // (lnT)^n
 
-  for (auto n = 1; n < coeff_table.size(); n++) {
+  for (std::size_t n = 1; n < coeff_table.size(); n++) {
     ln_sigmav += coeff_table[n] * lnT_n;
     lnT_n *= lnT;
   }

@@ -102,7 +102,7 @@ struct RateHelper {
     // Set up map to store results: one collision frequency per reactant + reaction rate
     std::string first_key = str_keys(this->rate_params)[0];
     result["rate"] = emptyFrom(this->rate_params[first_key]);
-    for (const std::string reactant_name : str_keys(this->reactant_densities)) {
+    for (const std::string& reactant_name : str_keys(this->reactant_densities)) {
       result[freq_lbl(reactant_name)] = emptyFrom(this->rate_params[first_key]);
     }
 
@@ -136,7 +136,7 @@ struct RateHelper {
                     rate_calc_func(mass_action_right(i, ym, yp), TR);
 
                 // collision freqs. at centre, left, right
-                for (const std::string reactant_name :
+                for (const std::string& reactant_name :
                      str_keys(this->reactant_densities)) {
                   std::string lbl = freq_lbl(reactant_name);
                   BoutReal nprod = density_product(i, reactant_name);
@@ -167,7 +167,7 @@ struct RateHelper {
                     rate_calc_func(mass_action_right(i, ym, yp), ne_right, Te_right);
 
                 // collision freqs. at centre, left, right
-                for (const std::string reactant_name :
+                for (const std::string& reactant_name :
                      str_keys(this->reactant_densities)) {
                   std::string lbl = freq_lbl(reactant_name);
                   BoutReal nprod = density_product(i, reactant_name);
@@ -189,7 +189,7 @@ struct RateHelper {
             }
 
             // Compute averages for each property and store in result map
-            for (const auto prop : str_keys(result)) {
+            for (const std::string& prop : str_keys(result)) {
               if (do_averaging) {
                 result[prop][i] = 4. / 6 * cell_data[prop].centre
                                   + (Ji + J[ym]) / (12. * Ji) * cell_data[prop].left

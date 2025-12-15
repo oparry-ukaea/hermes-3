@@ -98,8 +98,9 @@ void Reaction::init_channel_weights(Options& state) {
       this->parser->get_species(species_filter::heavy, species_filter::products);
 
   // If all channels already have values, bail out
-  int num_energy_channels_set = 0, num_momentum_channels_set = 0;
-  const int num_channels_expected = heavy_reactants.size() * heavy_products.size();
+  std::size_t num_energy_channels_set = 0, num_momentum_channels_set = 0;
+  const std::size_t num_channels_expected =
+      heavy_reactants.size() * heavy_products.size();
   for (const auto& reactant : heavy_reactants) {
     num_energy_channels_set += this->energy_channels[reactant].size();
     num_momentum_channels_set += this->momentum_channels[reactant].size();
