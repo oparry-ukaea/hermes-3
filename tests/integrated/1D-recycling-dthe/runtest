@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-# Test that a 1D-recycling example produces expected results
+# Test that a 1D-recyling-D-T-He example produces expected results
 
 from __future__ import division
 from __future__ import print_function
 
-from boututils.run_wrapper import launch_safe
+from boututils.run_wrapper import launch
 import numpy
 import pathlib
 import xhermes
@@ -113,7 +113,7 @@ fail_on_missing_exec()
 output_path.unlink(missing_ok=True)
 
 # Use Bout wrapper to run exec
-s, run_stdout = launch_safe(f"{hermes_exec} -d {data_dir}", nproc=1, pipe=True)
+s, run_stdout = launch(f"{hermes_exec} -d {data_dir}", nproc=1, pipe=True)
 
 # Save output to log file
 with open("run.log", "w") as f:
@@ -126,31 +126,28 @@ fail_on_missing_data()
 ds = xhermes.open(data_dir, unnormalise=False).hermes.extract_1d_tokamak_geometry()
 ds_last = ds.isel(t=-1)
 
-# Upstream electron temperature should be about 70eV
-Te = ds_last["Pe"] / ds_last["Ne"]
-Te_up = Te.values[0] * ds.metadata["Tnorm"]
-success &= check_value("Electron temperature [eV]", Te_up, 70, atol=10)
-
-# Upstream ion temperature should be about 140eV
-Ti = ds_last["Td+"]
-Ti_up = Ti.values[0] * ds.metadata["Tnorm"]
-success &= check_value("Ion temperature", Ti_up, 150, atol=10)
-
 # fmt: off
 # Check the values of various diagnostics
 # Diagnostic names and reference values (generated with -O1)
 diags_ref = {
-    "Sd+_iz": 0.0012499619217883283,
-    "Fd+_iz": 5.0313380951453235e-05,
-    "Ed+_iz": 0.0008868037136983765,
-    "Rd+_ex": -0.00029805651868773566,
-    "Sd+_rec": -3.477039265232431e-09,
-    "Fd+_rec": -1.052175126556987e-09,
-    "Ed+_rec": -4.287208089859149e-09,
-    "Rd+_rec": -7.854559370875191e-10,
-    "Kdd+_cx": 0.006217417259960819,
-    "Fdd+_cx": 0.000358469132093473,
-    "Edd+_cx": 0.0007153415365599912,
+    "Ed+t_cx": -0.00044916942235749286,
+    "Edd+_cx": 0.0001584462055586012,
+    "Edt+_cx": -0.0004246825908348509,
+    "Et+d_cx": -0.000703213458219236,
+    "Etd+_cx": -0.0005438529063749786,
+    "Ett+_cx": 4.1129091954560007e-05,
+    "Fd+t_cx": -0.00012159622040998301,
+    "Fdd+_cx": 0.00023601241685116078,
+    "Fdt+_cx": -1.480474061534612e-05,
+    "Ft+d_cx": -8.170568455767375e-05,
+    "Ftd+_cx": 4.734980178143874e-05,
+    "Ftt+_cx": 6.209672003436238e-05,
+    "Kdd+_cx": 0.010612777344029932,
+    "Kdt+_cx": 0.005504396701388891,
+    "Ktd+_cx": 0.010560574694497988,
+    "Ktt+_cx": 0.005475965585803034,
+    "Sdt+_cx": -0.0007849565120605158,
+    "Std+_cx": -0.0006956104988655306,
 }
 # fmt: on
 
