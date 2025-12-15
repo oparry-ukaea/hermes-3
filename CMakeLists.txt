@@ -49,19 +49,26 @@ else()
   find_package(bout++ REQUIRED)
 endif()
 
+include("./cmake/Sanitizers.cmake")
+
 set(HERMES_SOURCES
     src/amjuel_reaction.cxx
+    src/braginskii_collisions.cxx
+    src/braginskii_conduction.cxx
+    src/braginskii_electron_viscosity.cxx
+    src/braginskii_friction.cxx
+    src/braginskii_heat_exchange.cxx
+    src/braginskii_thermal_force.cxx
+    src/braginskii_ion_viscosity.cxx
     src/classical_diffusion.cxx
     src/component.cxx
     src/component_scheduler.cxx
     src/ionisation.cxx
-    src/radiation.cxx
     src/div_ops.cxx
     src/neutral_mixed.cxx
     src/neutral_full_velocity.cxx
     src/electromagnetic.cxx
     src/electron_force_balance.cxx
-    src/electron_viscosity.cxx
     src/evolve_density.cxx
     src/evolve_energy.cxx
     src/evolve_pressure.cxx
@@ -79,7 +86,6 @@ set(HERMES_SOURCES
     src/fixed_fraction_ions.cxx
     src/sound_speed.cxx
     src/zero_current.cxx
-    src/collisions.cxx
     src/anomalous_diffusion.cxx
     src/binormal_stpm.cxx
     src/recycling.cxx
@@ -95,8 +101,6 @@ set(HERMES_SOURCES
     src/detachment_controller.cxx
     src/reaction.cxx
     src/reaction_parser.cxx
-    src/thermal_force.cxx
-    src/ion_viscosity.cxx
     src/transform.cxx
     src/vorticity.cxx
     include/adas_reaction.hxx
@@ -108,14 +112,19 @@ set(HERMES_SOURCES
     include/anomalous_diffusion.hxx
     include/classical_diffusion.hxx
     include/binormal_stpm.hxx
-    include/collisions.hxx
+    include/braginskii_collisions.hxx
+    include/braginskii_conduction.hxx
+    include/braginskii_electron_viscosity.hxx
+    include/braginskii_friction.hxx
+    include/braginskii_heat_exchange.hxx
+    include/braginskii_ion_viscosity.hxx
+    include/braginskii_thermal_force.hxx
     include/component.hxx
     include/component_scheduler.hxx
     include/diamagnetic_drift.hxx
     include/div_ops.hxx
     include/electromagnetic.hxx
     include/electron_force_balance.hxx
-    include/electron_viscosity.hxx
     include/evolve_density.hxx
     include/evolve_energy.hxx
     include/evolve_momentum.hxx
@@ -128,7 +137,6 @@ set(HERMES_SOURCES
     include/hydrogen_charge_exchange.hxx
     include/solkit_hydrogen_charge_exchange.hxx
     include/integrate.hxx
-    include/ion_viscosity.hxx
     include/ionisation.hxx
     include/neutral_boundary.hxx
     include/neutral_mixed.hxx
@@ -137,7 +145,6 @@ set(HERMES_SOURCES
     include/noflow_boundary.hxx
     include/polarisation_drift.hxx
     include/quasineutral.hxx
-    include/radiation.hxx
     include/reaction.hxx
     include/recalculate_metric.hxx
     include/recycling.hxx
@@ -149,7 +156,6 @@ set(HERMES_SOURCES
     include/snb_conduction.hxx
     include/sheath_closure.hxx
     include/sound_speed.hxx
-    include/thermal_force.hxx
     include/upstream_density_feedback.hxx
     include/temperature_feedback.hxx
     include/detachment_controller.hxx
@@ -177,6 +183,8 @@ target_include_directories(hermes-3-lib PUBLIC
 # Have hermes-3-lib look for dynamic libs in ./ before searching elsewhere
 set_target_properties(hermes-3-lib PROPERTIES BUILD_RPATH "$ORIGIN")
 
+enable_sanitizers(hermes-3-lib)
+
 # The main executable target
 add_executable(hermes-3
                hermes-3.cxx
@@ -200,6 +208,7 @@ add_library(hermes_warnings INTERFACE)
 hermes_set_project_warnings(hermes_warnings ${HERMES_ERROR_ON_WARNINGS} "" "" "" "")
 
 if (HERMES_ENABLE_WARNINGS)
+  target_link_libraries(hermes-3-lib PRIVATE hermes_warnings)
   target_link_libraries(hermes-3 PRIVATE hermes_warnings)
 endif()
 
@@ -253,10 +262,12 @@ if(HERMES_TESTS)
       NAME ${TESTNAME}
       WORKING_DIRECTORY ${INT_TEST_DEST}
       COMMAND runtest)
+    set_tests_properties(${TESTNAME} PROPERTIES LABELS integration)
   endfunction()
 
   hermes_add_integrated_test(1D-fluid)
   hermes_add_integrated_test(1D-recycling)
+  hermes_add_integrated_test(1D-recycling-dthe)
   hermes_add_integrated_test(diffusion)
   hermes_add_integrated_test(evolve_density)
   hermes_add_integrated_test(neutral_mixed)
@@ -285,6 +296,7 @@ if(HERMES_TESTS)
     target_link_libraries(hermes_unit_tests PRIVATE hermes_warnings)
 
     add_test(NAME hermes_unit_tests COMMAND hermes_unit_tests)
+    set_tests_properties(hermes_unit_tests PROPERTIES LABELS unit)
     target_link_libraries(hermes_unit_tests PRIVATE gtest bout++::bout++ hermes-3-lib)
     # Have hermes_unit_tests look for dynamic libs in ./ before searching elsewhere
     set_target_properties(hermes_unit_tests PROPERTIES BUILD_RPATH "$ORIGIN")
