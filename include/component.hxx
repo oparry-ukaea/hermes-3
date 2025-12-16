@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <typeinfo>
 #include <utility>
 #include <vector>
@@ -226,6 +227,12 @@ T getNonFinal(const GuardedOptions & option) {
 #define TOSTRING(x) TOSTRING_(x)
 
 
+namespace hermes {
+/// Enable a function if and only if `T` is a (subclass of) `GuardedOptions`
+template <class T>
+using EnableIfGuardedOption = std::enable_if_t<std::is_base_of_v<GuardedOptions, T>>;
+}
+
 /// Faster non-printing getter for Options
 /// If this fails, it will throw BoutException
 ///
@@ -318,13 +325,10 @@ T getNoBoundary(const Options& option, [[maybe_unused]] const std::string& locat
 #endif
   return getNonFinal<T>(option);
 }
-template<typename T>
-T getNoBoundary(const GuardedOptions & option, const std::string& location = "") {
-  return getNoBoundary<T>(option.get(Regions::Interior), location);
-}
-template<typename T>
-T getNoBoundary(const GuardedOptions && option, const std::string& location = "") {
-  return getNoBoundary<T>(option.get(Regions::Interior), location);
+
+template<typename T, class GO, typename = hermes::EnableIfGuardedOption<GO>>
+T getNoBoundary(GO&& option, const std::string& location = "") {
+  return getNoBoundary<T>(std::forward<GO>(option).get(Regions::Interior), location);
 }
 
 #if CHECKLEVEL >= 1
@@ -399,15 +403,11 @@ Options& set(Options& option, T value) {
   option.force(std::move(value));
   return option;
 }
-template<typename T>
-GuardedOptions & set(GuardedOptions & option, T value) {
-  set(option.getWritable(), value);
-  return option;
-}
-template<typename T>
-GuardedOptions && set(GuardedOptions && option, T value) {
-  set(option.getWritable(), value);
-  return std::move(option);
+
+template<typename T, class GO, typename = hermes::EnableIfGuardedOption<GO>>
+decltype(auto) set(GO&& option, T value) {
+  set(std::forward<GO>(option).getWritable(), value);
+  return std::forward<GO>(option);
 }
 
 /// Set values in an option. This could be optimised, but
@@ -430,15 +430,11 @@ Options& setBoundary(Options& option, T value) {
   option.force(std::move(value));
   return option;
 }
-template<typename T>
-GuardedOptions & setBoundary(GuardedOptions & option, T value) {
-  setBoundary(option.getWritable(Regions::Boundaries), value);
-  return option;
-}
-template<typename T>
-GuardedOptions && setBoundary(GuardedOptions && option, T value) {
-  setBoundary(option.getWritable(Regions::Boundaries), value);
-  return std::move(option);
+
+template<typename T, class GO, typename = hermes::EnableIfGuardedOption<GO>>
+decltype(auto) setBoundary(GO&& option, T value) {
+  setBoundary(std::forward<GO>(option).getWritable(Regions::Boundaries), value);
+  return std::forward<GO>(option);
 }
 
 /// Add value to a given option. If not already set, treats
@@ -463,15 +459,11 @@ Options& add(Options& option, T value) {
     }
   }
 }
-template<typename T>
-GuardedOptions & add(GuardedOptions & option, T value) {
-  add(option.getWritable(), value);
-  return option;
-}
-template<typename T>
-GuardedOptions && add(GuardedOptions && option, T value) {
-  add(option.getWritable(), value);
-  return std::move(option);
+
+template<typename T, class GO, typename = hermes::EnableIfGuardedOption<GO>>
+decltype(auto) add(GO&& option, T value) {
+  add(std::forward<GO>(option).getWritable(), value);
+  return std::forward<GO>(option);
 }
 
 /// Add value to a given option. If not already set, treats
@@ -493,15 +485,11 @@ Options& subtract(Options& option, T value) {
     }
   }
 }
-template<typename T>
-GuardedOptions & subtract(GuardedOptions & option, T value) {
-  subtract(option.getWritable(), value);
-  return option;
-}
-template<typename T>
-GuardedOptions && subtract(GuardedOptions && option, T value) {
-  subtract(option.getWritable(), value);
-  return std::move(option);
+
+template<typename T, class GO, typename = hermes::EnableIfGuardedOption<GO>>
+decltype(auto) subtract(GO&& option, T value) {
+  subtract(std::forward<GO>(option).getWritable(), value);
+  return std::forward<GO>(option);
 }
 
 template<typename T>
@@ -509,13 +497,10 @@ void set_with_attrs(Options& option, T value, std::initializer_list<std::pair<st
   option.force(value);
   option.setAttributes(attrs);
 }
-template<typename T>
-void set_with_attrs(GuardedOptions & option, T value, std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
-  set_with_attrs(option.getWritable(), value, attrs);
-}
-template<typename T>
-void set_with_attrs(GuardedOptions && option, T value, std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
-  set_with_attrs(option.getWritable(), value, attrs);
+
+template<typename T, class GO, typename = hermes::EnableIfGuardedOption<GO>>
+void set_with_attrs(GO&& option, T value, std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+  set_with_attrs(std::forward<GO>(option).getWritable(), value, attrs);
 }
 
 #if CHECKLEVEL >= 1
@@ -527,13 +512,10 @@ inline void set_with_attrs(Options& option, Field3D value, std::initializer_list
   option.force(value);
   option.setAttributes(attrs);
 }
-template<>
-inline void set_with_attrs(GuardedOptions & option, Field3D value, std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
-  set_with_attrs(option.getWritable(), std::move(value), attrs);
-}
-template<>
-inline void set_with_attrs(GuardedOptions && option, Field3D value, std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
-  set_with_attrs(option.getWritable(), std::move(value), attrs);
+
+template<class GO, typename = hermes::EnableIfGuardedOption<GO>>
+inline void set_with_attrs(GO&& option, Field3D value, std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+  set_with_attrs(std::forward<GO>(option).getWritable(), std::move(value), attrs);
 }
 #endif
 
