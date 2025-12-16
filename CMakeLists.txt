@@ -308,9 +308,12 @@ if(HERMES_TESTS)
                          COMMAND wget ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/integrated/${TESTNAME}
                          COMMENT "Downloading ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}")
-      add_custom_target(download_test_data ALL
-      DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
-      DEPENDS setup-test)
+      string(CONCAT DOWNLOAD_TARGET_NAME "download_test_data" ${INT_TEST_DEST})
+      string(REPLACE "/" "_" DOWNLOAD_TARGET_NAME ${DOWNLOAD_TARGET_NAME})
+      string(REPLACE "/" "_" DOWNLOAD_TARGET_NAME ${DOWNLOAD_TARGET_NAME})
+      add_custom_target(${DOWNLOAD_TARGET_NAME} ALL
+                        DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+                        DEPENDS setup-test)
     endif()
   endfunction()
 
