@@ -268,15 +268,15 @@ if(HERMES_TESTS)
 
     foreach (REQUIREMENT IN LISTS HERMES_TEST_OPTIONS_REQUIRES)
       if (NOT ${REQUIREMENT})
-	message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
-	return()
+        message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
+        return()
       endif()
     endforeach()
 
     foreach (CONFLICT IN LISTS HERMES_TEST_OPTIONS_CONFLICTS)
       if (${CONFLICT})
-	message(STATUS "Not building test ${TESTNAME}, conflicts with: ${CONFLICT}")
-	return()
+        message(STATUS "Not building test ${TESTNAME}, conflicts with: ${CONFLICT}")
+        return()
       endif()
       message(STATUS "CONFLICT ${CONFLICT} ${${CONFLICT}}")
     endforeach()
@@ -301,17 +301,16 @@ if(HERMES_TESTS)
 
     if (HERMES_TEST_OPTIONS_DOWNLOAD)
       if (NOT HERMES_TEST_OPTIONS_DOWNLOAD_NAME)
-	message(FATAL_ERROR "We need DOWNLOAD_NAME if we should DOWNLOAD!")
+        message(FATAL_ERROR "We need DOWNLOAD_NAME if we should DOWNLOAD!")
       endif()
-      set(output )
+      set(output)
       add_custom_command(OUTPUT ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
-	COMMAND wget ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/integrated/${TESTNAME}
-	COMMENT "Downloading ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}"
-      )
+                         COMMAND wget ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/integrated/${TESTNAME}
+                         COMMENT "Downloading ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}")
       add_custom_target(download_test_data ALL
-	DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
-	DEPENDS setup-test)
+      DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+      DEPENDS setup-test)
     endif()
   endfunction()
 
