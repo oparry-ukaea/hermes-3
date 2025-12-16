@@ -303,14 +303,13 @@ if(HERMES_TESTS)
       if (NOT HERMES_TEST_OPTIONS_DOWNLOAD_NAME)
         message(FATAL_ERROR "We need DOWNLOAD_NAME if we should DOWNLOAD!")
       endif()
-      set(output)
+      file(REAL_PATH ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME} DOWNLOAD_DEST_PATH BASE_DIRECTORY ${INT_TEST_DEST})
       add_custom_command(OUTPUT ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
-                         COMMAND wget ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
-                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/integrated/${TESTNAME}
-                         COMMENT "Downloading ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}")
-      string(CONCAT DOWNLOAD_TARGET_NAME "download_test_data" ${INT_TEST_DEST})
-      string(REPLACE "/" "_" DOWNLOAD_TARGET_NAME ${DOWNLOAD_TARGET_NAME})
-      string(REPLACE "/" "_" DOWNLOAD_TARGET_NAME ${DOWNLOAD_TARGET_NAME})
+                         COMMAND wget -nv ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+                         WORKING_DIRECTORY ${INT_TEST_DEST}
+                         COMMENT "Downloading test data to ${DOWNLOAD_DEST_PATH}")
+      # Custom target to run download command; use sanitised absolute path for the target name
+      string(REPLACE "/" "_" DOWNLOAD_TARGET_NAME ${DOWNLOAD_DEST_PATH})
       add_custom_target(${DOWNLOAD_TARGET_NAME} ALL
                         DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
                         DEPENDS setup-test)
