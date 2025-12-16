@@ -138,6 +138,10 @@ EvolveDensity::EvolveDensity(std::string name, Options& alloptions, Solver* solv
   if (low_n_diffuse) {
     outputs.push_back("low_n_coeff");
   }
+
+  if (source_time_dependent) {
+    setPermissions(readOnly("time"));
+  }
   substitutePermissions("name", {name});
   substitutePermissions("outputs", outputs);
 }

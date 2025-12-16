@@ -120,21 +120,21 @@ struct Component {
   /// will use this information to substitute the following placeholders in
   /// `state_variable_access`:
   ///   - electrons (any electron species)
-  ///   - electrons2 (same as above, used for cross-product)
+  ///   - electrons2 (same as above, used for Cartesian product)
   ///   - neutrals (species with no charge)
-  ///   - neutrals2 (same as above, used for cross-product)
+  ///   - neutrals2 (same as above, used for Cartesian product)
   ///   - positive_ions (ions with a positive charge)
-  ///   - positive_ions2 (same as above, used for cross-product)
+  ///   - positive_ions2 (same as above, used for Cartesian product)
   ///   - negative_ions (ions with a negative charge)
-  ///   - negative_ions2 (same as above, used for cross-product)
+  ///   - negative_ions2 (same as above, used for Cartesian product)
   ///   - ions (all ions, regardless of sign of charge)
-  ///   - ions2 (same as above, used for cross-product)
+  ///   - ions2 (same as above, used for Cartesian product)
   ///   - charged (ions and electrons)
-  ///   - charged2 (same as above, used for cross-product)
+  ///   - charged2 (same as above, used for Cartesian product)
   ///   - non_electrons (ions and neutrals)
-  ///   - non_electrons2 (same as above, used for cross-product)
+  ///   - non_electrons2 (same as above, used for Cartesian product)
   ///   - all_species (ions, neutrals, and electrons)
-  ///   - all_species2 (same as above, used for cross-product)
+  ///   - all_species2 (same as above, used for Cartesian product)
   ///
   /// At the end of this function there is a call to
   /// Permissions::checkNoRemainingSubstitutions. All substitutions
@@ -162,10 +162,11 @@ private:
   /// Information on which state variables the transform method will read and write.
   Permissions state_variable_access;
 
-  /// Modify the given simulation state. All components must
-  /// implement this function. It will only allow the reading
-  /// from/writing to state variables with the appropriate permissiosn
-  /// in `state_variable_access`.
+  /// The implementation of the transform method. Modify the given
+  /// simulation state. All components must implement this
+  /// function. It will only allow the reading from/writing to state
+  /// variables with the appropriate permissiosn in
+  /// `state_variable_access`.
   virtual void transform_impl(GuardedOptions &state) = 0;
 };
 

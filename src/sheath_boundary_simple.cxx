@@ -64,17 +64,14 @@ SheathBoundarySimple::SheathBoundarySimple(std::string name, Options& alloptions
         readWrite("species:e:energy_source"),
         readWrite("species:e:energy_flow_ylow"),
         writeBoundaryIfSet("species:e:{e_optional}"),
-        {"species:e:pressure",
-         {Regions::Interior, Regions::Nowhere, Regions::Boundaries, Regions::Nowhere}},
-        // FIXME: These only applies to ions, not to all species
-        readIfSet("species:{all_species}:{ion_whole_domain}"),
-        readOnly("species:{all_species}:AA"),
-        readWrite("species:{all_species}:energy_source"),
-        readWrite("species:{all_species}:energy_flow_ylow"),
-        {"species:{all_species}:pressure",
-         {Regions::Interior, Regions::Nowhere, Regions::Boundaries, Regions::Nowhere}},
-        writeBoundary("species:{all_species}:{ion_boundary}"),
-        writeBoundaryIfSet("species:{all_species}:{ion_optional}"),
+        writeBoundaryReadInteriorIfSet("species:e:pressure"),
+        readIfSet("species:{all_species}:charge"),
+        readOnly("species:{ions}:AA"),
+        readWrite("species:{ions}:energy_source"),
+        readWrite("species:{ions}:energy_flow_ylow"),
+        writeBoundary("species:{ions}:{ion_boundary}"),
+        writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
+        writeBoundaryIfSet("species:{ions}:{ion_optional}"),
     }) {
   AUTO_TRACE();
 
@@ -148,15 +145,13 @@ SheathBoundarySimple::SheathBoundarySimple(std::string name, Options& alloptions
     .doc("Save additional output diagnostics")
     .withDefault<bool>(false);
 
-  substitutePermissions("e_whole_domain", {"AA", "charge", "adiabatic"});
+  substitutePermissions("e_whole_domain", {"AA", "charge"});
   substitutePermissions("e_boundary", {"density", "temperature"});
   substitutePermissions("e_optional", {"velocity", "momentum"});
-  substitutePermissions("ion_whole_domain", {"charge", "adiabatic"});
   substitutePermissions("ion_boundary", {"density", "temperature"});
-  // FIXME: velocity and momentum will only be set on boundaries if already set on
-  // interior
   substitutePermissions("ion_optional", {"velocity", "momentum"});
-  setPermissions(writeBoundaryIfSet("fields:phi"));
+  setPermissions(always_set_phi ? writeBoundaryReadInteriorIfSet("fields:phi")
+                                : writeBoundaryIfSet("fields:phi"));
 }
 
 void SheathBoundarySimple::transform_impl(GuardedOptions& state) {

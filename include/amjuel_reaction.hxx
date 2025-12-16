@@ -43,11 +43,9 @@ struct AmjuelReaction : public Reaction {
     this->includes_sigma_v_e = amjuel_data.includes_sigma_v_e;
     // Most of the access information we need is inherited from the parent Reaction class.
     // The electron velocity will be read if it is set
-    setPermissions("species:e:velocity",
-                   {Regions::All, Regions::Nowhere, Regions::Nowhere, Regions::Nowhere});
+    setPermissions(readIfSet("species:e:velocity"));
     // The energy source is set for electrons
-    setPermissions("species:e:energy_source",
-                   {Regions::Nowhere, Regions::Nowhere, Regions::All, Regions::Nowhere});
+    setPermissions(readWrite("species:e:energy_source"));
     std::string heavy_reactant = this->parser->get_species(species_filter::reactants,
                                                            species_filter::heavy)[0],
                 heavy_product = this->parser->get_species(species_filter::products,

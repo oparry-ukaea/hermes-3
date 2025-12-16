@@ -66,7 +66,6 @@ private:
   ///     - pressure    Optional
   ///     - velocity    Optional
   ///     - mass        Optional
-  ///     - adiabatic   Optional. Ratio of specific heats, default 5/3.
   ///   - <ions>  if charge is set (i.e. not neutrals)
   ///     - charge
   ///     - mass
@@ -75,7 +74,6 @@ private:
   ///     - pressure     Optional
   ///     - velocity     Optional. Default 0
   ///     - momentum     Optional. Default mass * density * velocity
-  ///     - adiabatic    Optional. Ratio of specific heats, default 5/3.
   /// - fields
   ///   - phi    Optional. If not set, calculated at boundary (see note below)
   ///

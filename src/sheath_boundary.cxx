@@ -46,19 +46,18 @@ BoutReal limitFree(BoutReal fm, BoutReal fc) {
 } // namespace
 
 SheathBoundary::SheathBoundary(std::string name, Options& alloptions, Solver*)
-    // FIXME: writeBoundaryIfSet doesn't really express that boundary
-    // should only be written if the interior is set. Instead it just
-    // give the permission readIfSet to the interior and writeFinal to
-    // the boundary.
     : Component({
+        readIfSet("species:{all_species}:charge"),
         readIfSet("species:e:{e_whole_domain}"),
         writeBoundary("species:e:{e_boundary}"),
         readWrite("species:e:energy_source"),
         writeBoundaryIfSet("species:e:{e_optional}"),
-        readIfSet("species:{ions}:{ion_whole_domain}"),
+        writeBoundaryReadInteriorIfSet("species:e:pressure"),
+        readIfSet("species:{ions}:adiabatic"),
         readOnly("species:{ions}:AA"),
         readWrite("species:{ions}:energy_source"),
         writeBoundary("species:{ions}:{ion_boundary}"),
+        writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
         writeBoundaryIfSet("species:{ions}:{ion_optional}"),
     }) {
   AUTO_TRACE();
@@ -110,22 +109,13 @@ SheathBoundary::SheathBoundary(std::string name, Options& alloptions, Solver*)
                         .doc("Apply a floor to wall potential when calculating Ve?")
                         .withDefault<bool>(true);
 
-  substitutePermissions("e_whole_domain", {"AA", "charge", "adiabatic"});
+  substitutePermissions("e_whole_domain", {"AA", "adiabatic"});
   substitutePermissions("e_boundary", {"density", "temperature"});
-  substitutePermissions("e_optional", {"pressure", "velocity"});
-  substitutePermissions("ion_whole_domain", {"charge", "adiabatic"});
+  substitutePermissions("e_optional", {"velocity", "momentum"});
   substitutePermissions("ion_boundary", {"density", "temperature"});
-  // FIXME: velocity and momentum will only be set on boundaries if already set on
-  // interior
-  substitutePermissions("ion_optional", {"pressure", "velocity", "momentum"});
-  // FIXME: The two results of the ternary are actually the same; need
-  // to change what writeBoundaryIfSet returns (and how we model
-  // permissions, for that matter)
-  setPermissions(always_set_phi
-                     ? Permissions::VarRights({"fields:phi",
-                                               {Regions::Interior, Regions::Nowhere,
-                                                Regions::Nowhere, Regions::Boundaries}})
-                     : writeBoundaryIfSet("fields:phi"));
+  substitutePermissions("ion_optional", {"velocity", "momentum"});
+  setPermissions(always_set_phi ? writeBoundaryReadInteriorIfSet("fields:phi")
+                                : writeBoundaryIfSet("fields:phi"));
 }
 
 void SheathBoundary::transform_impl(GuardedOptions& state) {

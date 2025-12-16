@@ -96,7 +96,7 @@ void Permissions::substitute(const std::string& label,
     it = variable_permissions.erase(it);
     for (const std::string& val : substitutions) {
       const std::string newname = replaceAll(varname, pattern, val);
-      // Do not overwrite permissiosn that are already set
+      // Do not overwrite permissions that are already set
       if (variable_permissions.count(newname) == 0) {
         variable_permissions[newname] = access;
       }

@@ -73,7 +73,7 @@ public:
   ///     AccessRights write_boundaries = { Regions::Nowhere, Regions::Nowhere,
   ///                      Regions::Boundaries, Regions::Nowhere };
   ///     AccessRights read_and_write_everywhere = { Regions::Nowhere,
-  ///                      Regions::AllReginos, Regions::All, Regions::Nowhere };
+  ///                      Regions::AllRegions, Regions::All, Regions::Nowhere };
   ///     AccessRights final_write_boundaries_read_interior = { Regions::Nowhere,
   ///                      Regions::Interior, Regions::Nowhere, Regions::Boundaries };
   ///
@@ -298,15 +298,29 @@ inline Permissions::VarRights writeBoundary(std::string varname) {
           {Regions::Nowhere, Regions::Interior, Regions::Nowhere, Regions::Boundaries}};
 }
 
-/// Convenience function to return an object expressing that the
-/// variable should have Final write permissions on the boundaries. It
-/// will have Read permissions in the interior if the interior is
-/// already set.
+/// Convenience function to return an object expressing that, if the
+/// interior has been set, then the variable should have Final write
+/// permissions on the boundaries and read permissions for the
+/// interior.
+///
+/// FIXME: Currently these permissiosn are not expressed properly, due
+/// to limitations in how the permission system. The boundary will
+/// have write permission regardless of whether or not the interior is
+/// set.
 inline Permissions::VarRights writeBoundaryIfSet(std::string varname) {
   return {std::move(varname),
           {Regions::Interior, Regions::Nowhere, Regions::Nowhere, Regions::Boundaries}};
 }
 
+/// Convenience function to return an object expressing that the
+/// interior has read-if-set permissions and the boundary has write
+/// permissions. This differs from what `writeBoundaryIfSet`
+/// is supposed to do because this will write the boundary
+/// unconditionally, regardless of whether the interior is set.
+inline Permissions::VarRights writeBoundaryReadInteriorIfSet(std::string varname) {
+  return {std::move(varname),
+          {Regions::Interior, Regions::Nowhere, Regions::Nowhere, Regions::Boundaries}};
+}
 /// @}
 
 // FIXME: Ideally there would be some way to express write permissions only if set
