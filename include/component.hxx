@@ -112,7 +112,7 @@ T getNonFinal(const Options& option) {
 /// @param option  The Option whose value will be returned
 /// @param location  An optional string to indicate where this value is used
 template<typename T>
-T get(const Options& option, const std::string& location = "") {
+T get(const Options& option, [[maybe_unused]] const std::string& location = "") {
 #if CHECKLEVEL >= 1
   // Mark option as final, both inside the domain and the boundary
   const_cast<Options&>(option).attributes["final"] = location;
@@ -180,7 +180,7 @@ bool isSetFinalNoBoundary(const Options& option, const std::string& location = "
 /// @param option  The Option whose value will be returned
 /// @param location  An optional string to indicate where this value is used
 template<typename T>
-T getNoBoundary(const Options& option, const std::string& location = "") {
+T getNoBoundary(const Options& option, [[maybe_unused]] const std::string& location = "") {
 #if CHECKLEVEL >= 1
   // Mark option as final inside the domain
   const_cast<Options&>(option).attributes["final-domain"] = location;
