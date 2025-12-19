@@ -468,14 +468,14 @@ To see which `variants` of Hermes-3 and BOUT++ are available, run
 
 By default, the top-level 'spec' in the environment is ``hermes-3%gcc ^boutpp+mumps+sundials``,
 which tells spack to configure BOUT++ with SUNDIALS and PETSc support (including MUMPS) and to build
-Hermes-3 with gcc. To change this, first modify spack.yaml. to (e.g.) include strumpack in
+Hermes-3 with gcc. To change this, first modify spack.yaml. to (e.g.) include hypre in
 the PETSc build instead of MUMPS:
 
 .. code-block:: yaml
 
    spack:
       specs:
-         - hermes-3%gcc ^boutpp+strumpack+sundials
+         - hermes-3%gcc ^boutpp+hypre+sundials
    ...
 
 then (re-)install dependencies as necessary:
