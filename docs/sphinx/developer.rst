@@ -522,189 +522,6 @@ Notes:
   sign: `n2+` is a singly charged nitrogen molecule, while `n+2` is a +2 charged
   nitrogen atom.
 
-
-Permissions
-~~~~~~~~~~~~~~
-
-The ``Permissions`` class can be used to store information about which
-variables within an ``Options`` object are allowed to be accessed and
-for what purpose. This is used to control the variables used by a
-``Component``. There are four levels of permissions, expressed in the
-`PermissionTypes` `enum <https://en.wikipedia.org/wiki/Enumerated_type>`__:
-
-ReadIfSet
-   Only allowed to read variable if it is already set.
-
-Read
-   Can read the contents of the variable. Assumes it has already been
-   set.
-
-Write
-   Can write variable. Makes no assumption about whether it has already
-   been written or will be written again in future.
-
-Final
-   This will be the last component to write to the variable. Only one
-   component may have ``Final`` permission for a given variable.
-
-The order these per permissions are listed in is significant: each
-permission implies a component also has all lower permissions. E.g.,
-writer permission implies read permission as well.
-
-Permission information for a variable is stored in a
-`Permissions::VarRights` object. The overwhelming majority of the
-permissions you would want to create can be constructed using one of
-the provided convenience-functions. For example::
-
-  Permissions::VarRights read_e_pressure = readOnly("species:e:pressure");
-  Permissions::VarRights write_d_density = readWrite("species:d:density");
-  Permissions::VarRights read_e_velocity_in_interior_if_set =
-    readIfSet("species:e:velocity", Regions::Interior);
-
-.. doxygengroup:: PermissionFactories
-   :members:
-
-This permission data can be used to construct a ``Permissions`` object
-describing the permissions for multiple variables.::
-
-  Permissions p({readOnly("time"),
-                 readOnly("species:e:pressure"),
-                 readWrite("species:e:momentum", Regions::Interior)});
-A permission
-applied to a section of an ``Options`` object will apply to all
-variables contained within that section, unless a more specific
-permission is also set. Therefore, if we have a state with variables
-``species:e:pressure``, ``species:e:density``, ``species:e:velocity``,
-and ``species:e:momentum``, then the following are equivalent::
-
-  Permissions p({readOnly("species:e"),
-                 readWrite("species:e:momentum")});
-  Permissions p({readOnly("species:e:pressure"),
-                 readOnly("species:e:density"),
-                 readOnly("species:e:velocity"),
-                 readWrite("species:e:momentum")});
-
-Variable names can include labels, marked in curly-braces, that will
-later be substituted (using `Permissions::substitute` and
-`Component::substitutePermissions`). Substitutions are necessary
-because, when declaring permissions for a `Component`, you may need to
-express that it can access some variable for all species (or all ions,
-all neutrals, etc.), but you won't yet know the names of all the
-species. For example, if you need to read the density of all species
-and write the collision frequency of all ions then you would write::
-
-  Permissions p({readOnly("species:{all_spcies}:density"),
-                 readWrite("species:{ions}:collision_frequency"});
-
-If there are species e, d, d+, h, and h+ then the above will be
-equivalent to::
-
-  Permissions p({readOnly("species:e:density"),
-                 readOnly("species:d:density"),
-                 readOnly("species:d+:density"),
-                 readOnly("species:h:density"),
-                 readOnly("species:h+:density"),
-                 readWrite("species:d+:collision_frequency"),
-                 readWrite("species:h+:collision_frequency")});
-
-These substitutions will be performed in
-`Component::declareAllSpecies`. See the documentation for that method
-for a full list of the substitutions which it can perform.
-
-It can also be useful to define your own substitutions, to save
-repetitive declarations. For example, you could declare read
-permissions for electron density, pressure, temperature, velocity, and
-momentum as follows::
-
-  Permissions p({readOnly("species:e:{inputs}");
-  p.substitute({"density", "pressure", "temperature", "velocity", "momentum"});
-
-This is equivalent to having written::
-   
-   Permissions p({readOnly("species:e:density"),
-                  readOnly("species:e:pressure")},
-                  readOnly("species:e:temperature")},
-                  readOnly("species:e:velocity")},
-                  readOnly("species:e:momentum")});
-
-.. doxygenclass:: Permissions
-   :members:
-
-Further Implementation Details
-``````````````````````````````
-The above information should be sufficient for users that are
-developing or modifying components. The following explains in more
-detail how permission data is stored and should be read by anyone
-looking to modify the `Permissions` or `GuardedOptions` classes.
-
-The `PermissionTypes` are applied to particular regions of the domain.
-This allows, e.g., for there to be read permissions for the interior
-of the domain but write permissions for the boundaries. Regions are
-expressed using the `Permissions::Regions` enum, which functions as a `bitset
-<https://en.wikipedia.org/wiki/Bit_array>`__. You can combine regions
-using bitwise logical operators.
-
-.. doxygengroup:: RegionsGroup
-   :members:
-
-Permission information for a variable gets stored in
-`Permissions::AccessRights` objects, which are arrays of
-`Regions`. Each element of the array corresponds to information about
-a permission level: ``{read_if_set, read, write, final}``. To access
-the element for a desired permission level, you can index the array
-with the corresponding member of the `PermissionTypes` enum::
-
-  Permissions::AccessRights rights;
-  Regions read_regions = rights[PermissionTypes::Read];
-  Regions write_regions = rights[PermissionTypes::Write];
-
-The contents of each element of an `Permissions::AccessRights` array
-is the set of regions for which the permissions apply. For example::
-
-  Permissions::AccessRights read_boundaries_if_set =
-    {Regions::Boundaries, Regions::Nowhere, Regions::Nowhere,
-     Regions::Nowhere};
-  Permissions::AccessRights read_interior_write_boundaries =
-    {Regions::Nowhere, Regions::Interior, Regions::Boundaries,
-     Regions::Nowhere};
-  Permissions::AccessRights final_write_all_regions =
-    {Regions::Nowhere, Regions::Nowhere, Regions::Nowhere, Regions::All};
-
-The `Permissions::VarRights` struct is used to pair a variable name
-with a `Permissions::AccessRights` array containing the permission
-information for that variable.
-
-
-GuardedOptions
-~~~~~~~~~~~~~~
-
-``GuardedOptions`` objects combine a `Permissions` object and an
-`Options` object. They can be indexed just like normal ``Options``
-objects but will return another ``GuardedOptions``, wrapping the
-result. In order to read or write the contents of a ``GuardedOptions``
-object you must use the ``get()`` or ``getWritable()`` methods,
-respectively. These will return the underlying (const) ``Options``
-object, if you have the necessary permissions to access it. Otherwise,
-they will raise an exception.
-
-If ``CHECKLEVEL`` is 1 or above, then the ``GuardedOptions`` will track
-which variables have actually been accessed. Lists of
-unread/unwritten variables can be returned with the ``unreadItems()``
-and ``unwrittenItems()`` methods. If ``CHECKLEVEL`` is zero then
-calling these methods will raise an exception.
-
-.. doxygenclass:: GuardedOptions
-   :members:
-
-.. note::
-   When indexing a ``GuardedOptions`` object, it will create a new
-   ``GuardedOptions`` on-demand. This is unlike with a normal
-   ``Options`` object which returns a reference to a preexisting child
-   ``Options`` object. You generally should not store
-   ``GuardedOptions`` by reference. You may be able to pass them by
-   reference, but this requires you to think carefully about whether
-   the argument is going to be an r-value or an l-value.
-
   
 Components
 ~~~~~~~~~~~~~~
@@ -760,21 +577,28 @@ The `name` is a string labelling the instance. The `alloptions` tree contains at
 
 * `alloptions[name]` options for this instance
 * `alloptions['units']`
-  
-All component constructors must pass a `Permissions` object to the
-`Component::Component` constructor of the base class. The
-`Permissions` object can be further updated in the body of your
-component's constructor using the `Component::setPermissions` and
-`Component::substitutePermissions` methods.  It specifies which
-variables will be read/written by the `Component::transform_impl`
-method. `Component::transform` will use the permissions to construct a
-`GuardedOptions` object with which it will call
-`Component::transform_impl`.
 
-As explained above, a number of substitutions will automatically be performed on your
-permissions, so that you can specify permissions for some variables
-for each species. For example, the following permissions would give read
-access to pressure for all species and density of ions::
+
+Component Permissions
+`````````````````````
+
+All component constructors must pass a `Permissions` object (see
+below) to the constructor on the `Component::Component` base
+class. This specifies which variables will be read/written by the
+`Component::transform` method and will be used to construct a
+`GuardedOptions` object to be passed into
+`Component::transform_impl`. The `Permissions` object can be further
+updated in the body of the constructor of your component using the
+`Component::setPermissions` and `Component::substitutePermissions`
+methods. You should give read and write permissions to the minimum
+number of variables necessary, to avoid circular dependencies arising
+among components.
+
+A number of substitutions will automatically be performed on your
+permissions (see `Permission Substitution`_), so that you can specify
+permissions for some variables for each species. For example, the
+following permissions would give read access to pressure for all
+species and density of ions::
 
   MyComponent::MyComponent(const std::string &name, Options &options,
       Solver *solver) : Component({readOnly("species:{all_species}:pressure"),
@@ -844,6 +668,202 @@ in `group1`, and then `component3`.
 .. doxygenclass:: ComponentScheduler
    :members:
 
+
+Permissions
+~~~~~~~~~~~~~~
+
+The ``Permissions`` class can be used to store information about which
+variables within an ``Options`` object are allowed to be accessed and
+for what purpose. This is used to control the variables used by a
+``Component``. There is a hierarchy of four types of increasing
+permission. These are expressed using the
+`PermissionTypes` `enum <https://en.wikipedia.org/wiki/Enumerated_type>`__:
+
+#. **ReadIfSet:** Only allowed to read variable if it is already set.
+#. **Read:** Can read the contents of the variable. Assumes it has already been set.
+#. **Write:** Can write variable. Makes no assumption about whether it has already been written or will be written again in future.
+#. **Final:** This will be the last component to write to the variable. Only one component may have ``Final`` permission for a given variable.
+
+The order these per permissions are listed in is significant: each
+higher permission implies a component also has all lower permissions. E.g.,
+write permission implies read permission as well.
+
+Declaring Permissions for Particular Variables
+``````````````````````````````````````````````
+
+Permission information for a variable is stored in a
+`Permissions::VarRights` object. The overwhelming majority of the
+permissions you would want to create can be constructed using one of
+the provided convenience-functions. For example::
+
+  Permissions::VarRights read_e_pressure = readOnly("species:e:pressure");
+  Permissions::VarRights write_d_density = readWrite("species:d:density");
+  Permissions::VarRights read_e_velocity_in_interior_if_set =
+    readIfSet("species:e:velocity", Regions::Interior);
+
+Permissions can be set to apply only to a particular region of the
+domain (e.g., the boundary or the interior) using a `Regions` enum
+(see `Specifying a Region`_).
+
+Creating Permissions Objects
+````````````````````````````
+
+Permission data like that created in the previous example can be used
+to construct a ``Permissions`` object. These objects describe the
+permissions for multiple variables.::
+
+  Permissions p({readOnly("time"),
+                 readOnly("species:e:pressure"),
+                 readWrite("species:e:momentum", Regions::Interior)});
+
+A permission applied to a section of an ``Options`` object will apply
+to all variables contained within that section, unless a more specific
+permission is also set. Therefore, if we have a state with variables
+``species:e:pressure``, ``species:e:density``, ``species:e:velocity``,
+and ``species:e:momentum``, then the following are equivalent::
+
+  Permissions p({readOnly("species:e"),
+                 readWrite("species:e:momentum")});
+  Permissions p({readOnly("species:e:pressure"),
+                 readOnly("species:e:density"),
+                 readOnly("species:e:velocity"),
+                 readWrite("species:e:momentum")});
+
+Specifying a Region
+```````````````````
+
+The `PermissionTypes` are applied to particular regions of the domain.
+This allows, e.g., for there to be read permissions for the interior
+of the domain but write permissions for the boundaries. Regions are
+expressed using the `Permissions::Regions` enum, which functions as a `bitset
+<https://en.wikipedia.org/wiki/Bit_array>`__. You can combine regions
+using bitwise logical operators.
+
+.. doxygengroup:: RegionsGroup
+   :members:
+         
+Permission Substitution
+```````````````````````
+
+Variable names can include labels, marked in curly-braces, that will
+later be substituted (using `Permissions::substitute` and
+`Component::substitutePermissions`). Substitutions are necessary
+because, when declaring permissions for a `Component`, you may need to
+express that it can access some variable for all species (or all ions,
+all neutrals, etc.), but you won't yet know the names of all the
+species. For example, if you need to read the density of all species
+and write the collision frequency of all ions then you would write::
+
+  Permissions p({readOnly("species:{all_spcies}:density"),
+                 readWrite("species:{ions}:collision_frequency"});
+
+If there are species e, d, d+, h, and h+ then the above will be
+equivalent to::
+
+  Permissions p({readOnly("species:e:density"),
+                 readOnly("species:d:density"),
+                 readOnly("species:d+:density"),
+                 readOnly("species:h:density"),
+                 readOnly("species:h+:density"),
+                 readWrite("species:d+:collision_frequency"),
+                 readWrite("species:h+:collision_frequency")});
+
+These substitutions will be performed in
+`Component::declareAllSpecies`. See the documentation for that method
+for a full list of the substitutions which it can perform.
+
+It can also be useful to define your own substitutions, to save
+repetitive declarations. For example, you could declare read
+permissions for electron density, pressure, temperature, velocity, and
+momentum as follows::
+
+  Permissions p({readOnly("species:e:{inputs}");
+  p.substitute({"density", "pressure", "temperature", "velocity", "momentum"});
+
+This is equivalent to having written::
+   
+   Permissions p({readOnly("species:e:density"),
+                  readOnly("species:e:pressure")},
+                  readOnly("species:e:temperature")},
+                  readOnly("species:e:velocity")},
+                  readOnly("species:e:momentum")});
+
+Permission Factory Functions
+````````````````````````````
+
+.. doxygengroup:: PermissionFactories
+   :members:
+
+Permissions Class
+`````````````````
+.. doxygenclass:: Permissions
+   :members:
+
+Further Implementation Details
+``````````````````````````````
+
+The above information should be sufficient for users that are
+developing or modifying components. The following explains in more
+detail how permission data is stored and should be read by anyone
+looking to modify the `Permissions` or `GuardedOptions` classes.
+
+Permission information for a variable gets stored in
+`Permissions::AccessRights` objects, which are arrays of
+`Regions`. Each element of the array corresponds to information about
+a permission level: ``{read_if_set, read, write, final}``. To access
+the element for a desired permission level, you can index the array
+with the corresponding member of the `PermissionTypes` enum::
+
+  Permissions::AccessRights rights;
+  Regions read_regions = rights[PermissionTypes::Read];
+  Regions write_regions = rights[PermissionTypes::Write];
+
+The contents of each element of an `Permissions::AccessRights` array
+is the set of regions for which the permissions apply. For example::
+
+  Permissions::AccessRights read_boundaries_if_set =
+    {Regions::Boundaries, Regions::Nowhere, Regions::Nowhere,
+     Regions::Nowhere};
+  Permissions::AccessRights read_interior_write_boundaries =
+    {Regions::Nowhere, Regions::Interior, Regions::Boundaries,
+     Regions::Nowhere};
+  Permissions::AccessRights final_write_all_regions =
+    {Regions::Nowhere, Regions::Nowhere, Regions::Nowhere, Regions::All};
+
+The `Permissions::VarRights` struct is used to pair a variable name
+with a `Permissions::AccessRights` array containing the permission
+information for that variable.
+
+
+GuardedOptions
+~~~~~~~~~~~~~~
+
+``GuardedOptions`` objects combine a `Permissions` object and an
+`Options` object. They can be indexed just like normal ``Options``
+objects but will return another ``GuardedOptions``, wrapping the
+result. In order to read or write the contents of a ``GuardedOptions``
+object you must use the ``get()`` or ``getWritable()`` methods,
+respectively. These will return the underlying (const) ``Options``
+object, if you have the necessary permissions to access it. Otherwise,
+they will raise an exception.
+
+If ``CHECKLEVEL`` is 1 or above, then the ``GuardedOptions`` will track
+which variables have actually been accessed. Lists of
+unread/unwritten variables can be returned with the ``unreadItems()``
+and ``unwrittenItems()`` methods. If ``CHECKLEVEL`` is zero then
+calling these methods will raise an exception.
+
+.. doxygenclass:: GuardedOptions
+   :members:
+
+.. note::
+   When indexing a ``GuardedOptions`` object, it will create a new
+   ``GuardedOptions`` on-demand. This is unlike with a normal
+   ``Options`` object which returns a reference to a preexisting child
+   ``Options`` object. You generally should not store
+   ``GuardedOptions`` by reference. You may be able to pass them by
+   reference, but this requires you to think carefully about whether
+   the argument is going to be an r-value or an l-value.
 
 .. _sec-tests:
 
