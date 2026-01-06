@@ -72,7 +72,7 @@ void updateAccessRecords(std::map<std::string, Regions>& records, const std::str
   }
 }
 
-const Options& GuardedOptions::get(Regions region) const {
+const Options& GuardedOptions::get([[maybe_unused]] Regions region) const {
 #if CHECKLEVEL >= 1
   const std::string name = options->str();
   auto [permission, varname] = permissions->getHighestPermission(name, region);
@@ -90,7 +90,7 @@ const Options& GuardedOptions::get(Regions region) const {
 #endif
 }
 
-Options& GuardedOptions::getWritable(Regions region) {
+Options& GuardedOptions::getWritable([[maybe_unused]] Regions region) {
 #if CHECKLEVEL >= 1
   const std::string name = options->str();
   auto [access, varname] = permissions->canAccess(name, PermissionTypes::Write, region);

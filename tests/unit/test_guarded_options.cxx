@@ -65,6 +65,7 @@ TEST_F(GuardedOptionsTests, TestGet) {
                    .isSet());
 }
 
+#if CHECKLEVEL >= 1
 TEST_F(GuardedOptionsTests, TestGetException) {
   EXPECT_THROW(guarded_opts["species:he:AA"].get(), BoutException);
   EXPECT_THROW(guarded_opts["species"]["he"]["temperature"].get(), BoutException);
@@ -78,6 +79,7 @@ TEST_F(GuardedOptionsTests, TestGetException) {
   EXPECT_THROW(guarded_opts["no_permission"].get(), BoutException);
   EXPECT_THROW(guarded_opts["species:d+:velocity"].get(), BoutException);
 }
+#endif
 
 TEST_F(GuardedOptionsTests, TestGetWritable) {
   auto& he_pressure = guarded_opts["species:he:pressure"].getWritable(Regions::Interior);
@@ -111,6 +113,7 @@ TEST_F(GuardedOptionsTests, TestGetWritable) {
   EXPECT_EQ(opts["species:d:collision_frequencies:d_t+_coll"], 14);
 }
 
+#if CHECKLEVEL >= 1
 TEST_F(GuardedOptionsTests, TestGetWritableException) {
   EXPECT_THROW(guarded_opts["species"]["he"]["temperature"].getWritable(), BoutException);
   EXPECT_THROW(guarded_opts["unset"].getWritable(), BoutException);
@@ -195,6 +198,7 @@ TEST_F(GuardedOptionsTests, TestUnwrittenItems) {
   guarded_opts["species:d:pressure"].getWritable(Regions::Interior);
   EXPECT_EQ(guarded_opts.unwrittenItems(), expected3);
 }
+#endif
 
 TEST_F(GuardedOptionsTests, TestNullOptions) {
   EXPECT_THROW(GuardedOptions(nullptr, &permissions), BoutException);
@@ -210,8 +214,10 @@ TEST_F(GuardedOptionsTests, TestGetChildren) {
   EXPECT_EQ(guarded_children.count("he"), 1);
   EXPECT_EQ(guarded_children.count("d"), 1);
   EXPECT_EQ(&(guarded_children.at("d").get()), &(opts["species"]["d"]));
+#if CHECKLEVEL >= 1
   // We do not have access to the whole "he" section
   EXPECT_THROW(guarded_children.at("he").get(), BoutException);
+#endif
 }
 
 TEST_F(GuardedOptionsTests, TestIsThisSection) {
