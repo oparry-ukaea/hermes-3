@@ -61,7 +61,8 @@ struct BraginskiiIonViscosity : public Component {
 
 private:
   BoutReal eta_limit_alpha; ///< Flux limit coefficient
-  bool perpendicular;       ///< Include perpendicular flow? (Requires phi)
+  bool parallel;            ///< Include parallel viscosity (requires parallel velocity)
+  bool perpendicular;       ///< Include perpendicular viscosity? (Requires phi)
   std::map<std::string, std::vector<std::string>>
       collision_names;                   ///< Collisions used for collisionality
   std::string viscosity_collisions_mode; ///< Collision selection, either multispecies or
