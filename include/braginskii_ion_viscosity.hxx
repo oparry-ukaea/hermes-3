@@ -74,6 +74,7 @@ private:
   BoutReal bounce_frequency_epsilon; ///< Input inverse aspect ratio for including bounce
                                      ///< frequency change
   BoutReal bounce_frequency_R;       ///< Input major radius
+  BoutReal density_floor;            ///< Minimum density used in calculating Pi_ciperp
   bool diagnose;                     ///< Output additional diagnostics?
 
   /// Per-species diagnostics
