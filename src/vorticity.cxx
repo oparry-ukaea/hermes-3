@@ -677,9 +677,9 @@ void Vorticity::transform_impl(GuardedOptions& state) {
     // kinetic energy is proportional to mass
 
     Field3D sum_A_n = zeroFrom(Vort); // Sum of atomic mass * density
-    Options& allspecies = state["species"];
+    GuardedOptions allspecies = state["species"];
     for (const auto& kv : allspecies.getChildren()) {
-      const Options& species = kv.second;
+      const GuardedOptions species = kv.second;
 
       if (!(species.isSet("charge") and species.isSet("AA"))) {
         continue; // No charge or mass -> no current
@@ -694,7 +694,7 @@ void Vorticity::transform_impl(GuardedOptions& state) {
     }
 
     for (const auto& kv : allspecies.getChildren()) {
-      Options& species = allspecies[kv.first]; // Note: need non-const
+      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
 
       if (!(species.isSet("charge") and species.isSet("AA"))) {
         continue; // No charge or mass -> no current

@@ -33,6 +33,8 @@ BraginskiiIonViscosity::BraginskiiIonViscosity(const std::string& name,
                                                Options& alloptions, Solver*)
     : Component({
         readIfSet("species:{non_electrons}:pressure"),
+        readIfSet("species:{non_electrons}:temperature"),
+        readIfSet("species:{non_electrons}:density"),
         readIfSet("species:{non_electrons}:velocity"),
         readIfSet("species:{non_electrons}:charge"),
         readIfSet("species:{non_electrons}:collision_frequencies:{coll_type}"),
