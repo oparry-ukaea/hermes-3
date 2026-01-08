@@ -14,7 +14,8 @@ PolarisationDrift::PolarisationDrift(std::string name, Options& alloptions,
     // here. E.g., species without AA or momentum will be skipped.
     : Component({readIfSet("species:{all_species}:charge"),
                  readOnly("species:{charged}:{inputs}"),
-                 readIfSet("species:{charged}:{optional_inputs}"),
+                 readIfSet("species:{charged}:momentum"),
+                 readIfSet("species:{charged}:pressure", Regions::Interior),
                  readIfSet("fields:{fields}"),
                  readWrite("species:{charged}:{outputs}")}) {
   AUTO_TRACE();
@@ -75,8 +76,7 @@ PolarisationDrift::PolarisationDrift(std::string name, Options& alloptions,
     outputs.push_back("density_source");
     outputs.push_back("momentum_source");
   }
-  substitutePermissions("inputs", {"AA", "density"});
-  substitutePermissions("optional_inputs", {"momentum, pressure"});
+  substitutePermissions("inputs", inputs);
   substitutePermissions("fields", fields);
   // FIXME: energy_source and momentum source are only set if pressure
   // and momentum were set, respectively
@@ -180,7 +180,7 @@ void PolarisationDrift::transform_impl(GuardedOptions& state) {
     // Apply a floor to prevent divide-by-zero errors
     mass_density = floor(mass_density, density_floor);
   }
-  
+
   if (IS_SET(state["fields"]["DivJextra"])) {
     DivJ += get<Field3D>(state["fields"]["DivJextra"]);
   }
