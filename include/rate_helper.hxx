@@ -131,9 +131,12 @@ struct RateHelper {
 
                 // reaction rates at centre, left, right
                 cell_data["rate"].centre = rate_calc_func(mass_action(i), T);
-                cell_data["rate"].left = rate_calc_func(mass_action_left(i, ym, yp), TL);
-                cell_data["rate"].right =
-                    rate_calc_func(mass_action_right(i, ym, yp), TR);
+                if (do_averaging) {
+                  cell_data["rate"].left =
+                      rate_calc_func(mass_action_left(i, ym, yp), TL);
+                  cell_data["rate"].right =
+                      rate_calc_func(mass_action_right(i, ym, yp), TR);
+                }
 
                 // collision freqs. at centre, left, right
                 for (const std::string& reactant_name :
@@ -143,8 +146,10 @@ struct RateHelper {
                   BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
                   BoutReal nprodR = density_product_right(i, ym, yp, reactant_name);
                   cell_data[lbl].centre = rate_calc_func(nprod, T);
-                  cell_data[lbl].left = rate_calc_func(nprodL, TL);
-                  cell_data[lbl].right = rate_calc_func(nprodR, TR);
+                  if (do_averaging) {
+                    cell_data[lbl].left = rate_calc_func(nprodL, TL);
+                    cell_data[lbl].right = rate_calc_func(nprodR, TR);
+                  }
                 }
               } else {
                 throw BoutException(
@@ -161,21 +166,25 @@ struct RateHelper {
 
                 // reaction rates at centre, left, right
                 cell_data["rate"].centre = rate_calc_func(mass_action(i), ne, Te);
-                cell_data["rate"].left =
-                    rate_calc_func(mass_action_left(i, ym, yp), ne_left, Te_left);
-                cell_data["rate"].right =
-                    rate_calc_func(mass_action_right(i, ym, yp), ne_right, Te_right);
+                if (do_averaging) {
+                  cell_data["rate"].left =
+                      rate_calc_func(mass_action_left(i, ym, yp), ne_left, Te_left);
+                  cell_data["rate"].right =
+                      rate_calc_func(mass_action_right(i, ym, yp), ne_right, Te_right);
+                }
 
                 // collision freqs. at centre, left, right
                 for (const std::string& reactant_name :
                      str_keys(this->reactant_densities)) {
                   std::string lbl = freq_lbl(reactant_name);
                   BoutReal nprod = density_product(i, reactant_name);
-                  BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
-                  BoutReal nprodR = density_product_right(i, ym, yp, reactant_name);
                   cell_data[lbl].centre = rate_calc_func(nprod, ne, Te);
-                  cell_data[lbl].left = rate_calc_func(nprodL, ne_left, Te_left);
-                  cell_data[lbl].right = rate_calc_func(nprodR, ne_right, Te_right);
+                  if (do_averaging) {
+                    BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
+                    BoutReal nprodR = density_product_right(i, ym, yp, reactant_name);
+                    cell_data[lbl].left = rate_calc_func(nprodL, ne_left, Te_left);
+                    cell_data[lbl].right = rate_calc_func(nprodR, ne_right, Te_right);
+                  }
                 }
 
               } else if constexpr (RateParamsType == RateParamsTypes::ET) {
