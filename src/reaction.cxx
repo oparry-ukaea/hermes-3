@@ -248,12 +248,12 @@ void Reaction::transform(Options& state) {
   transform_additional(state, rate_calc_results);
 
   // Use the stoichiometric values to set density sources for all species
+  Field3D density_source;
   for (const auto& sp_name : this->parser->get_species()) {
     int pop_change = this->parser->pop_change(sp_name);
     if (pop_change != 0) {
       // Density sources
-      Field3D density_source =
-          pfactors.at(sp_name) * pop_change * rate_calc_results["rate"];
+      density_source = pfactors.at(sp_name) * pop_change * rate_calc_results["rate"];
       update_source<add<Field3D>>(state, sp_name, ReactionDiagnosticType::density_src,
                                   density_source);
     }
@@ -263,13 +263,14 @@ void Reaction::transform(Options& state) {
   init_channel_weights(state);
   momentum_exchange = 0.0;
   energy_exchange = 0.0;
+  Field3D momentum_source, energy_source;
   for (const auto& [sp_name, pop_change_s] : this->parser->get_mom_energy_pop_changes()) {
     // No momentum, energy source for electrons due to pop change
     if (sp_name.compare("e") == 0) {
       continue;
     }
-    Field3D momentum_source = 0.0;
-    Field3D energy_source = 0.0;
+    momentum_source = 0.0;
+    energy_source = 0.0;
     if (pop_change_s < 0) {
       // For species with net loss, sources follows directly from pop change
       momentum_source = pop_change_s * rate_calc_results["rate"]
@@ -319,7 +320,7 @@ void Reaction::transform(Options& state) {
 void Reaction::zero_diagnostics(Options& state) {
   if (this->diagnose) {
     for (auto& [key, diag] : diagnostics) {
-      set<Field3D>(state[diag.name], 0.0);
+      state[diag.name] = 0.0;
     }
   }
 }
