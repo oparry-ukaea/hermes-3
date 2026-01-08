@@ -218,7 +218,7 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver)
     setPermissions(readWrite("species:{charged}:energy_source"));
     setPermissions(readWrite("fields:DivJdia"));
   }
-  if (diamagnetic_polarisation or collisional_friction) {
+  if (diamagnetic_polarisation or collisional_friction or include_viscosity) {
     // FIXME: Only read if pressure also set
     setPermissions(readIfSet("species:{charged}:AA"));
   }
@@ -230,9 +230,11 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver)
     }
     setPermissions(readIfSet("species:e:temperature", Regions::Interior));
   }
+  if (collisional_friction or include_viscosity) {
+    setPermissions(readOnly("species:{charged}:density", Regions::Interior));
+  }
   if (collisional_friction) {
     setPermissions(readIfSet("species:{all_species}:charge"));
-    setPermissions(readOnly("species:{positive_ions}:density"));
     setPermissions(readIfSet("species:{positive_ions}:collision_frequency"));
     setPermissions(readWrite("fields:DivJcol"));
   }
