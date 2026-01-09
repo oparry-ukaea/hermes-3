@@ -138,60 +138,62 @@ struct HydrogenChargeExchange : public AmjuelReaction {
                         atom_reactant, ion_product, ion_reactant),
             ReactionDiagnosticType::density_src, "hydrogen_charge_exchange", identity,
             "particle transfer");
-      } else {
-        /*
-         Simpler case of same isotopes  - No net particle source/sink; atoms lose
-         * <atom_mom>, gain <ion_mom>
-         */
-        // Need F2 = -ion_mom - CHECK
-        add_diagnostic(
-            atom_reactant, fmt::format("F{:s}{:s}_cx", ion_product, atom_reactant),
-            fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
-                        ion_product, atom_product, atom_reactant),
-            ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange", identity,
-            "momentum transfer");
 
-        // Need E2 = -ion_energy - CHECK
+        // F2 = -ion-mom (key by atom product)
         add_diagnostic(
-            atom_reactant, fmt::format("E{:s}{:s}_cx", ion_product, atom_reactant),
+            atom_product, fmt::format("F{:s}{:s}_cx", ion_reactant, atom_reactant),
+            fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
+                        ion_reactant, atom_product, atom_reactant),
+            ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange", negate,
+            "momentum transfer");
+        // E2 = -ion-energy (key by atom product)
+        add_diagnostic(
+            atom_product, fmt::format("E{:s}{:s}_cx", ion_reactant, atom_reactant),
             fmt::format("Energy transfer to {:s} from {:s} due to CX with {:s}",
-                        ion_product, atom_product, atom_reactant),
-            ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange", identity,
+                        ion_reactant, atom_product, atom_reactant),
+            ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange", negate,
+            "energy transfer");
+
+        // F = -atom_mom for non-symmetric  (key by ion product)
+        add_diagnostic(
+            ion_product, fmt::format("F{:s}{:s}_cx", atom_reactant, ion_reactant),
+            fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
+                        atom_reactant, ion_product, ion_reactant),
+            ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange", negate);
+
+        // E = -atom_energy for non-symmetric  (key by ion product)
+        add_diagnostic(
+            ion_product, fmt::format("E{:s}{:s}_cx", atom_reactant, ion_reactant),
+            fmt::format("Energy transfer to {:s} from {:s} due to CX with {:s}",
+                        atom_reactant, ion_product, ion_reactant),
+            ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange", negate,
+            "energy transfer");
+
+      } else {
+
+        // F = ion_mom - atom_mom for symmetric
+        add_diagnostic(
+            ion_product, fmt::format("F{:s}{:s}_cx", atom_reactant, ion_reactant),
+            fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
+                        atom_reactant, ion_product, ion_reactant),
+            ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange", negate);
+
+        // E = ion_energy - atom_energy for symmetric
+        add_diagnostic(
+            ion_product, fmt::format("E{:s}{:s}_cx", atom_reactant, ion_reactant),
+            fmt::format("Energy transfer to {:s} from {:s} due to CX with {:s}",
+                        atom_reactant, ion_product, ion_reactant),
+            ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange", negate,
             "energy transfer");
       }
 
-      // Always add atom1 momentum source
-      // Need transform such that
-      // F = ion_mom - atom_mom for symmetric
-      // F = -atom_mom for non-symmetric
-      add_diagnostic(
-          atom_reactant, fmt::format("F{:s}{:s}_cx", atom_reactant, ion_product),
-          fmt::format("Momentum transfer to {:s} from {:s} due to CX with {:s}",
-                      atom_reactant, ion_reactant, ion_product),
-          ReactionDiagnosticType::momentum_src, "hydrogen_charge_exchange",
-          default_transformer);
-
-      // Always add atom1 energy source
-      // Need transform such that
-      // E = ion_energy - atom_energy for symmetric
-      // E = -atom_energy for non-symmetric
-      add_diagnostic(atom_reactant,
-                     fmt::format("E{:s}{:s}_cx", atom_reactant, ion_product),
-                     fmt::format("Energy transfer to {:s} from {:s} due to CX with {:s}",
-                                 atom_reactant, ion_reactant, ion_product),
-                     ReactionDiagnosticType::energy_src, "hydrogen_charge_exchange",
-                     default_transformer, "energy transfer");
-
       // Always add CX collision frequency
-      // Need transform such that
-      // K = atom_rate
-      add_diagnostic(atom_reactant,
-                     fmt::format("K{:s}{:s}_cx", atom_reactant, ion_product),
-                     fmt::format("Collision frequency of CX of {:s} and {:s} producing "
-                                 "{:s} and {:s}. Note Kab != Kba",
-                                 atom_reactant, ion_reactant, ion_product, atom_product),
-                     ReactionDiagnosticType::collision_freq, "hydrogen_charge_exchange",
-                     default_transformer);
+      add_diagnostic(
+          atom_reactant, fmt::format("K{:s}{:s}_cx", atom_reactant, ion_reactant),
+          fmt::format("Collision frequency of CX of {:s} and {:s} producing "
+                      "{:s} and {:s}. Note Kab != Kba",
+                      atom_reactant, ion_product, ion_reactant, atom_product),
+          ReactionDiagnosticType::collision_freq, "hydrogen_charge_exchange", identity);
     }
   }
 
@@ -201,12 +203,12 @@ protected:
         this->parser->get_single_species(species_filter::reactants, species_filter::ion);
     std::string ion_product =
         this->parser->get_single_species(species_filter::products, species_filter::ion);
-    std::string neutral_reactant = this->parser->get_single_species(
+    std::string atom_reactant = this->parser->get_single_species(
         species_filter::reactants, species_filter::neutral);
     std::string neutral_product = this->parser->get_single_species(
         species_filter::products, species_filter::neutral);
 
-    Options& atom1 = state["species"][neutral_reactant];
+    Options& atom1 = state["species"][atom_reactant];
     Options& ion1 = state["species"][ion_reactant];
     Options& atom2 = state["species"][neutral_product];
     Options& ion2 = state["species"][ion_product];
@@ -234,17 +236,18 @@ protected:
     add(atom2["energy_source"],
         0.5 * Aion * rate_calc_results["rate"] * SQ(atom2_velocity - ion1_velocity));
 
-    // Set individual collision frequencies
-    std::string neutral_coll_freq_key =
-        fmt::format("{:s}:collision_frequency", neutral_reactant);
-    set(atom1["collision_frequencies"]
-             [atom1.name() + std::string("_") + ion1.name() + std::string("_cx")],
-        rate_calc_results[neutral_coll_freq_key]);
+    // Set 'collision_frequencies' values (only atomic one is written as a diagnostic)
+    std::string atom_cf_key = fmt::format("{:s}:collision_frequency", atom_reactant);
+    std::string atom_cf_state_lbl =
+        fmt::format("collision_frequencies:{:s}_{:s}_cx", atom_reactant, ion_reactant);
+    update_source<set>(state, atom_reactant, ReactionDiagnosticType::collision_freq,
+                       atom_cf_state_lbl, rate_calc_results[atom_cf_key]);
 
-    std::string ion_coll_freq_key = fmt::format("{:s}:collision_frequency", ion_reactant);
-    set(ion1["collision_frequencies"]
-            [ion1.name() + std::string("_") + atom1.name() + std::string("_cx")],
-        rate_calc_results[ion_coll_freq_key]);
+    std::string ion_cf_key = fmt::format("{:s}:collision_frequency", ion_reactant);
+    std::string ion_cf_state_lbl =
+        fmt::format("collision_frequencies:{:s}_{:s}_cx", ion_reactant, atom_reactant);
+    update_source<set>(state, ion_reactant, ReactionDiagnosticType::collision_freq,
+                       ion_cf_state_lbl, rate_calc_results[ion_cf_key]);
   }
 
 private:
