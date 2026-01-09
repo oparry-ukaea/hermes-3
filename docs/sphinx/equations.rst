@@ -684,14 +684,14 @@ new AFN (Advanced Fluid Neutral) model in SOLPS-ITER [N. Horsten, N.F. (2017)].
    
    \begin{aligned}
 
-   \frac{\partial n_n}{\partial t} =& -\nabla\cdot\left(n_n\mathbf{b}v_{||n} + n_n\mathbf{v}_{\perp n}\right) \\
+   \frac{\partial n_n}{\partial t} =& -\nabla\cdot\left(n_n\mathbf{b}v_{\parallel, n} + n_n\mathbf{v}_{\perp n}\right) \\
          &    + S \\
-   \frac{\partial}{\partial t}\left(m_nn_nv_{||n}\right) =& -m_n \nabla\cdot\left(n_n v_{||n} (\mathbf{b}v_{||n} + \mathbf{v}_{\perp n}\right)) \\
-         &    - \partial_{||}p_n \\
+   \frac{\partial}{\partial t}\left(m_nn_nv_{\parallel, n}\right) =& -m_n \nabla\cdot\left(n_n v_{\parallel, n} (\mathbf{b}v_{||n} + \mathbf{v}_{\perp n}\right)) \\
+         &    - \nabla_{\parallel}p_n \\
          &    + \nabla \cdot (\eta_{n} (\nabla_{\perp} v_{\parallel n} + \mathbf{b} \nabla_{\parallel} v_{\parallel n} )) \\
          &    + F \\
-   \frac{\partial p_n}{\partial t} =& -\nabla\cdot\left(p_n\mathbf{b}v_{||n} + \frac{5}{3} p_n\mathbf{v}_{\perp n}\right) \\
-         &    - \frac{2}{3}p_n\nabla\cdot\left(\mathbf{b}v_{||n}\right) \\
+   \frac{\partial p_n}{\partial t} =& -\nabla\cdot\left(p_n\mathbf{b}v_{\parallel, n} + \frac{5}{3} p_n\mathbf{v}_{\perp n}\right) \\
+         &    - \frac{2}{3}p_n\nabla\cdot\left(\mathbf{b}v_{\parallel, n}\right) \\
          &    + \frac{2}{3} \nabla\cdot\left(\kappa_n \nabla_\perp T_n\right) + \frac{2}{3} \nabla\cdot\left(\kappa_n \nabla_{\parallel} T_n\right) \\
          &    - \frac{2}{3} v_n \nabla \cdot (m_n \eta_{n} \nabla_{\perp} v_{\parallel n}) + \frac{2}{3} \nabla \cdot( m_n \eta_{n} \nabla_{\parallel} v_{\parallel n} ) \\
          &    + \frac{2}{3}E \\
