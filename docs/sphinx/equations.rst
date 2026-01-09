@@ -686,7 +686,7 @@ new AFN (Advanced Fluid Neutral) model in SOLPS-ITER [N. Horsten, N.F. (2017)].
 
    \frac{\partial n_n}{\partial t} =& -\nabla\cdot\left(n_n\mathbf{b}v_{||n} + n_n\mathbf{v}_{\perp n}\right) \\
          &    + S \\
-   \frac{\partial}{\partial t}\left(n_nv_{||n}\right) =& -\nabla\cdot\left(n_nv_{||n} \mathbf{b}v_{||n} + n_nv_{||n}\mathbf{v}_{\perp n}\right) \\
+   \frac{\partial}{\partial t}\left(m_nn_nv_{||n}\right) =& -m_n \nabla\cdot\left(n_n v_{||n} (\mathbf{b}v_{||n} + \mathbf{v}_{\perp n}\right)) \\
          &    - \partial_{||}p_n \\
          &    + \nabla \cdot (m_n \eta_{n} \nabla_{\perp} v_{\parallel n}) + \nabla \cdot( m_n \eta_{n} \nabla{\parallel} v_{\parallel n} ) \\
          &    + F \\
