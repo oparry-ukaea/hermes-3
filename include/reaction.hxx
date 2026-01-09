@@ -180,6 +180,18 @@ protected:
 
   /**
    * @brief Update both a species source term and the corresponding diagnostics (if any
+   * exist and if diagnostics are enabled), determining the key in the state from the
+   * type. See alternative form of update_source for further details.
+   */
+  template <OPTYPE operation>
+  void update_source(Options& state, const std::string& sp_name,
+                     ReactionDiagnosticType type, Field3D& fld) {
+
+    update_source<operation>(state, sp_name, type, state_labels.at(type), fld);
+  }
+
+  /**
+   * @brief Update both a species source term and the corresponding diagnostics (if any
    * exist and if diagnostics are enabled)
    *
    * @tparam operation function to call on the state to update the source term and
@@ -187,13 +199,15 @@ protected:
    * @param state the state to update
    * @param sp_name the species to update
    * @param type the type of source/diagnostic to update
+   * @param lbl label/key for the field in the state object, i.e.
+   * state["species"][sp_name][lbl]
    * @param fld the field used in the update
    */
   template <OPTYPE operation>
   void update_source(Options& state, const std::string& sp_name,
-                     ReactionDiagnosticType type, Field3D& fld) {
+                     ReactionDiagnosticType type, std::string& lbl, Field3D& fld) {
     // Update species data
-    operation(state["species"][sp_name][state_labels.at(type)], fld);
+    operation(state["species"][sp_name][lbl], fld);
 
     if (this->diagnose) {
       // Update corresponding diagnostic(s) (if any exist)
