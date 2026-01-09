@@ -730,7 +730,7 @@ The diffusion coefficients are defined as:
 .. math::
 
    \begin{aligned} 
-   D_n =& v_{th,n}^{2} \nu_{n, tot}  \\
+   D_n =& \frac{v_{th,n}^{2}}{\nu_{n, tot}} = \frac{T_n}{m_n \nu_{n, tot}} \\
    \kappa_{n} =& \frac{5}{2} D_n N_n \\
    \eta_{n} =& \frac{2}{5} m_n \kappa_{n} \\
    \end{aligned}
