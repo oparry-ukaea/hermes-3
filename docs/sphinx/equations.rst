@@ -720,11 +720,6 @@ The perpendicular velocity is calculated as:
 Where in the code, :math:`\frac{1}{P_n} \nabla_{\perp}P_n` is represented as :math:`ln(P_n)`, which helps
 preserve pressure positivity. 
 
-The choice of collision frequency is set by the flag `diffusion_collisions_mode`: `multispecies` uses
-all available collision frequencies involving the chosen species, while `afn` uses only
-CX and IZ rates. The default is `afn` and corresponds to the choice in UEDGE and 
-the SOLPS-ITER AFN (Advanced Fluid Neutral) model. 
-
 The diffusion coefficients are defined as:
 
 .. math::
@@ -736,9 +731,13 @@ The diffusion coefficients are defined as:
    \end{aligned}
 
 Where :math:`v_{th,n}= \sqrt{\frac{T_n}{m_n}}` is the thermal velocity of neutrals and :math:`\nu_{n, tot}` is the total
-neutral collisionality. This is primarily driven by charge exchange and ionisation, which can cause issues in regions
-where plasma density is low. Because of this, an additional pseudo-collisionality is calculated based on the maximum vessel 
-mean free path and added to the total neutral collisionality.
+neutral collisionality.  When the `AFN` diffusion collision mode is selected using the `diffusion_collisions_mode` setting, 
+this collisionality is the sum of charge exchange, ionisation, neutral-neutral collisions and the 
+pseudo-collisionality `Rnn`, which represents a mean-free path limit. When the `multispecies` mode is selected, all available 
+collision frequencies are enabled instead of ionisation. `AFN` is recommended in all cases, with the `multispecies` mode representing
+a legacy approach. The `Rnn` pseudo-collisionality is based on the `neutral_lmax` parameter, currently hardcoded to 0.1m, 
+which acts as an effective maximum neutral mean free path. It represents the distance that neutrals can travel before
+hitting a solid surface.
 
 In an additional effort to limit the diffusivitiy to more physical values, a flux limiter has been implemented which clamps
 :math:`D_n` to :math:`D_{n,max}` defined as:
@@ -746,7 +745,7 @@ In an additional effort to limit the diffusivitiy to more physical values, a flu
 .. math::
 
    \begin{aligned}
-   D_{n,max} =& f_l \frac{v_{th,n}}{abs(\nabla ln(P_n) + 1/l_{max}}
+   D_{n,max} =& f_l \frac{v_{th,n}}{abs(\nabla ln(P_n) + 1/l_{max})}
    \end{aligned}
 
 This formulation is equivalent to defining a :math:`D_n` with a free streaming velocity while accounting for the pseudo collisionality due 
