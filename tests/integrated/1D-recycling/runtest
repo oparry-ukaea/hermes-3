@@ -168,7 +168,7 @@ for name, target in diags_ref.items():
     try:
         val = ds_diags[name].values[pos_idx]
         if gen_data:
-            print(f'"{name}": {val},')
+            print(f'    "{name}": {val},')
         else:
             success &= check_ULPs_diff(name, val, target, maxulp=ULPs_tolerance)
     except KeyError:
