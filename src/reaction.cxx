@@ -10,7 +10,10 @@
 
 #include "integrate.hxx"
 
-Reaction::Reaction(std::string name, Options& options) : name(name) {
+Reaction::Reaction(std::string name, Options& options)
+    : ReactionBase({readOnly("species:{sp}:{r_val}"), readOnly("species:e:{e_val}"),
+                    readWrite("species:{sp}:{w_val}")}),
+      name(name) {
 
   // Extract some relevant options, units to member vars for readability
   const auto& units = options["units"];
@@ -39,8 +42,9 @@ Reaction::Reaction(std::string name, Options& options) : name(name) {
   // Parse the reaction string
   this->parser = std::make_unique<ReactionParser>(reaction_str);
 
+  std::vector<std::string> species = this->parser->get_species();
   // Participation factors. All set to unity for now; could make configurable in future.
-  for (const std::string& sp : this->parser->get_species()) {
+  for (const std::string& sp : species) {
     this->pfactors[sp] = 1;
   }
 
@@ -54,6 +58,11 @@ Reaction::Reaction(std::string name, Options& options) : name(name) {
       momentum_channels[reactant] = std::map<std::string, BoutReal>();
     }
   }
+
+  substitutePermissions("sp", species);
+  substitutePermissions("r_val", {"AA", "density", "velocity", "temperature"});
+  substitutePermissions("e_val", {"density", "temperature"});
+  substitutePermissions("w_val", {"momentum_source", "energy_source", "density_source"});
 }
 
 /**
@@ -83,6 +92,7 @@ void Reaction::add_diagnostic(const std::string& sp_name, const std::string& dia
         diag_key, ReactionDiagnostic(diag_name, description, type, data_source,
                                      standard_name, transformer)));
   }
+  setPermissions(readWrite(diag_name));
 }
 
 /**
@@ -91,7 +101,7 @@ void Reaction::add_diagnostic(const std::string& sp_name, const std::string& dia
  *
  * @param state current simulation state
  */
-void Reaction::init_channel_weights(Options& state) {
+void Reaction::init_channel_weights(GuardedOptions& state) {
   std::vector<std::string> heavy_reactants =
       this->parser->get_species(species_filter::heavy, species_filter::reactants);
   std::vector<std::string> heavy_products =
@@ -185,7 +195,7 @@ void Reaction::set_momentum_channel_weight(const std::string& reactant_name,
  *
  * @param state
  */
-void Reaction::transform(Options& state) {
+void Reaction::transform_impl(GuardedOptions& state) {
 
   Field3D momentum_exchange, energy_exchange, energy_loss;
   zero_diagnostics(state);
@@ -317,10 +327,10 @@ void Reaction::transform(Options& state) {
  *
  * @param state
  */
-void Reaction::zero_diagnostics(Options& state) {
+void Reaction::zero_diagnostics(GuardedOptions& state) {
   if (this->diagnose) {
     for (auto& [key, diag] : diagnostics) {
-      state[diag.name] = 0.0;
+      set<Field3D>(state[diag.name], 0.0);
     }
   }
 }

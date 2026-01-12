@@ -103,7 +103,8 @@ RateParamsTypes AmjuelReaction::get_rate_params_type() const {
   return RateParamsTypesFromString(fit_type_lcase);
 }
 
-void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_results) {
+void AmjuelReaction::transform_additional(GuardedOptions& state,
+                                          RatesMap& rate_calc_results) {
 
   // Amjuel-based reactions are assumed to have exactly 2 reactants, for now.
   std::vector<std::string> reactant_species =
@@ -114,7 +115,7 @@ void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_re
   // function has been overridden
   std::string heavy_reactant_species =
       parser->get_single_species(reactant_species, species_filter::heavy);
-  Options& rh = state["species"][heavy_reactant_species];
+  GuardedOptions rh = state["species"][heavy_reactant_species];
   BoutReal AA_rh = get<BoutReal>(rh["AA"]);
   Field3D n_rh = get<Field3D>(rh["density"]);
   Field3D v_rh = get<Field3D>(rh["velocity"]);
@@ -123,7 +124,7 @@ void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_re
   // function has been overridden
   std::string heavy_product_species =
       parser->get_single_species(species_filter::heavy, species_filter::products);
-  Options& ph = state["species"][heavy_product_species];
+  GuardedOptions ph = state["species"][heavy_product_species];
   Field3D v_ph = get<Field3D>(ph["velocity"]);
 
   // Kinetic energy transfer to thermal energy
@@ -160,7 +161,7 @@ void AmjuelReaction::transform_additional(Options& state, RatesMap& rate_calc_re
   add(ph["energy_source"], 0.5 * AA_rh * rate_calc_results["rate"] * SQ(v_rh - v_ph));
 
   // Energy source for electrons due to pop change
-  Options& electron = state["species"]["e"];
+  GuardedOptions electron = state["species"]["e"];
   Field3D T_e = get<Field3D>(electron["temperature"]);
   const int e_pop_change = this->parser->pop_change("e");
   if (e_pop_change != 0) {

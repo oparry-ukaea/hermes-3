@@ -53,7 +53,7 @@ struct RateHelper {
    * factor, n_e and T_e
    * @param region the region in which to calculate the rate
    */
-  RateHelper(const Options& state, const std::vector<std::string>& reactant_names,
+  RateHelper(const GuardedOptions state, const std::vector<std::string>& reactant_names,
              const Region<Ind3D> region, const BoutReal density_floor = 0)
       : region(region) {
 
@@ -247,8 +247,8 @@ private:
    *
    * @todo read clamp values from json?
    */
-  void calc_Teff(const Options& state, const std::vector<std::string>& reactant_names,
-                 Field3D& Teff) {
+  void calc_Teff(const GuardedOptions state,
+                 const std::vector<std::string>& reactant_names, Field3D& Teff) {
 
     std::vector<std::string> heavy_reactant_names;
     std::copy_if(reactant_names.begin(), reactant_names.end(),
