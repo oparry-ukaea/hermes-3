@@ -229,6 +229,14 @@ ion_neutral = true
 neutral_neutral = true
 
 ################################################################################
+[braginskii_friction]
+diagnose = true
+
+################################################################################
+[braginskii_heat_exchange]
+diagnose = true
+
+################################################################################
 [neutral_parallel_diffusion]
 dneut = 10    # (B / Bpol)^2 in neutral diffusion terms
 
