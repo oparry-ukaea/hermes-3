@@ -48,7 +48,8 @@ protected:
   /// Reaction string parser
   std::unique_ptr<ReactionParser> parser;
 
-  /// Normalisations, extracted from input options
+  /// Units and normalisations extracted to member vars for convenience
+  Options& units;
   BoutReal Tnorm, Nnorm, FreqNorm;
 
   /// Rate multipliers, extracted from input options

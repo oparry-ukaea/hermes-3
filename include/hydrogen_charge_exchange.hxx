@@ -131,7 +131,6 @@ struct HydrogenChargeExchange : public AmjuelReaction {
     setPermissions(readOnly("species:{reactant}:{react_vals}"));
     setPermissions(readOnly("species:{sp}:{read_vals}"));
     setPermissions(readWrite("species:{sp}:{writevals}"));
-    setPermissions(readWrite("species:{reactant}:collision_frequency"));
     setPermissions(readWrite("species:{atom}:collision_frequencies:{atom}_{ion}_cx"));
     setPermissions(readWrite("species:{ion}:collision_frequencies:{ion}_{atom}_cx"));
 

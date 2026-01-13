@@ -13,13 +13,12 @@
 Reaction::Reaction(std::string name, Options& options)
     : ReactionBase({readOnly("species:{sp}:{r_val}"), readOnly("species:e:{e_val}"),
                     readWrite("species:{sp}:{w_val}")}),
-      name(name) {
+      units(options["units"]), name(name) {
 
   // Extract some relevant options, units to member vars for readability
-  const auto& units = options["units"];
-  Tnorm = get<BoutReal>(units["eV"]);
-  Nnorm = get<BoutReal>(units["inv_meters_cubed"]);
-  FreqNorm = 1. / get<BoutReal>(units["seconds"]);
+  Tnorm = get<BoutReal>(this->units["eV"]);
+  Nnorm = get<BoutReal>(this->units["inv_meters_cubed"]);
+  FreqNorm = 1. / get<BoutReal>(this->units["seconds"]);
 
   this->diagnose = options[name]["diagnose"]
                        .doc("Output additional diagnostics?")
@@ -63,6 +62,8 @@ Reaction::Reaction(std::string name, Options& options)
   substitutePermissions("r_val", {"AA", "density", "velocity", "temperature"});
   substitutePermissions("e_val", {"density", "temperature"});
   substitutePermissions("w_val", {"momentum_source", "energy_source", "density_source"});
+  setPermissions(readWrite("species:{reactant}:collision_frequency"));
+  substitutePermissions("reactant", this->parser->get_species(species_filter::reactants));
 }
 
 /**
@@ -223,7 +224,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
       return result;
     };
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
-        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
+        state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
     rate_helper.calc_rates(calc_rate, rate_calc_results);
   } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
@@ -233,7 +234,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
     };
 
     auto rate_helper = RateHelper<RateParamsTypes::T>(
-        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
+        state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
     rate_helper.calc_rates(calc_rate, rate_calc_results, false);
   } else {
