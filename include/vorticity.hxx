@@ -121,6 +121,7 @@ private:
   Vector2D Curlb_B; // Curvature vector Curl(b/B)
   BoutReal hyper_z; ///< Hyper-viscosity in Z
   Field2D viscosity; ///< Kinematic viscosity
+  Field3D viscous_heating; ///< Heating due to kinematic viscosity
   bool include_viscosity; ///< Is viscosity > 0?
 
   // Diagnostic outputs
