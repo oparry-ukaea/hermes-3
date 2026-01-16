@@ -52,3 +52,34 @@ TEST_F(VorticityTest, Transform) {
   ASSERT_TRUE(state["fields"].isSet("vorticity"));
   ASSERT_TRUE(state["fields"].isSet("phi"));
 }
+
+TEST_F(VorticityTest, KinematicViscosity) {
+  FakeSolver solver;
+
+  Options::root()["mesh"]["paralleltransform"]["type"] = "shifted";
+  Options options {{"units",
+                    {{"seconds", 1.0},
+                     {"Tesla", 1.0},
+                     {"meters", 1.0}}},
+                   {"test",
+                    {{"viscosity", 1.0}}}};
+
+  Vorticity component("test", options, &solver);
+  component.declareAllSpecies({{"e"},
+                               {"d"},
+                               {"d+"},
+                               {}});
+
+  Options state {{"species",
+                  {{"d+",
+                    {{"AA", 2.0},
+                     {"charge", 1.0},
+                     {"density", 1.0}}},
+                   {"d",
+                    {{"AA", 2.0},
+                     {"density", 1.0}}}}}};
+  component.transform(state);
+
+  ASSERT_TRUE(state["species"]["d+"].isSet("energy_source"));
+  ASSERT_FALSE(state["species"]["d"].isSet("energy_source"));
+}

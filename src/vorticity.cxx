@@ -266,9 +266,9 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver)
   }
   if (collisional_friction or include_viscosity) {
     setPermissions(readOnly("species:{charged}:density", Regions::Interior));
+    setPermissions(readIfSet("species:{all_species}:charge"));
   }
   if (collisional_friction) {
-    setPermissions(readIfSet("species:{all_species}:charge"));
     setPermissions(readIfSet("species:{positive_ions}:collision_frequency"));
     setPermissions(readWrite("fields:DivJcol"));
   }
@@ -722,7 +722,7 @@ void Vorticity::transform_impl(GuardedOptions& state) {
     for (const auto& kv : allspecies.getChildren()) {
       const GuardedOptions species = kv.second;
 
-      if (!(species.isSet("charge") and species.isSet("AA"))) {
+      if (!(species.isSet("charge") and species.isSet("AA") and species.isSet("density"))) {
         continue; // No charge or mass -> no current
       }
       if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
@@ -737,7 +737,7 @@ void Vorticity::transform_impl(GuardedOptions& state) {
     for (const auto& kv : allspecies.getChildren()) {
       GuardedOptions species = allspecies[kv.first]; // Note: need non-const
 
-      if (!(species.isSet("charge") and species.isSet("AA"))) {
+      if (!(species.isSet("charge") and species.isSet("AA") and species.isSet("density"))) {
         continue; // No charge or mass -> no current
       }
       if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
