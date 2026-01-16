@@ -172,7 +172,7 @@ Field3D PolarisationDrift::calcMassDensity(GuardedOptions& state) {
     for (auto& kv : allspecies.getChildren()) {
       const GuardedOptions species = kv.second;
 
-      if (!(species.isSet("charge") and species.isSet("AA"))) {
+      if (!(species.isSet("charge") and species.isSet("AA") and species.isSet("density"))) {
         continue; // No charge or mass -> no current
       }
       if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
