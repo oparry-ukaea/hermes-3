@@ -7,7 +7,7 @@
 #include "reaction_diagnostic.hxx"
 #include "reaction_parser.hxx"
 
-typedef Options& (*OPTYPE)(Options&, Field3D);
+using OPTYPE = GuardedOptions && (GuardedOptions&&, Field3D);
 
 /**
  * @brief Temporary struct to use as a base class for all reactions components.
@@ -18,7 +18,8 @@ typedef Options& (*OPTYPE)(Options&, Field3D);
  * Reaction.
  */
 struct ReactionBase : public Component {
-  ReactionBase() : inst_num(get_instance_num() + 1) {}
+  ReactionBase(Permissions&& permissions)
+      : Component(std::move(permissions)), inst_num(get_instance_num() + 1) {}
   static int get_instance_num() {
     static int instance_num{0};
     return instance_num++;
@@ -41,15 +42,14 @@ protected:
 struct Reaction : public ReactionBase {
   Reaction(std::string name, Options& alloptions);
 
-  void transform(Options& state) final;
-
   void outputVars(Options& state) final;
 
 protected:
   /// Reaction string parser
   std::unique_ptr<ReactionParser> parser;
 
-  /// Normalisations, extracted from input options
+  /// Units and normalisations extracted to member vars for convenience
+  Options& units;
   BoutReal Tnorm, Nnorm, FreqNorm;
 
   /// Rate multipliers, extracted from input options
@@ -103,7 +103,7 @@ protected:
    *
    * @param state Current sim state
    */
-  void init_channel_weights(Options& state);
+  void init_channel_weights(GuardedOptions& state);
 
   /**
    * @brief Evaluate <sigma . v . E> at a particular density and temperature
@@ -175,7 +175,7 @@ protected:
    * @param state
    * @param reaction_rate
    */
-  virtual void transform_additional([[maybe_unused]] Options& state,
+  virtual void transform_additional([[maybe_unused]] GuardedOptions& state,
                                     [[maybe_unused]] RatesMap& rate_calc_results) {}
 
   /**
@@ -184,7 +184,7 @@ protected:
    * type. See alternative form of update_source for further details.
    */
   template <OPTYPE operation>
-  void update_source(Options& state, const std::string& sp_name,
+  void update_source(GuardedOptions& state, const std::string& sp_name,
                      ReactionDiagnosticType type, Field3D& fld) {
 
     update_source<operation>(state, sp_name, type, state_labels.at(type), fld);
@@ -204,7 +204,7 @@ protected:
    * @param fld the field used in the update
    */
   template <OPTYPE operation>
-  void update_source(Options& state, const std::string& sp_name,
+  void update_source(GuardedOptions& state, const std::string& sp_name,
                      ReactionDiagnosticType type, std::string& lbl, Field3D& fld) {
     // Update species data
     operation(state["species"][sp_name][lbl], fld);
@@ -255,6 +255,8 @@ private:
   /// Participation factors of all species
   std::map<std::string, BoutReal> pfactors;
 
-  void zero_diagnostics(Options& state);
+  void zero_diagnostics(GuardedOptions& state);
+
+  void transform_impl(GuardedOptions& state) override final;
 };
 #endif

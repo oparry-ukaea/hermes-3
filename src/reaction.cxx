@@ -10,13 +10,15 @@
 
 #include "integrate.hxx"
 
-Reaction::Reaction(std::string name, Options& options) : name(name) {
+Reaction::Reaction(std::string name, Options& options)
+    : ReactionBase({readOnly("species:{sp}:{r_val}"), readOnly("species:e:{e_val}"),
+                    readWrite("species:{sp}:{w_val}")}),
+      units(options["units"]), name(name) {
 
   // Extract some relevant options, units to member vars for readability
-  const auto& units = options["units"];
-  Tnorm = get<BoutReal>(units["eV"]);
-  Nnorm = get<BoutReal>(units["inv_meters_cubed"]);
-  FreqNorm = 1. / get<BoutReal>(units["seconds"]);
+  Tnorm = get<BoutReal>(this->units["eV"]);
+  Nnorm = get<BoutReal>(this->units["inv_meters_cubed"]);
+  FreqNorm = 1. / get<BoutReal>(this->units["seconds"]);
 
   this->diagnose = options[name]["diagnose"]
                        .doc("Output additional diagnostics?")
@@ -39,8 +41,9 @@ Reaction::Reaction(std::string name, Options& options) : name(name) {
   // Parse the reaction string
   this->parser = std::make_unique<ReactionParser>(reaction_str);
 
+  std::vector<std::string> species = this->parser->get_species();
   // Participation factors. All set to unity for now; could make configurable in future.
-  for (const std::string& sp : this->parser->get_species()) {
+  for (const std::string& sp : species) {
     this->pfactors[sp] = 1;
   }
 
@@ -54,6 +57,13 @@ Reaction::Reaction(std::string name, Options& options) : name(name) {
       momentum_channels[reactant] = std::map<std::string, BoutReal>();
     }
   }
+
+  substitutePermissions("sp", species);
+  substitutePermissions("r_val", {"AA", "density", "velocity", "temperature"});
+  substitutePermissions("e_val", {"density", "temperature"});
+  substitutePermissions("w_val", {"momentum_source", "energy_source", "density_source"});
+  setPermissions(readWrite("species:{reactant}:collision_frequency"));
+  substitutePermissions("reactant", this->parser->get_species(species_filter::reactants));
 }
 
 /**
@@ -83,6 +93,7 @@ void Reaction::add_diagnostic(const std::string& sp_name, const std::string& dia
         diag_key, ReactionDiagnostic(diag_name, description, type, data_source,
                                      standard_name, transformer)));
   }
+  setPermissions(readWrite(diag_name));
 }
 
 /**
@@ -91,7 +102,7 @@ void Reaction::add_diagnostic(const std::string& sp_name, const std::string& dia
  *
  * @param state current simulation state
  */
-void Reaction::init_channel_weights(Options& state) {
+void Reaction::init_channel_weights(GuardedOptions& state) {
   std::vector<std::string> heavy_reactants =
       this->parser->get_species(species_filter::heavy, species_filter::reactants);
   std::vector<std::string> heavy_products =
@@ -185,7 +196,7 @@ void Reaction::set_momentum_channel_weight(const std::string& reactant_name,
  *
  * @param state
  */
-void Reaction::transform(Options& state) {
+void Reaction::transform_impl(GuardedOptions& state) {
 
   Field3D momentum_exchange, energy_exchange, energy_loss;
   zero_diagnostics(state);
@@ -213,7 +224,7 @@ void Reaction::transform(Options& state) {
       return result;
     };
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
-        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
+        state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
     rate_helper.calc_rates(calc_rate, rate_calc_results);
   } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
@@ -223,7 +234,7 @@ void Reaction::transform(Options& state) {
     };
 
     auto rate_helper = RateHelper<RateParamsTypes::T>(
-        state, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
+        state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
     rate_helper.calc_rates(calc_rate, rate_calc_results, false);
   } else {
@@ -317,10 +328,10 @@ void Reaction::transform(Options& state) {
  *
  * @param state
  */
-void Reaction::zero_diagnostics(Options& state) {
+void Reaction::zero_diagnostics(GuardedOptions& state) {
   if (this->diagnose) {
     for (auto& [key, diag] : diagnostics) {
-      state[diag.name] = 0.0;
+      set<Field3D>(state[diag.name], 0.0);
     }
   }
 }

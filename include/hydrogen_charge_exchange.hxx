@@ -86,6 +86,7 @@ template <char Isotope1, char Isotope2>
 struct HydrogenChargeExchange : public AmjuelReaction {
   HydrogenChargeExchange([[maybe_unused]] std::string name, Options& alloptions, Solver*)
       : AmjuelReaction(name, "cx", "H.2_3.1.8", alloptions) {
+
     this->includes_sigma_v_e = false;
     /* This is useful for testing the impact of enabling the neutral momentum equation.
      * When set to true, CX behaves as if using diffusive neutrals but the neutral
@@ -125,6 +126,26 @@ struct HydrogenChargeExchange : public AmjuelReaction {
     } else {
       this->set_momentum_channel_weight(ion_reactant, atom_product, 1.0);
     }
+
+    // Set permissions
+    setPermissions(readOnly("species:{reactant}:{react_vals}"));
+    setPermissions(readOnly("species:{sp}:{read_vals}"));
+    setPermissions(readWrite("species:{sp}:{writevals}"));
+    setPermissions(readWrite("species:{atom}:collision_frequencies:{atom}_{ion}_cx"));
+    setPermissions(readWrite("species:{ion}:collision_frequencies:{ion}_{atom}_cx"));
+
+    std::vector<std::string> writevals = {"momentum_source", "energy_source"};
+    if constexpr (Isotope1 != Isotope2) {
+      writevals.push_back("density_source");
+    }
+    substitutePermissions("reactant", {{Isotope1}, {Isotope2, '+'}});
+    substitutePermissions("react_vals", {"density", "temperature"});
+    substitutePermissions("read_vals", {"AA", "velocity"});
+    substitutePermissions("sp",
+                          {{Isotope1}, {Isotope2, '+'}, {Isotope1, '+'}, {Isotope2}});
+    substitutePermissions("writevals", writevals);
+    substitutePermissions("atom", {{Isotope1}});
+    substitutePermissions("ion", {{Isotope2, '+'}});
 
     if (diagnose) {
       // Set up diagnostics to be written to dump file
@@ -198,7 +219,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
   }
 
 protected:
-  void transform_additional(Options& state, RatesMap& rate_calc_results) override {
+  void transform_additional(GuardedOptions& state, RatesMap& rate_calc_results) override {
     std::string ion_reactant =
         this->parser->get_single_species(species_filter::reactants, species_filter::ion);
     std::string ion_product =
@@ -208,10 +229,10 @@ protected:
     std::string neutral_product = this->parser->get_single_species(
         species_filter::products, species_filter::neutral);
 
-    Options& atom1 = state["species"][atom_reactant];
-    Options& ion1 = state["species"][ion_reactant];
-    Options& atom2 = state["species"][neutral_product];
-    Options& ion2 = state["species"][ion_product];
+    GuardedOptions atom1 = state["species"][atom_reactant];
+    GuardedOptions ion1 = state["species"][ion_reactant];
+    GuardedOptions atom2 = state["species"][neutral_product];
+    GuardedOptions ion2 = state["species"][ion_product];
 
     // Masses of initial atom and ion
     const BoutReal Aatom = get<BoutReal>(atom1["AA"]);

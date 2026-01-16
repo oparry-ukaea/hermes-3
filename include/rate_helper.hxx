@@ -53,8 +53,9 @@ struct RateHelper {
    * factor, n_e and T_e
    * @param region the region in which to calculate the rate
    */
-  RateHelper(const Options& state, const std::vector<std::string>& reactant_names,
-             const Region<Ind3D> region, const BoutReal density_floor = 0)
+  RateHelper(const GuardedOptions state, const Options& units,
+             const std::vector<std::string>& reactant_names, const Region<Ind3D> region,
+             const BoutReal density_floor = 0)
       : region(region) {
 
     // Compute / extract fields that are required as parameters for the rate calculations
@@ -70,7 +71,7 @@ struct RateHelper {
       }
     } else if constexpr (RateParamsType == RateParamsTypes::T) {
       Field3D Teff;
-      calc_Teff(state, reactant_names, Teff);
+      calc_Teff(state, units, reactant_names, Teff);
       add_rate_param("Teff", Teff);
     } else {
       // Compile-time error if any other RateParamsType enum exists
@@ -247,15 +248,15 @@ private:
    *
    * @todo read clamp values from json?
    */
-  void calc_Teff(const Options& state, const std::vector<std::string>& reactant_names,
-                 Field3D& Teff) {
+  void calc_Teff(const GuardedOptions state, const Options& units,
+                 const std::vector<std::string>& reactant_names, Field3D& Teff) {
 
     std::vector<std::string> heavy_reactant_names;
     std::copy_if(reactant_names.begin(), reactant_names.end(),
                  std::back_inserter(heavy_reactant_names),
                  [](const std::string s) { return s.compare("e") != 0; });
     Teff = 0.0;
-    BoutReal Tnorm = get<BoutReal>(state["units"]["eV"]);
+    BoutReal Tnorm = get<BoutReal>(units["eV"]);
     for (auto& sp : heavy_reactant_names) {
       Teff += (get<Field3D>(state["species"][sp]["temperature"])
                / get<Field3D>(state["species"][sp]["AA"]))
