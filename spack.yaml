@@ -10,7 +10,7 @@ spack:
   view:
     gcc:
       root: ./views/gcc
-      select: [ '%gcc' ]
+      select: [ '%gcc', '^python' ]
       link_type: symlink
   concretizer:
     unify: when_possible
