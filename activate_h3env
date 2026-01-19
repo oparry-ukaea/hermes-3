@@ -106,7 +106,7 @@ updatelinks() {
   local links_dir="${REPO_ROOT}/$3"
   local link_prefix="spack-"
   
-  # Use 'spack find' to get the hashes of currently installations of the package
+  # Use 'spack find' to get the hashes of current installations of the package
   # Discard stderr to suppress error message when no installs are found
   local identifier_fmt="{hash:7}"
   installed_hashes=$(spack find --format "$identifier_fmt" "$pkg_name" 2> /dev/null)
