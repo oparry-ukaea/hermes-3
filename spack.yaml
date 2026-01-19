@@ -15,8 +15,7 @@ spack:
   concretizer:
     unify: when_possible
   repos:
-    - ./external/BOUT-spack
-    - $spack/var/spack/repos/builtin
+    - ./external/BOUT-spack/spack_repo/bout
   packages:
     all:
       providers:
