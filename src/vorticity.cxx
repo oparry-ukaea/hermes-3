@@ -479,7 +479,7 @@ void Vorticity::transform_impl(GuardedOptions& state) {
   //    and sets the boundary between cells to this value.
   //    This shift by 1/2 grid cell is important.
 
-  Field3D phi_plus_pi = copy(phi);// + Pi_hat;
+  Field3D phi_plus_pi = phi + Pi_hat;
 
   if (mesh->firstX()) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
