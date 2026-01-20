@@ -157,7 +157,15 @@ void PolarisationDrift::diamagneticCompression(GuardedOptions& state, Field3D Di
 
     Field3D energy_source = P * (AA / average_atomic_mass / charge) * DivJ;
 
-    diagnostics[fmt::format("E{}_pol", kv.first)] = energy_source;
+    if (diagnose) {
+      set_with_attrs(diagnostics[fmt::format("E{}_pol", kv.first)], energy_source,
+                     {{"time_dimension", "t"},
+                      {"units", "W m^-3"},
+                      //{"conversion", SI::qe * Tnorm * Nnorm * Omega_ci},
+                      {"long_name", "Compression of polarisation drift"},
+                      {"source", "polarisation_drift"}});
+    }
+
     add(species["energy_source"], energy_source);
   }
 }
