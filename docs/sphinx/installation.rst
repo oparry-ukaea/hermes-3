@@ -375,7 +375,7 @@ Then activate the Spack environment described in ``spack.yaml`` by using the wra
 
    . activate_h3env
 
-The file provides some useful bash functions and aliases, but it's also possible to use standard
+This file provides some useful bash functions and aliases, but it's also possible to use standard
 Spack commands to activate the environment. You should see your prompt change to ``[hermes-3]``, 
 indicating that the spack environment is active.
 
@@ -417,8 +417,8 @@ To change the version, simply check out a different commit in either your Hermes
 BOUT++ submodule in `external/BOUT-dev` and run `spack install` again.
 
 .. tip::
-   This method does not allow a custom build directory, and so your previous build will be overwritten.
-   In order to compile many different builds, you need to compile using CMake as described below.
+   This method does not allow a custom build directory, and so your previous build is typically overwritten.
+   In order to compile many different builds, you should compile using CMake directly, as described below.
 
 .. .. _sec-hermes-cmake-in-spackenv:
 Developing Hermes-3 and BOUT++ in the Spack environment
@@ -431,10 +431,10 @@ via the instructions above, or only install the dependencies in the first place:
 
    spack install --only dependencies -j 8
 
-Having the environment activated provides all of the dependencies for compilation using CMake as 
-described in :ref:`sec-hermes-cmake`. The wrapper script provides a bash function ``in_h3env`` 
-that runs commands in the hermes-3 *build* environment, setting all of the necessary paths to find headers, link libraries etc. To
-build with CMake, run (e.g.):
+Having the environment activated provides all of the dependencies for compilation using CMake as
+described in :ref:`sec-hermes-cmake`. The wrapper script provides a bash function ``in_h3env`` that
+runs commands in the hermes-3 *build* environment, setting all of the necessary paths to find
+headers, link libraries etc. To build with CMake, run (e.g.):
 
 .. code-block:: bash
 
