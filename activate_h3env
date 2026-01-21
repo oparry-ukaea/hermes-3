@@ -103,8 +103,7 @@ in_h3env() {
 updatelinks() {
   local pkg_name="$1"
   local builds_dir="${REPO_ROOT}/$2"
-  local links_dir="${REPO_ROOT}/$3"
-  local link_prefix="spack-"
+  local links_dir="${REPO_ROOT}/builds/spack/$1"
   
   # Use 'spack find' to get the hashes of current installations of the package
   # Discard stderr to suppress error message when no installs are found
@@ -114,12 +113,12 @@ updatelinks() {
   # Create any links for installed packages that don't exist already
   mkdir -p "${links_dir}"
   for hash in $installed_hashes; do
-    spack_build_dir=$(spack location -b "$pkg_name/$hash")
-    _create-link "${spack_build_dir}" "${links_dir}/${link_prefix}${hash}"
+    spack_build_dir=$(spack location -s "$pkg_name/$hash")
+    _create-link "${spack_build_dir}" "${links_dir}/${hash}"
   done
 
   # Check whether existing links are still valid (Could also just use find -xtype l ?)
-  for l in "${links_dir}/${link_prefix}"*; do
+  for l in "${links_dir}/"*; do
     # Skip if l isn't a link (also guards against case where pattern has zero matches)
     [ ! -L "$l" ] && break;
     hash=$(echo "$l"|rev|cut -c -7|rev)
@@ -155,11 +154,11 @@ updatelinks() {
   
 }
 
-# Update the <REPO_ROOT>/builds/spack-* and <REPO_ROOT>/builds/boutpp/spack-* links such that there's
+# Update the <REPO_ROOT>/builds/spack/<pkg_name>/ links such that there's
 # exactly one link for every package returned by 'spack find [pkg_name]'
 updatelinks_h3env() {
-  updatelinks "hermes-3" "." "builds"
-  updatelinks "boutpp" "external/BOUT-dev" "builds/boutpp"
+  updatelinks "hermes-3" "."
+  updatelinks "boutpp" "external/BOUT-dev"
 }
 
 # Print help/usage info
