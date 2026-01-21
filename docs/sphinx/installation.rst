@@ -304,6 +304,8 @@ local repository.
 These instructions were last tested using Ubuntu 22.04.1 and spack version 0.23.1.
 The default environment configuration assumes you have gcc installed.
 
+.. _sec-hermes-install-spack:
+
 Install Spack
 ~~~~~~~~~~~~~
 
@@ -406,6 +408,13 @@ packages. It's possible to speed things up by defining a `packages.yaml
 package versions, but unless storage space is a big concern, letting spack build its own versions is
 usually the most trouble-free approach. This step rarely need to be repeated in its entirety unless
 moving to another version of the same compiler, or switching to a different version of spack itself.
+
+The location in which spack builds packages is set via your user configuration options (see
+:ref:`sec-hermes-install-spack`), but for convenience, the environment wrapper script automatically generates links to
+the BOUT++ and hermes-3 builds in `./builds/spack/boutpp/[hash]` and `./builds/spack/hermes-3/[hash]` respectively,
+(where `[hash]` is a label that spack assigns). CMake and compiler output can be found in the spack log files, and the
+the build itself in a subdirectory `spack-build-[hash]`. Build directory links are updated every time a `spack install`
+or `spack uninstall` command is run.
 
 
 Changing Hermes-3 and BOUT++ versions
