@@ -53,6 +53,69 @@ TEST_F(VorticityTest, Transform) {
   ASSERT_TRUE(state["fields"].isSet("phi"));
 }
 
+TEST_F(VorticityTest, TransformNoDiamagnetic) {
+  FakeSolver solver;
+  Options::root()["mesh"]["paralleltransform"]["type"] = "shifted";
+
+  Options options {{"units",
+                    {{"seconds", 1.0},
+                     {"Tesla", 1.0},
+                     {"meters", 1.0}}},
+                   {"test",
+                    {{"diamagnetic", false}}}};
+
+  Vorticity component("test", options, &solver);
+  component.declareAllSpecies({{"d+"},
+                               {}});
+
+  Options state{{"species",
+                 {{"d+",
+                   {{"AA", 2.0},
+                    {"charge", 1.0},
+                    {"pressure", 1.0}}}}}};
+
+  component.transform(state);
+
+  // No diamagnetic terms so values are not set
+  ASSERT_FALSE(state["species"]["d+"].isSet("energy_source"));
+  ASSERT_FALSE(state["fields"].isSet("DivJdia"));
+}
+
+TEST_F(VorticityTest, TransformWithCurlb_B) {
+  FakeSolver solver;
+  Options::root()["mesh"]["paralleltransform"]["type"] = "shifted";
+
+  // Add curvature data
+  static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
+                                                                 new FakeGridDataSource {{{"bxcvx", 1.0},
+                                                                                          {"bxcvy", 0.0},
+                                                                                          {"bxcvz", 0.0}}});
+
+  Options options {{"units",
+                    {{"seconds", 1.0},
+                     {"Tesla", 1.0},
+                     {"meters", 1.0}}},
+                   {"test",
+                    {{"diamagnetic", true}}}};
+
+  Vorticity component("test", options, &solver);
+  component.declareAllSpecies({{"d+"},
+                               {}});
+
+  Options state{{"species",
+                 {{"d+",
+                   {{"AA", 2.0},
+                    {"charge", 1.0},
+                    {"pressure", 1.0}}}}}};
+
+  component.transform(state);
+
+  // Diamagnetic terms set both the divergence of the current,
+  // and energy exchange with charged species
+  ASSERT_TRUE(state["species"]["d+"].isSet("energy_source"));
+  ASSERT_TRUE(state["fields"].isSet("DivJdia"));
+}
+
 TEST_F(VorticityTest, KinematicViscosity) {
   FakeSolver solver;
 
@@ -62,7 +125,8 @@ TEST_F(VorticityTest, KinematicViscosity) {
                      {"Tesla", 1.0},
                      {"meters", 1.0}}},
                    {"test",
-                    {{"viscosity", 1.0}}}};
+                    {{"viscosity", 1.0},
+                     {"diamagnetic", false}}}};
 
   Vorticity component("test", options, &solver);
   component.declareAllSpecies({{"e"},
@@ -82,4 +146,62 @@ TEST_F(VorticityTest, KinematicViscosity) {
 
   ASSERT_TRUE(state["species"]["d+"].isSet("energy_source"));
   ASSERT_FALSE(state["species"]["d"].isSet("energy_source"));
+}
+
+TEST_F(VorticityTest, calculatePihat) {
+  FakeSolver solver;
+  Options::root()["mesh"]["paralleltransform"]["type"] = "shifted";
+
+  Options options {{"units",
+                    {{"seconds", 1.0},
+                     {"Tesla", 1.0},
+                     {"meters", 1.0}}},
+                   {"test",
+                    {{"average_atomic_mass", 2.5}}}};
+
+  Vorticity component("test", options, &solver);
+
+  Options state {{"species",
+                  {{"d+",
+                    {{"pressure", 1.2},
+                     {"AA", 2.0},
+                     {"charge", 1.4}}}}}};
+  Permissions permissions {{readOnly("species"),
+                              readWrite("species:d+:energy_source")}};
+  GuardedOptions guarded_state {&state, &permissions};
+
+  Field3D Pi_hat = component.calculatePihat(guarded_state["species"]);
+
+  ASSERT_TRUE(IsFieldEqual(Pi_hat,
+                           1.2 * 2.0 / 2.5 / 1.4, "RGN_NOBNDRY"));
+}
+
+TEST_F(VorticityTest, calculateDivJdia) {
+  FakeSolver solver;
+  Options::root()["mesh"]["paralleltransform"]["type"] = "shifted";
+
+  Options options {{"units",
+                    {{"seconds", 1.0},
+                     {"Tesla", 1.0},
+                     {"meters", 1.0}}},
+                   {"test",
+                    {{"average_atomic_mass", 2.5}}}};
+
+  Vorticity component("test", options, &solver);
+
+  Options state {{"species",
+                  {{"d+",
+                    {{"pressure", 1.2},
+                     {"AA", 2.0},
+                     {"charge", 1.4}}}}}};
+  Permissions permissions {{readOnly("species"),
+                              readWrite("species:d+:energy_source")}};
+  GuardedOptions guarded_state {&state, &permissions};
+
+  Field3D DivJdia = component.calculateDivJdia(0.0, guarded_state["species"]);
+
+  ASSERT_TRUE(IsFieldEqual(DivJdia,
+                           0.0, "RGN_NOBNDRY"));
+  ASSERT_TRUE(IsFieldEqual(get<Field3D>(state["species"]["d+"]["energy_source"]),
+                           0.0, "RGN_NOBNDRY"));
 }
