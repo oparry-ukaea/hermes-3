@@ -150,9 +150,41 @@ TEST_F(NeutralFullVelocityTest, Transform) {
   component.transform(state);
 
   ASSERT_TRUE(state["species"]["neutral"].isSet("density"));
-  ASSERT_FLOAT_EQ(get<BoutReal>(state["species"]["neutral"]["AA"]), 2.0);
+  ASSERT_DOUBLE_EQ(get<BoutReal>(state["species"]["neutral"]["AA"]), 2.0);
   ASSERT_TRUE(state["species"]["neutral"].isSet("pressure"));
   ASSERT_TRUE(state["species"]["neutral"].isSet("momentum"));
   ASSERT_TRUE(state["species"]["neutral"].isSet("velocity"));
   ASSERT_TRUE(state["species"]["neutral"].isSet("temperature"));
+}
+
+TEST_F(NeutralFullVelocityTest, OutputVars) {
+  FakeSolver solver;
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource{
+          {{"Rxy", 1.0}, {"Zxy", 0.0}, {"hthe", 1.0}, {"Bpxy", 1.0}}});
+
+  Options options{{"units",
+                   {{"seconds", 1.0},
+                    {"Tesla", 1.0},
+                    {"meters", 1.0},
+                    {"inv_meters_cubed", 1e19},
+                    {"eV", 100}}},
+                  {"neutral", {{"AA", 2.0}}}};
+
+  NeutralFullVelocity component("neutral", options, &solver);
+
+  Options state;
+  component.transform(state);
+
+  Options outputs {
+    {"Nnorm", get<BoutReal>(options["units"]["inv_meters_cubed"])},
+    {"Tnorm", get<BoutReal>(options["units"]["eV"])},
+    {"Omega_ci", 1./get<BoutReal>(options["units"]["seconds"])},
+    {"Cs0", get<BoutReal>(options["units"]["meters"]) /
+     get<BoutReal>(options["units"]["seconds"])}};
+  component.outputVars(outputs);
+
+  ASSERT_TRUE(outputs.isSet("Urx"));
+  ASSERT_TRUE(outputs.isSet("Tyr"));
 }
