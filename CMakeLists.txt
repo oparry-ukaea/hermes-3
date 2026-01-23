@@ -73,6 +73,7 @@ set(HERMES_SOURCES
     src/evolve_energy.cxx
     src/evolve_pressure.cxx
     src/evolve_momentum.cxx
+    src/guarded_options.cxx
     src/isothermal.cxx
     src/quasineutral.cxx
     src/diamagnetic_drift.cxx
@@ -93,6 +94,7 @@ set(HERMES_SOURCES
     src/noflow_boundary.cxx
     src/neutral_parallel_diffusion.cxx
     src/neutral_boundary.cxx
+    src/permissions.cxx
     src/polarisation_drift.cxx
     src/solkit_neutral_parallel_diffusion.cxx
     src/hydrogen_charge_exchange.cxx
@@ -133,6 +135,7 @@ set(HERMES_SOURCES
     include/fixed_density.hxx
     include/fixed_fraction_ions.hxx
     include/fixed_velocity.hxx
+    include/guarded_options.hxx
     include/neutral_full_velocity.hxx
     include/hermes_utils.hxx
     include/hydrogen_charge_exchange.hxx
@@ -144,6 +147,7 @@ set(HERMES_SOURCES
     include/neutral_parallel_diffusion.hxx
     include/solkit_neutral_parallel_diffusion.hxx
     include/noflow_boundary.hxx
+    include/permissions.hxx
     include/polarisation_drift.hxx
     include/quasineutral.hxx
     include/reaction.hxx
@@ -221,33 +225,67 @@ configure_file(
 
 # Once built, copy the data and test directories
 option(HERMES_COPY_EXAMPLES_TO_BUILD "Copy the examples to the build directory" ON)
-if(HERMES_COPY_EXAMPLES_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/examples $<TARGET_FILE_DIR:${PROJECT_NAME}>/examples)
-endif()
 
 option(HERMES_COPY_JSON_DATABASE_TO_BUILD "Copy the json database to the build directory" ON)
-if(HERMES_COPY_JSON_DATABASE_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/json_database $<TARGET_FILE_DIR:${PROJECT_NAME}>/json_database)
+
+if(HERMES_COPY_EXAMPLES_TO_BUILD OR HERMES_COPY_JSON_DATABASE_TO_BUILD)
+  add_custom_target(setup-examples ALL)
+else()
+  add_custom_target(setup-examples)
 endif()
 
-option(HERMES_COPY_TESTS_TO_BUILD "Copy the tests to the build directory" ON)
-if(HERMES_COPY_TESTS_TO_BUILD)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${CMAKE_SOURCE_DIR}/tests $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests)
-endif()
+
 
 # Tests
+option(HERMES_COPY_TESTS_TO_BUILD "Copy the tests to the build directory" ON)
 option(HERMES_TESTS "Build the tests" ON)
+if(HERMES_COPY_TESTS_TO_BUILD OR HERMES_TESTS)
+  add_custom_target(setup-test ALL)
+else()
+  add_custom_target(setup-test)
+endif()
+
+
+
+# copy the data and test directories
+add_custom_command(TARGET setup-examples PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   ${CMAKE_SOURCE_DIR}/examples $<TARGET_FILE_DIR:${PROJECT_NAME}>/examples)
+
+add_custom_command(TARGET setup-examples PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   ${CMAKE_SOURCE_DIR}/json_database $<TARGET_FILE_DIR:${PROJECT_NAME}>/json_database)
+
+add_custom_command(TARGET setup-test PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   ${CMAKE_SOURCE_DIR}/tests $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests)
+
+
 if(HERMES_TESTS)
   enable_testing()
 
   # Integrated tests
   function(hermes_add_integrated_test TESTNAME)
+    set(oneValueArgs DOWNLOAD DOWNLOAD_NAME)
+    set(multiValueArgs REQUIRES CONFLICTS)
+    cmake_parse_arguments(HERMES_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    foreach (REQUIREMENT IN LISTS HERMES_TEST_OPTIONS_REQUIRES)
+      if (NOT ${REQUIREMENT})
+        message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
+        return()
+      endif()
+    endforeach()
+
+    foreach (CONFLICT IN LISTS HERMES_TEST_OPTIONS_CONFLICTS)
+      if (${CONFLICT})
+        message(STATUS "Not building test ${TESTNAME}, conflicts with: ${CONFLICT}")
+        return()
+      endif()
+      message(STATUS "CONFLICT ${CONFLICT} ${${CONFLICT}}")
+    endforeach()
+
+
     if(HERMES_COPY_TESTS_TO_BUILD)
       set(INT_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/tests/integrated/${TESTNAME})
       set(INT_TEST_DEST
@@ -264,6 +302,22 @@ if(HERMES_TESTS)
       WORKING_DIRECTORY ${INT_TEST_DEST}
       COMMAND runtest)
     set_tests_properties(${TESTNAME} PROPERTIES LABELS integration)
+
+    if (HERMES_TEST_OPTIONS_DOWNLOAD)
+      if (NOT HERMES_TEST_OPTIONS_DOWNLOAD_NAME)
+        message(FATAL_ERROR "We need DOWNLOAD_NAME if we should DOWNLOAD!")
+      endif()
+      file(REAL_PATH ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME} DOWNLOAD_DEST_PATH BASE_DIRECTORY ${INT_TEST_DEST})
+      add_custom_command(OUTPUT ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+                         COMMAND wget -nv ${HERMES_TEST_OPTIONS_DOWNLOAD} -O ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+                         WORKING_DIRECTORY ${INT_TEST_DEST}
+                         COMMENT "Downloading test data to ${DOWNLOAD_DEST_PATH}")
+      # Custom target to run download command; use sanitised absolute path for the target name
+      string(REPLACE "/" "_" DOWNLOAD_TARGET_NAME ${DOWNLOAD_DEST_PATH})
+      add_custom_target(${DOWNLOAD_TARGET_NAME} ALL
+                        DEPENDS ${HERMES_TEST_OPTIONS_DOWNLOAD_NAME}
+                        DEPENDS setup-test)
+    endif()
   endfunction()
 
   hermes_add_integrated_test(1D-fluid)
@@ -279,6 +333,7 @@ if(HERMES_TESTS)
   hermes_add_integrated_test(alfven-wave)
   hermes_add_integrated_test(collfreq-braginskii-afn)
   hermes_add_integrated_test(collfreq-multispecies)
+  hermes_add_integrated_test(2D-energy)
 
   # Unit tests
   option(HERMES_UNIT_TESTS "Build the unit tests" ON)

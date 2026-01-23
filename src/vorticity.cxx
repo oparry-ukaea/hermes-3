@@ -38,9 +38,44 @@ BoutReal limitFree(BoutReal fm, BoutReal fc) {
 
   return fp;
 }
+
+// Grad_perp, setting DDY -> 0 and using corner values
+Vector3D Grad_perp_XZ(const Field3D& f) {
+  Vector3D result(f.getMesh());
+  auto metric = f.getCoordinates();
+
+  result.x = emptyFrom(f);
+  result.y = 0.0;
+  result.z = emptyFrom(f);
+
+  auto dx = metric->dx;
+  auto dz = metric->dz;
+
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    auto xp = i.xp();
+    auto xm = i.xm();
+    // DDX(f)
+    result.x[i] = ((4. * f[xp] + f[xp.zp()] + f[xp.zm()]) -
+                   (4. * f[xm] + f[xm.zp()] + f[xm.zm()]))
+      / (12. * dx[i]);
+
+    // DDZ(f)
+    auto zp = i.zp();
+    auto zm = i.zm();
+    result.z[i] = ((4. * f[zp] + f[zp.xp()] + f[zp.xm()]) -
+                   (4. * f[zm] + f[zm.xp()] + f[zm.xm()]))
+      / (12. * dz[i]);
+  }
+
+  result.setLocation(f.getLocation());
+  result.covariant = true;
+
+  return result;
+}
 } // namespace
 
-Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver) {
+Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver)
+    : Component({readWrite("fields:vorticity"), readWrite("fields:phi")}) {
   AUTO_TRACE();
 
   solver->add(Vort, "Vort");
@@ -93,6 +128,7 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver) {
                  .doc("Split phi into n=0 and n!=0 components")
                  .withDefault<bool>(false);
 
+  include_viscosity = options.isSet("viscosity"); // Only include if set
   viscosity = options["viscosity"]
     .doc("Kinematic viscosity [m^2/s]")
     .withDefault<BoutReal>(0.0)
@@ -205,13 +241,44 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver) {
   diagnose = options["diagnose"]
     .doc("Output additional diagnostics?")
     .withDefault<bool>(false);
+
+  if (diamagnetic or diamagnetic_polarisation) {
+    // FIXME: These will only be read if BOTH charge and pressure (and possibly AA) are
+    // set
+    setPermissions(readIfSet("species:{charged}:pressure", Regions::Interior));
+    setPermissions(readIfSet("species:{all_species}:charge"));
+  }
+  if (diamagnetic) {
+    setPermissions(readWrite("species:{charged}:energy_source"));
+    setPermissions(readWrite("fields:DivJdia"));
+  }
+  if (diamagnetic_polarisation or collisional_friction or include_viscosity) {
+    // FIXME: Only read if pressure also set
+    setPermissions(readIfSet("species:{charged}:AA"));
+  }
+  if (phi_boundary_relax) {
+    setPermissions(readOnly("time"));
+  } else {
+    if (sheath_boundary) {
+      setPermissions(readOnly("species:e:AA"));
+    }
+    setPermissions(readIfSet("species:e:temperature", Regions::Interior));
+  }
+  if (collisional_friction or include_viscosity) {
+    setPermissions(readOnly("species:{charged}:density", Regions::Interior));
+    setPermissions(readIfSet("species:{all_species}:charge"));
+  }
+  if (collisional_friction) {
+    setPermissions(readIfSet("species:{positive_ions}:collision_frequency"));
+    setPermissions(readWrite("fields:DivJcol"));
+  }
 }
 
-void Vorticity::transform(Options& state) {
+void Vorticity::transform_impl(GuardedOptions& state) {
   AUTO_TRACE();
 
   phi.name = "phi";
-  auto& fields = state["fields"];
+  auto fields = state["fields"];
 
   // Set the boundary of phi. Both 2D and 3D fields are kept, though the 3D field
   // is constant in Z. This is for efficiency, to reduce the number of conversions.
@@ -221,9 +288,9 @@ void Vorticity::transform(Options& state) {
   if (diamagnetic_polarisation) {
     // Diamagnetic term in vorticity. Note this is weighted by the mass
     // This includes all species, including electrons
-    Options& allspecies = state["species"];
+    GuardedOptions allspecies = state["species"];
     for (auto& kv : allspecies.getChildren()) {
-      Options& species = allspecies[kv.first]; // Note: need non-const
+      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
 
       if (!(IS_SET_NOBOUNDARY(species["pressure"]) and species.isSet("charge")
             and species.isSet("AA"))) {
@@ -368,11 +435,14 @@ void Vorticity::transform(Options& state) {
         // Set midpoint (boundary) value
         for (int k = 0; k < mesh->LocalNz; k++) {
           phi(mesh->xstart - 1, j, k) = 2. * phivalue - phi(mesh->xstart, j, k);
-
-          // Note: This seems to make a difference, but don't know why.
-          // Without this, get convergence failures with no apparent instability
-          // (all fields apparently smooth, well behaved)
-          phi(mesh->xstart - 2, j, k) = phi(mesh->xstart - 1, j, k);
+        }
+        if (mesh->xstart > 1) {
+          for (int k = 0; k < mesh->LocalNz; k++) {
+            // Note: This seems to make a difference, but don't know why.
+            // Without this, get convergence failures with no apparent instability
+            // (all fields apparently smooth, well behaved)
+            phi(mesh->xstart - 2, j, k) = phi(mesh->xstart - 1, j, k);
+          }
         }
       }
     }
@@ -388,11 +458,15 @@ void Vorticity::transform(Options& state) {
         // Set midpoint (boundary) value
         for (int k = 0; k < mesh->LocalNz; k++) {
           phi(mesh->xend + 1, j, k) = 2. * phivalue - phi(mesh->xend, j, k);
-
-          // Note: This seems to make a difference, but don't know why.
-          // Without this, get convergence failures with no apparent instability
-          // (all fields apparently smooth, well behaved)
-          phi(mesh->xend + 2, j, k) = phi(mesh->xend + 1, j, k);
+        }
+        if (mesh->xend < mesh->LocalNx - 2) {
+          for (int k = 0; k < mesh->LocalNz; k++) {
+        
+            // Note: This seems to make a difference, but don't know why.
+            // Without this, get convergence failures with no apparent instability
+            // (all fields apparently smooth, well behaved)
+            phi(mesh->xend + 2, j, k) = phi(mesh->xend + 1, j, k);
+          }
         }
       }
     }
@@ -515,10 +589,10 @@ void Vorticity::transform(Options& state) {
 
     Vector3D Grad_phi = Grad(phi);
 
-    Options& allspecies = state["species"];
+    GuardedOptions allspecies = state["species"];
 
     for (auto& kv : allspecies.getChildren()) {
-      Options& species = allspecies[kv.first]; // Note: need non-const
+      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
 
       if (!(IS_SET_NOBOUNDARY(species["pressure"]) and IS_SET(species["charge"]))) {
         continue; // No pressure or charge -> no diamagnetic current
@@ -590,9 +664,9 @@ void Vorticity::transform(Options& state) {
         zeroFrom(Vort); // Sum of atomic mass * collision frequency * density
     Field3D sum_A_n = zeroFrom(Vort); // Sum of atomic mass * density
 
-    const Options& allspecies = state["species"];
+    GuardedOptions allspecies = state["species"];
     for (const auto& kv : allspecies.getChildren()) {
-      const Options& species = kv.second;
+      const GuardedOptions species = kv.second;
 
       if (!(species.isSet("charge") and species.isSet("AA"))) {
         continue; // No charge or mass -> no current
@@ -618,6 +692,73 @@ void Vorticity::transform(Options& state) {
 
     ddt(Vort) += DivJcol;
     set(fields["DivJcol"], DivJcol);
+  }
+
+  // Kinematic viscosity
+  if (include_viscosity) {
+    // This uses a viscous force density F = -nu * B * b x ∇ω
+    // This gives rise to a drift and so the divergence of a current
+    //   ∇ . Jvis = ∇ . [ b x F / B ] = ∇ . [ nu ∇⟂ ω ]
+    //
+    // Fluid velocity u = b x ∇Φ / B   (Boussinesq approximation)
+    // where potential Φ = ϕ + Pi/n0
+    // Work done F . u = - nu * ∇⟂ ω . ∇⟂Φ
+    //                 = - nu B^2 / (n0 m_i) ∇⟂(∇ . g) . g
+    //                 = nu B^2 / (n0 m_i) [ (∇⟂g : ∇⟂g) - ∇ . ([g . ∇⟂]g) ]
+    //                                                     ^^^^^^^^^^^^^^^
+    //                                                   not positive definite
+    // where vector g = n0 m_i / B^2 ∇⟂Φ
+    //
+    // The work done is not positive definite but integrates to zero over the
+    // domain provided that nu B^2 = const, because then the scalars
+    // in front can move through the divergence, integrating to leave only
+    // boundary fluxes.
+
+    Vort.applyBoundary("neumann");
+    ddt(Vort) += FV::Div_a_Grad_perp(viscosity, Vort);
+
+    Field3D phi_hat = phi + Pi_hat;
+    //phi_hat.applyBoundary("neumann");
+
+    // Note: Grad_perp_XZ ignores the DDY terms
+    viscous_heating = - viscosity * (Grad_perp_XZ(Vort) * Grad_perp_XZ(phi_hat));
+
+    // Weight the heating by mass density of charged species
+    // This is an approximation motivated because the perpendicular
+    // kinetic energy is proportional to mass
+
+    Field3D sum_A_n = zeroFrom(Vort); // Sum of atomic mass * density
+    GuardedOptions allspecies = state["species"];
+    for (const auto& kv : allspecies.getChildren()) {
+      const GuardedOptions species = kv.second;
+
+      if (!(species.isSet("charge") and species.isSet("AA") and species.isSet("density"))) {
+        continue; // No charge or mass -> no current
+      }
+      if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
+        continue; // Zero charge
+      }
+
+      const BoutReal A = get<BoutReal>(species["AA"]);
+      const Field3D N = GET_NOBOUNDARY(Field3D, species["density"]);
+      sum_A_n += A * N;
+    }
+
+    for (const auto& kv : allspecies.getChildren()) {
+      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
+
+      if (!(species.isSet("charge") and species.isSet("AA") and species.isSet("density"))) {
+        continue; // No charge or mass -> no current
+      }
+      if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
+        continue; // Zero charge
+      }
+
+      const BoutReal A = get<BoutReal>(species["AA"]);
+      const Field3D N = GET_NOBOUNDARY(Field3D, species["density"]);
+
+      add(species["energy_source"], viscous_heating * A * N / sum_A_n);
+    }
   }
 
   set(fields["vorticity"], Vort);
@@ -702,9 +843,6 @@ void Vorticity::finally(const Options& state) {
     }
   }
 
-  // Viscosity
-  ddt(Vort) += FV::Div_a_Grad_perp(viscosity, Vort);
-
   if (vort_dissipation) {
     // Adds dissipation term like in other equations
     Field3D sound_speed = get<Field3D>(state["sound_speed"]);
@@ -770,6 +908,7 @@ void Vorticity::outputVars(Options& state) {
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
   auto Tnorm = get<BoutReal>(state["Tnorm"]);
   auto Omega_ci = get<BoutReal>(state["Omega_ci"]);
+  auto Lnorm = get<BoutReal>(state["rho_s0"]);
 
   state["Vort"].setAttributes({{"time_dimension", "t"},
                                {"units", "C m^-3"},
@@ -807,6 +946,20 @@ void Vorticity::outputVars(Options& state) {
                       {"units", "A m^-3"},
                       {"conversion", SI::qe * Nnorm * Omega_ci},
                       {"long_name", "Divergence of collisional current"},
+                      {"source", "vorticity"}});
+    }
+    if (include_viscosity) {
+      set_with_attrs(state["kinematic_viscosity"], viscosity,
+                     {{"time_dimension", "t"},
+                      {"units", "m^-2 / s"},
+                      {"conversion", Lnorm * Lnorm * Omega_ci},
+                      {"long_name", "Kinematic viscosity"},
+                      {"source", "vorticity"}});
+      set_with_attrs(state["kinematic_viscous_heating"], viscous_heating,
+                     {{"time_dimension", "t"},
+                      {"units", "W m^-3"},
+                      {"conversion", SI::qe * Tnorm * Nnorm * Omega_ci},
+                      {"long_name", "Heating due to kinematic viscosity"},
                       {"source", "vorticity"}});
     }
   }
