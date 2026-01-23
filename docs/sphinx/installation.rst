@@ -324,7 +324,7 @@ version v1.1.0 has been tested:
 
 .. code-block:: bash
    
-   git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git -b releases/v1.1.0
+   git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git -b v1.1.0
 
 .. important::
    If you have an existing Spack installation of a version before v1.0.0, you will need to uninstall it first.
