@@ -42,26 +42,13 @@ struct BraginskiiIonViscosity : public Component {
   ///
   BraginskiiIonViscosity(const std::string& name, Options& alloptions, Solver*);
 
-  /// Inputs
-  /// - species
-  ///   - <name>   (skips "e")
-  ///     - pressure  (skips if not present)
-  ///     - velocity  (skips if not present)
-  ///     - collision_frequency
-  ///
-  /// Sets in the state
-  /// - species
-  ///   - <name>
-  ///     - momentum_source
-  ///
-  void transform(Options& state) override;
-
   /// Save variables to the output
   void outputVars(Options& state) override;
 
 private:
   BoutReal eta_limit_alpha; ///< Flux limit coefficient
-  bool perpendicular;       ///< Include perpendicular flow? (Requires phi)
+  bool parallel;            ///< Include parallel viscosity (requires parallel velocity)
+  bool perpendicular;       ///< Include perpendicular viscosity? (Requires phi)
   std::map<std::string, std::vector<std::string>>
       collision_names;                   ///< Collisions used for collisionality
   std::string viscosity_collisions_mode; ///< Collision selection, either multispecies or
@@ -73,6 +60,7 @@ private:
   BoutReal bounce_frequency_epsilon; ///< Input inverse aspect ratio for including bounce
                                      ///< frequency change
   BoutReal bounce_frequency_R;       ///< Input major radius
+  BoutReal density_floor;            ///< Minimum density used in calculating Pi_ciperp
   bool diagnose;                     ///< Output additional diagnostics?
 
   /// Per-species diagnostics
@@ -86,6 +74,26 @@ private:
 
   /// Store diagnostics for each species
   std::map<std::string, Diagnostics> diagnostics;
+
+  /// Inputs
+  /// - species
+  ///   - <name>   (skips "e")
+  ///     - charge
+  ///     - pressure  (skips if not present)
+  ///     - velocity  (skips if not present)
+  ///     - collision_frequency
+  ///   - fields
+  ///     - phi
+  ///
+  /// Sets in the state
+  /// - species
+  ///   - <name>
+  ///     - momentum_source
+  ///     - energy_source
+  ///   - fields
+  ///     - DivJextra
+  ///
+  void transform_impl(GuardedOptions& state) override;
 };
 
 namespace {

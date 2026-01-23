@@ -14,7 +14,7 @@ using bout::globals::mesh;
 
 NeutralFullVelocity::NeutralFullVelocity(const std::string& name, Options& alloptions,
                                          Solver* solver)
-    : name(name) {
+    : Component({readWrite("species:{name}:{outputs}")}), name(name) {
   AUTO_TRACE();
 
   // This is used in both transform and finally functions
@@ -248,10 +248,13 @@ NeutralFullVelocity::NeutralFullVelocity(const std::string& name, Options& allop
   // Ensure that guard cells are filled and consistent between processors
   mesh->communicate(Urx, Ury, Uzx, Uzy);
   mesh->communicate(Txr, Txz, Tyr, Tyz);
+  substitutePermissions("name", {name});
+  substitutePermissions(
+      "outputs", {"AA", "density", "pressure", "temperature", "momentum", "velocity"});
 }
 
 /// Modify the given simulation state
-void NeutralFullVelocity::transform(Options& state) {
+void NeutralFullVelocity::transform_impl(GuardedOptions& state) {
   AUTO_TRACE();
   mesh->communicate(Nn2D, Vn2D, Pn2D);
 
@@ -314,7 +317,7 @@ void NeutralFullVelocity::transform(Options& state) {
   Vnpar = Vn2D.y / (coord->J * coord->Bxy);
 
   // Set values in the state
-  auto& localstate = state["species"][name];
+  auto localstate = state["species"][name];
   set(localstate["density"], Nn2D);
   set(localstate["AA"], AA); // Atomic mass
   set(localstate["pressure"], Pn2D);
@@ -394,14 +397,13 @@ void NeutralFullVelocity::finally(const Options& state) {
           output_info.write("{:s} ", collision);
         }
         output_info.write("\n");
-        }
+      }
 
       // Collect the collisionalities based on list of names
       nu = 0;
       for (const auto& collision_name : collision_names) {
         nu += DC(get<Field3D>(localstate["collision_frequencies"][collision_name]));
       }
-
 
       // Dnn = Vth^2 / sigma
       Dnn = (Tn2D_floor / AA) / (nu + Rnn);
@@ -421,16 +423,6 @@ void NeutralFullVelocity::finally(const Options& state) {
     //       where nu is the collision frequency used in Dnn
     kappa_n = (5. / 2) * Dnn * Nn2D_floor;
 
-    // Viscosity
-    // Relationship between heat conduction and viscosity for neutral
-    // gas Chapman, Cowling "The Mathematical Theory of Non-Uniform
-    // Gases", CUP 1952 Ferziger, Kaper "Mathematical Theory of
-    // Transport Processes in Gases", 1972
-    // eta_n = (2. / 5) * m_n * kappa_n;
-    //
-    // eta_n = AA * (2. / 5) * kappa_n;
-
-
     if (flux_limit > 0.0) {
       // Thermal velocity of neutrals
       Field2D Vnth = sqrt(Tn2D_floor / AA); 
@@ -446,17 +438,14 @@ void NeutralFullVelocity::finally(const Options& state) {
       BOUT_FOR(i, kappa_n.getRegion("RGN_NOBNDRY")) {
         kappa_n[i] = kappa_n[i] * kappa_n_max[i] / (kappa_n[i] + kappa_n_max[i]);
       }
-
-      // NOTE: How can we make a good estimate of abs(Grad(Vn)) since we have two velocities?
-      // Field2D viscosity_factor = 1.0 / (1.0 + eta_n * abs(Grad(Vn)) / (flux_limit * Pn2D_floor)); 
-      // BOUT_FOR(i, eta_n.getRegion("RGN_NOBNDRY")) {
-      //   eta_n[i] = eta_n[i] * viscosity_factor[i];
-      // }
-
     }
 
+    // Viscosity
+    // Relationship between heat conduction and viscosity for neutral
+    // gas Chapman, Cowling "The Mathematical Theory of Non-Uniform
+    // Gases", CUP 1952 Ferziger, Kaper "Mathematical Theory of
+    // Transport Processes in Gases", 1972
     eta_n = AA * (2. / 5) * kappa_n;
-
 
     mesh->communicate(Dnn);
     Dnn.applyBoundary();
@@ -466,7 +455,6 @@ void NeutralFullVelocity::finally(const Options& state) {
 
     mesh->communicate(eta_n);
     eta_n.applyBoundary("neumann");
-
 
     for (RangeIterator idwn = mesh->iterateBndryLowerY(); !idwn.isDone(); idwn.next()) {
       // Neumann conditions for transport coefficients
@@ -479,7 +467,6 @@ void NeutralFullVelocity::finally(const Options& state) {
       kappa_n(idwn.ind, mesh->yend + 1) = kappa_n(idwn.ind, mesh->yend);
       eta_n(idwn.ind, mesh->yend + 1) = eta_n(idwn.ind, mesh->yend);
     }
-
   }
 
   /////////////////////////////////////////////////////
@@ -679,8 +666,6 @@ void NeutralFullVelocity::finally(const Options& state) {
         / (coord->dy(r.ind, mesh->yend) * coord->J(r.ind, mesh->yend));
   }
 
-
-
 #if CHECKLEVEL >= 2
   for (auto& i : Nn2D.getRegion("RGN_NOBNDRY")) {
     if (!std::isfinite(ddt(Nn2D)[i])) {
@@ -705,7 +690,7 @@ void NeutralFullVelocity::finally(const Options& state) {
   ddt(Vn2D).toContravariant();
   Vn2D.toContravariant();
 
-  // Ste time derivatives to zero
+  // Set time derivatives to zero
   if (zero_timederivs) {
     Field2D zero {0.0};
     ddt(Nn2D) = zero;
@@ -713,7 +698,6 @@ void NeutralFullVelocity::finally(const Options& state) {
     ddt(Vn2D) = 0.0;
     return;
   }
-
 }
 
 /// Add extra fields for output, or set attributes e.g docstrings

@@ -15,9 +15,6 @@
 struct NeutralFullVelocity : public Component {
   NeutralFullVelocity(const std::string& name, Options& options, Solver* solver);
 
-  /// Modify the given simulation state
-  void transform(Options& state) override;
-
   /// Use the final simulation state to update internal state
   /// (e.g. time derivatives)
   void finally(const Options& state) override;
@@ -60,7 +57,6 @@ private:
   BoutReal neutral_conduction; // Neutral gas thermal conduction
   BoutReal neutral_gamma;      // Heat transmission for neutrals
 
-
   std::vector<std::string> collision_names; ///< Collisions used for collisionality
   std::string diffusion_collisions_mode;  ///< Collision selection, either afn or multispecies
   Field2D nu; ///< Collisionality to use for diffusion
@@ -87,6 +83,16 @@ private:
   Field2D density_source, pressure_source; ///< External input source
   Field2D Sn, Sp, Snv; ///< Particle, pressure and momentum source
 
+  /// Sets
+  /// - species
+  ///   - <name>
+  ///     - AA
+  ///     - density
+  ///     - momentum
+  ///     - pressure
+  ///     - temperature
+  ///     - velocity
+  void transform_impl(GuardedOptions& state) override;
 };
 
 namespace {
