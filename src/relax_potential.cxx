@@ -38,7 +38,8 @@ BoutReal limitFree(BoutReal fm, BoutReal fc) {
 }
 } // namespace
 
-RelaxPotential::RelaxPotential(std::string name, Options& alloptions, Solver* solver) {
+RelaxPotential::RelaxPotential(std::string name, Options& alloptions, Solver* solver)
+    : Component({readWrite("fields:vorticity"), readWrite("fields:phi")}) {
   AUTO_TRACE();
 
   solver->add(Vort, "Vort"); // Vorticity evolving
@@ -139,7 +140,6 @@ RelaxPotential::RelaxPotential(std::string name, Options& alloptions, Solver* so
   lambda_1 = options["lambda_1"].doc("λ_1 > 1").withDefault(3e8) / (Tnorm * Omega_ci / SI::qe / Nnorm);
   lambda_2 = options["lambda_2"].doc("λ_2 > λ_1").withDefault(1.0);
 
-
   // Add phi to restart files so that the value in the boundaries
   // is restored on restart. This is done even when phi is not evolving,
   // so that phi can be saved and re-loaded
@@ -165,12 +165,18 @@ RelaxPotential::RelaxPotential(std::string name, Options& alloptions, Solver* so
                              / get<BoutReal>(alloptions["units"]["seconds"]);
   }
 
-  // Read curvature vector
-  try {
-    Curlb_B.covariant = false; // Contravariant
-    mesh->get(Curlb_B, "bxcv");
+  if (diamagnetic) {
+    // FIXME: These will only be read if BOTH charge and pressure are set
+    setPermissions(readIfSet("species:{charged}:pressure", Regions::Interior));
+    setPermissions(readIfSet("species:{all_species}:charge"));
+    // FIXME: The weay transform_impl is currently written,
+    // energy_source is set for neutral species with an explicit
+    // charge declared as 0 if diamagnetic_polarisation == true. I
+    // suspect that's a mistake though.
+    setPermissions(readWrite("species:{all_species}:energy_source"));
+    setPermissions(readWrite("fields:DivJdia"));
 
-  } catch (BoutException& e) {
+    // Read curvature vector
     try {
       // May be 2D, reading as 3D
       Vector2D curv2d;
@@ -208,13 +214,13 @@ RelaxPotential::RelaxPotential(std::string name, Options& alloptions, Solver* so
     .withDefault<bool>(false);
 }
 
-void RelaxPotential::transform(Options& state) {
+void RelaxPotential::transform_impl(GuardedOptions& state) {
   AUTO_TRACE();
 
-  Options& allspecies = state["species"];
+  auto allspecies = state["species"];
 
   phi.name = "phi";
-  auto& fields = state["fields"];
+  auto fields = state["fields"];
 
   // Set the boundary of phi1. 
   phi1.applyBoundary("neumann");
@@ -269,7 +275,7 @@ void RelaxPotential::transform(Options& state) {
     // This includes all species, including electrons
     // Options& allspecies = state["species"];
     for (auto& kv : allspecies.getChildren()) {
-      Options& species = allspecies[kv.first]; // Note: need non-const
+      auto species = allspecies[kv.first]; // Note: need non-const
 
       if (!(IS_SET_NOBOUNDARY(species["pressure"]) and species.isSet("charge")
             and species.isSet("AA"))) {
@@ -465,7 +471,6 @@ void RelaxPotential::transform(Options& state) {
     }
   }
 
-
   // Ensure that potential is set in the communication guard cells
   mesh->communicate(phi, phi1, Vort); //NOTE(malamast): Should we include phi1?
 
@@ -516,8 +521,9 @@ void RelaxPotential::transform(Options& state) {
 
     Vector3D Grad_phi = Grad(phi);
 
+    GuardedOptions allspecies = state["species"];
     for (auto& kv : allspecies.getChildren()) {
-      Options& species = allspecies[kv.first]; // Note: need non-const
+      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
 
       if (!(IS_SET_NOBOUNDARY(species["pressure"]) and IS_SET(species["charge"]))) {
         continue; // No pressure or charge -> no diamagnetic current
@@ -590,7 +596,7 @@ void RelaxPotential::transform(Options& state) {
     Field3D sum_A_n = zeroFrom(Vort); // Sum of atomic mass * density
 
     for (const auto& kv : allspecies.getChildren()) {
-      const Options& species = kv.second;
+      const auto species = kv.second;
 
       if (!(species.isSet("charge") and species.isSet("AA"))) {
         continue; // No charge or mass -> no current

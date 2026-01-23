@@ -22,20 +22,6 @@ struct Recycling : public Component {
   ///
   Recycling(std::string name, Options &alloptions, Solver *);
 
-  /// Inputs
-  ///
-  /// - species
-  ///   - <species>
-  ///    - density
-  ///    - velocity
-  ///
-  /// Outputs
-  ///
-  /// - species
-  ///  - <species>
-  ///   - density_source
-  ///
-  void transform(Options &state) override;
   void outputVars(Options &state) override;
 
 private:
@@ -69,7 +55,7 @@ private:
 
   std::vector<RecycleChannel> channels; // Recycling channels
 
-  bool target_recycle, sol_recycle, pfr_recycle, neutral_pump;  ///< Flags for enabling recycling in different regions
+  bool target_recycle {false}, sol_recycle {false}, pfr_recycle {false}, neutral_pump {false};  ///< Flags for enabling recycling in different regions
   bool diagnose; ///< Save additional post-processing variables?
 
   BoutReal density_floor, pressure_floor; ///< minimum values for Nn, Pn to avoid divide by zero
@@ -79,6 +65,27 @@ private:
   Field3D particle_flow_xlow; ///< Radial wall particle fluxes for recycling calc. No need to get poloidal from here, it's calculated from sheath velocity
 
   Field2D is_pump; ///< 1 = pump, 0 = no pump. Works only in SOL/PFR. Provided by user in grid file.
+  /// Inputs
+  ///
+  /// - species
+  ///   - <from species>
+  ///     - density
+  ///     - velocity
+  ///     - temperature
+  ///   - <to species>
+  ///     - AA
+  ///     - density
+  ///     - pressure
+  ///     - temperature
+  ///
+  /// Outputs
+  ///
+  /// - species
+  ///   - <species>
+  ///     - density_source
+  ///     - energy_source
+  ///
+  void transform_impl(GuardedOptions& state) override;
 };
 
 namespace {
