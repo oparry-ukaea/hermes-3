@@ -248,8 +248,10 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver)
     setPermissions(readIfSet("species:{charged}:pressure", Regions::Interior));
     setPermissions(readIfSet("species:{all_species}:charge"));
   }
-  if (diamagnetic) {
+  if (diamagnetic or include_viscosity) {
     setPermissions(readWrite("species:{charged}:energy_source"));
+  }
+  if (diamagnetic) {
     setPermissions(readWrite("fields:DivJdia"));
   }
   if (diamagnetic_polarisation or collisional_friction or include_viscosity) {
@@ -274,6 +276,103 @@ Vorticity::Vorticity(std::string name, Options& alloptions, Solver* solver)
   }
 }
 
+Field3D Vorticity::calculatePihat(GuardedOptions allspecies) {
+  Pi_hat = 0.0;
+  for (auto& kv : allspecies.getChildren()) {
+    GuardedOptions species = allspecies[kv.first]; // Note: need non-const
+
+    if (!(IS_SET_NOBOUNDARY(species["pressure"]) and species.isSet("charge")
+          and species.isSet("AA"))) {
+      continue; // No pressure, charge or mass -> no polarisation current
+    }
+
+    const auto charge = get<BoutReal>(species["charge"]);
+    if (fabs(charge) < 1e-5) {
+      // No charge
+      continue;
+    }
+
+    // Don't need sheath boundary
+    const auto P = GET_NOBOUNDARY(Field3D, species["pressure"]);
+    const auto AA = get<BoutReal>(species["AA"]);
+
+    Pi_hat += P * (AA / average_atomic_mass / charge);
+  }
+  Pi_hat.applyBoundary("neumann");
+  return Pi_hat;
+}
+
+Field3D Vorticity::calculateDivJdia(Field3D phi, GuardedOptions allspecies) {
+  Vector3D Jdia;
+  Jdia.x = 0.0;
+  Jdia.y = 0.0;
+  Jdia.z = 0.0;
+  Jdia.covariant = Curlb_B.covariant;
+
+  Vector3D Grad_phi = Grad(phi);
+
+  for (auto& kv : allspecies.getChildren()) {
+    GuardedOptions species = allspecies[kv.first]; // Note: need non-const
+
+    if (!(IS_SET_NOBOUNDARY(species["pressure"]) and IS_SET(species["charge"]))) {
+      continue; // No pressure or charge -> no diamagnetic current
+    }
+    if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
+      // No charge
+      continue;
+    }
+
+    // Note that the species must have a charge, but charge is not used,
+    // because it cancels out in the expression for current
+
+    auto P = GET_NOBOUNDARY(Field3D, species["pressure"]);
+
+    // Note: We need boundary conditions on P, so apply the same
+    //       free boundary condition as sheath_boundary.
+    if (P.hasParallelSlices()) {
+      Field3D &P_ydown = P.ydown();
+      Field3D &P_yup = P.yup();
+      for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          P_ydown(r.ind, mesh->ystart - 1, jz) = 2 * P(r.ind, mesh->ystart, jz) - P_yup(r.ind, mesh->ystart + 1, jz);
+        }
+      }
+      for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          P_yup(r.ind, mesh->yend + 1, jz) = 2 * P(r.ind, mesh->yend, jz) - P_ydown(r.ind, mesh->yend - 1, jz);
+        }
+      }
+    } else {
+      Field3D P_fa = toFieldAligned(P);
+      for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          auto i = indexAt(P_fa, r.ind, mesh->ystart, jz);
+          P_fa[i.ym()] = limitFree(P_fa[i.yp()], P_fa[i]);
+        }
+      }
+      for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          auto i = indexAt(P_fa, r.ind, mesh->yend, jz);
+          P_fa[i.yp()] = limitFree(P_fa[i.ym()], P_fa[i]);
+        }
+      }
+      P = fromFieldAligned(P_fa);
+    }
+
+    Vector3D Jdia_species = P * Curlb_B; // Diamagnetic current for this species
+
+    // This term energetically balances diamagnetic term
+    // in the vorticity equation
+    subtract(species["energy_source"], Jdia_species * Grad_phi);
+
+    Jdia += Jdia_species; // Collect total diamagnetic current
+  }
+
+  // Note: This term is central differencing so that it balances
+  // the corresponding compression term in the species pressure equations
+  return Div(Jdia);
+}
+
 void Vorticity::transform_impl(GuardedOptions& state) {
   AUTO_TRACE();
 
@@ -286,32 +385,8 @@ void Vorticity::transform_impl(GuardedOptions& state) {
   //       and only phi is considered, not phi + Pi which is handled in Boussinesq solves
   Pi_hat = 0.0; // Contribution from ion pressure, weighted by atomic mass / charge
   if (diamagnetic_polarisation) {
-    // Diamagnetic term in vorticity. Note this is weighted by the mass
-    // This includes all species, including electrons
-    GuardedOptions allspecies = state["species"];
-    for (auto& kv : allspecies.getChildren()) {
-      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
-
-      if (!(IS_SET_NOBOUNDARY(species["pressure"]) and species.isSet("charge")
-            and species.isSet("AA"))) {
-        continue; // No pressure, charge or mass -> no polarisation current
-      }
-
-      const auto charge = get<BoutReal>(species["charge"]);
-      if (fabs(charge) < 1e-5) {
-        // No charge
-        continue;
-      }
-
-      // Don't need sheath boundary
-      const auto P = GET_NOBOUNDARY(Field3D, species["pressure"]);
-      const auto AA = get<BoutReal>(species["AA"]);
-
-      Pi_hat += P * (AA / average_atomic_mass / charge);
-    }
+    Pi_hat = calculatePihat(state["species"]);
   }
-
-  Pi_hat.applyBoundary("neumann");
 
   if (phi_boundary_relax) {
     // Update the boundary regions by relaxing towards zero gradient
@@ -544,110 +619,42 @@ void Vorticity::transform_impl(GuardedOptions& state) {
     }
   }
 
+  // Note: The below calculation requires phi derivatives at the Y boundaries
+  //       Setting to free boundaries
+  if (phi.hasParallelSlices()) {
+    Field3D &phi_ydown = phi.ydown();
+    Field3D &phi_yup = phi.yup();
+    for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        phi_ydown(r.ind, mesh->ystart - 1, jz) = 2 * phi(r.ind, mesh->ystart, jz) - phi_yup(r.ind, mesh->ystart + 1, jz);
+      }
+    }
+    for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        phi_yup(r.ind, mesh->yend + 1, jz) = 2 * phi(r.ind, mesh->yend, jz) - phi_ydown(r.ind, mesh->yend - 1, jz);
+      }
+    }
+  } else {
+    Field3D phi_fa = toFieldAligned(phi);
+    for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        phi_fa(r.ind, mesh->ystart - 1, jz) = 2 * phi_fa(r.ind, mesh->ystart, jz) - phi_fa(r.ind, mesh->ystart + 1, jz);
+      }
+    }
+    for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        phi_fa(r.ind, mesh->yend + 1, jz) = 2 * phi_fa(r.ind, mesh->yend, jz) - phi_fa(r.ind, mesh->yend - 1, jz);
+      }
+    }
+    phi = fromFieldAligned(phi_fa);
+  }
+
   ddt(Vort) = 0.0;
 
   if (diamagnetic) {
     // Diamagnetic current. This is calculated here so that the energy sources/sinks
     // can be calculated for the evolving species.
-
-    Vector3D Jdia;
-    Jdia.x = 0.0;
-    Jdia.y = 0.0;
-    Jdia.z = 0.0;
-    Jdia.covariant = Curlb_B.covariant;
-
-    GuardedOptions allspecies = state["species"];
-
-    for (auto& kv : allspecies.getChildren()) {
-      GuardedOptions species = allspecies[kv.first]; // Note: need non-const
-
-      if (!(IS_SET_NOBOUNDARY(species["pressure"]) and IS_SET(species["charge"]))) {
-        continue; // No pressure or charge -> no diamagnetic current
-      }
-      if (fabs(get<BoutReal>(species["charge"])) < 1e-5) {
-        // No charge
-        continue;
-      }
-
-      // Note that the species must have a charge, but charge is not used,
-      // because it cancels out in the expression for current
-
-      auto P = GET_NOBOUNDARY(Field3D, species["pressure"]);
-
-      // Note: We need boundary conditions on P, so apply the same
-      //       free boundary condition as sheath_boundary.
-      if (P.hasParallelSlices()) {
-        Field3D &P_ydown = P.ydown();
-        Field3D &P_yup = P.yup();
-        for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            P_ydown(r.ind, mesh->ystart - 1, jz) = 2 * P(r.ind, mesh->ystart, jz) - P_yup(r.ind, mesh->ystart + 1, jz);
-          }
-        }
-        for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            P_yup(r.ind, mesh->yend + 1, jz) = 2 * P(r.ind, mesh->yend, jz) - P_ydown(r.ind, mesh->yend - 1, jz);
-          }
-        }
-      } else {
-        Field3D P_fa = toFieldAligned(P);
-        for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            auto i = indexAt(P_fa, r.ind, mesh->ystart, jz);
-            P_fa[i.ym()] = limitFree(P_fa[i.yp()], P_fa[i]);
-          }
-        }
-        for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            auto i = indexAt(P_fa, r.ind, mesh->yend, jz);
-            P_fa[i.yp()] = limitFree(P_fa[i.ym()], P_fa[i]);
-          }
-        }
-        P = fromFieldAligned(P_fa);
-      }
-
-      // Note: This calculation requires phi derivatives at the Y boundaries
-      //       Setting to free boundaries
-      if (phi.hasParallelSlices()) {
-        Field3D &phi_ydown = phi.ydown();
-        Field3D &phi_yup = phi.yup();
-        for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            phi_ydown(r.ind, mesh->ystart - 1, jz) = 2 * phi(r.ind, mesh->ystart, jz) - phi_yup(r.ind, mesh->ystart + 1, jz);
-          }
-        }
-        for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            phi_yup(r.ind, mesh->yend + 1, jz) = 2 * phi(r.ind, mesh->yend, jz) - phi_ydown(r.ind, mesh->yend - 1, jz);
-          }
-        }
-      } else {
-        Field3D phi_fa = toFieldAligned(phi);
-        for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            phi_fa(r.ind, mesh->ystart - 1, jz) = 2 * phi_fa(r.ind, mesh->ystart, jz) - phi_fa(r.ind, mesh->ystart + 1, jz);
-          }
-        }
-        for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            phi_fa(r.ind, mesh->yend + 1, jz) = 2 * phi_fa(r.ind, mesh->yend, jz) - phi_fa(r.ind, mesh->yend - 1, jz);
-          }
-        }
-        phi = fromFieldAligned(phi_fa);
-      }
-
-      Vector3D Jdia_species = P * Curlb_B; // Diamagnetic current for this species
-
-      // This term energetically balances diamagnetic term
-      // in the vorticity equation
-      subtract(species["energy_source"], Jdia_species * Grad(phi));
-
-      Jdia += Jdia_species; // Collect total diamagnetic current
-    }
-
-    // Note: This term is central differencing so that it balances
-    // the corresponding compression term in the species pressure equations
-    DivJdia = Div(Jdia);
+    DivJdia = calculateDivJdia(phi, state["species"]);
     ddt(Vort) += DivJdia;
 
     set(fields["DivJdia"], DivJdia);

@@ -84,6 +84,17 @@ struct Vorticity : public Component {
                    {{"long_name", "plasma potential"},
                     {"source", "vorticity"}});
   }
+
+  // The following are public functions for unit testing
+
+  /// Diamagnetic term in vorticity. Note this is weighted by the mass
+  /// This includes all species, including electrons
+  Field3D calculatePihat(GuardedOptions allspecies);
+
+  /// Calculates Div(Jdia) and sets energy_source for all
+  /// charged species with pressure.
+  Field3D calculateDivJdia(Field3D phi, GuardedOptions allspecies);
+
 private:
   Field3D Vort; // Evolving vorticity
 
