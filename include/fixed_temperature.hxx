@@ -3,6 +3,7 @@
 #define FIXED_TEMPERATURE_H
 
 #include "component.hxx"
+#include <bout/constants.hxx>
 
 /// Set species temperature to a fixed value
 ///
