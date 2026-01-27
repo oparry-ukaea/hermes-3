@@ -1,7 +1,7 @@
 #
 
 nout = 5                     # Number of output timesteps
-timestep = 5        
+timestep = 0.001        
 
 MZ = 1
 NXPE = 1
