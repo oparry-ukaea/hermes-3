@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from boututils.run_wrapper import shell, launch_safe, getmpirun
 import numpy as np
 import shutil
@@ -32,8 +33,8 @@ expected_filenames = [
     "BOUT.restart.7.nc",
     "BOUT.restart.8.nc",
     "BOUT.restart.9.nc",
-    "grid_test2.nc"
-    ]
+    "grid_test2.nc",
+]
 
 
 ## Download files
@@ -41,8 +42,10 @@ tmp_path = zipfile_path.with_name(zipfile_path.name + ".tmp")
 
 with urllib.request.urlopen(url, timeout=60) as response:
     if response.status != 200:
-        raise RuntimeError(f"2D-Production test: download failed - HTTP {response.status}")
-    
+        raise RuntimeError(
+            f"2D-Production test: download failed - HTTP {response.status}"
+        )
+
     # Copy bits of the file from response to a temp file
     # This ensures no partial files are left if the download fails
     with open(tmp_path, "wb") as out_file:
@@ -52,7 +55,6 @@ with urllib.request.urlopen(url, timeout=60) as response:
 tmp_path.replace(zipfile_path)
 
 with zipfile.ZipFile(zipfile_path, "r") as zf:
-
     zip_contents = set(zf.namelist())
     try:
         # Extract only expected grids
@@ -69,35 +71,37 @@ with open(zipfile_path, "rb") as f:
     print(file_hash)
 
 if file_hash != expected_hash:
-    raise RuntimeError("2D-Production test: downloaded zip file hash does not match expected value")
+    raise RuntimeError(
+        "2D-Production test: downloaded zip file hash does not match expected value"
+    )
 
 if verbose:
     print("2D-Production test: downloaded and extracted files")
 
 ## Run test
 if not Path("hermes-3").is_file():
-  shell("ln -s ../../../hermes-3 hermes-3")
+    shell("ln -s ../../../hermes-3 hermes-3")
 
 runcmd = getmpirun().split(" ")[0] + " --oversubscribe -np"
 
-s, out = launch_safe("./hermes-3 -d data", runcmd = runcmd, nproc=10, pipe=True)
+s, out = launch_safe("./hermes-3 -d data", runcmd=runcmd, nproc=10, pipe=True)
 
 if s != 0:
-  print(" => 2D-Production test failed: ")
-  print(out)
-  exit(1)
+    print(" => 2D-Production test failed: ")
+    print(out)
+    exit(1)
 
 if verbose:
     print("2D-Production test: completed simulation")
 
 # Load case
 ds = xhermes.open_hermesdataset(
-    datapath = output_path,
-    gridfilepath = this_dir / "grid_test2.nc",
-    keep_yboundaries = True,
-    keep_xboundaries = True,
-    geometry = "toroidal"
-    ).isel(t=-1)
+    datapath=output_path,
+    gridfilepath=this_dir / "grid_test2.nc",
+    keep_yboundaries=True,
+    keep_xboundaries=True,
+    geometry="toroidal",
+).isel(t=-1)
 
 ds = ds.hermes.extract_2d_tokamak_geometry()
 
@@ -109,16 +113,22 @@ if verbose:
 m = ds.metadata
 x_selection = slice(None)
 regions = {}
-regions["inner_lower_target"] = ds.isel(x = x_selection, theta = 2)
-regions["inner_upper_target"] = ds.isel(x = x_selection, theta = m["ny_innerg"] - m["MYG"] * 2 -1)
-regions["outer_upper_target"] = ds.isel(x = x_selection, theta = m["ny_innerg"])
-regions["outer_lower_target"] = ds.isel(x = x_selection, theta = -3)
-regions["outer_midplane_a"] = ds.isel(x = x_selection, theta = int((m["jyseps2_2g"] - m["jyseps1_2g"]) / 2) + m["jyseps1_2g"])
-regions["sol_boundary"] = ds.isel(x = -3, theta = slice(None))
-regions["core_and_pfr_boundary"] = ds.isel(x = 0, theta = slice(None))
-regions["sol_ring"] = ds.isel(x = m["ixseps1"], theta = slice(None))
+regions["inner_lower_target"] = ds.isel(x=x_selection, theta=2)
+regions["inner_upper_target"] = ds.isel(
+    x=x_selection, theta=m["ny_innerg"] - m["MYG"] * 2 - 1
+)
+regions["outer_upper_target"] = ds.isel(x=x_selection, theta=m["ny_innerg"])
+regions["outer_lower_target"] = ds.isel(x=x_selection, theta=-3)
+regions["outer_midplane_a"] = ds.isel(
+    x=x_selection, theta=int((m["jyseps2_2g"] - m["jyseps1_2g"]) / 2) + m["jyseps1_2g"]
+)
+regions["sol_boundary"] = ds.isel(x=-3, theta=slice(None))
+regions["core_and_pfr_boundary"] = ds.isel(x=0, theta=slice(None))
+regions["sol_ring"] = ds.isel(x=m["ixseps1"], theta=slice(None))
 
 # Expected results
+# The below line disables Ruff formatting for the data to keep it readable
+# fmt: off
 expected = {}
 expected["inner_lower_target"] = {}
 expected["inner_lower_target"]["Pe"] = [1454.0042394661134, 1454.0042394661134, 1681.933037988994, 1681.9359043085508, 1681.9385648986674, 1681.940391544095, 1681.9416183684464, 1681.9422494446703, 1681.9420911867353, 1681.9407908170201, 1681.9383733264822, 1681.9344544920773, 1681.9277796071935, 1681.916419131515, 1681.8971926132997, 1681.8650958434412, 1681.8169300518691, 1681.759856418861, 686.110329745551, 686.1103297455512]
@@ -151,9 +161,11 @@ expected["core_and_pfr_boundary"]["NVd+"] = [0.0, -0.04890894329417926, 0.0, 0.0
 expected["sol_ring"] = {}
 expected["sol_ring"]["Pe"] = [1682.2235470913586, 1681.6532479048094, 1681.9383733264822, 1682.223547091359, 1682.2742098498595, 1682.2851030407148, 1682.2854648605025, 1682.2854656934928, 1682.2854656928698, 1682.2854656937216, 1682.2854656938732, 1682.2854656938762, 1682.2854656938762, 1682.2854656938732, 1682.2854656937216, 1682.2854656928698, 1682.2854656934826, 1682.2854648518185, 1682.2851023010198, 1682.274256922003, 1682.2239294382716, 1681.9400478253015, 1681.656214118421, 1682.2239294382712, 1682.1110643569389, 1681.1321681958134, 1681.6215450476805, 1682.1110643569389, 1682.1752328305706, 1682.2196036156886, 1682.2506226296393, 1682.2708089177715, 1682.281458441837, 1682.2849786515706, 1682.285455673886, 1682.2854656773693, 1682.2854656943325, 1682.2854656931559, 1682.2854656937734, 1682.285465693894, 1682.2854656939103, 1682.2854656939103, 1682.285465693894, 1682.2854656937734, 1682.2854656931559, 1682.285465694335, 1682.2854656775025, 1682.2854558612637, 1682.2849914498822, 1682.2815731465419, 1682.271192089276, 1682.2514037136102, 1682.220845847842, 1682.1768922607125, 1682.1128630381158, 1681.6296613338873, 1681.1465984335948, 1682.1128630381156]
 expected["sol_ring"]["NVd+"] = [0.0, -0.056123196800296406, -5.109517527362631e-06, -3.6154712135961444e-10, -2.661425102278293e-11, -1.7564229872030303e-12, -1.4981874165092892e-14, -2.451640782616168e-17, 2.2582088811934407e-19, -5.752781442935291e-19, -1.1826870303420756e-19, -7.399899370433813e-21, 7.399900829268362e-21, 1.1826876832885502e-19, 5.752868191806979e-19, -2.2542963067666455e-19, 2.4773965997008987e-17, 1.507293688461222e-14, 1.7545906189149198e-12, 2.6511573295968064e-11, 3.6130824862188135e-10, 5.076592651706649e-06, 0.056123246566621675, 0.0, 0.0, -0.056102553993518066, -1.3141283989206976e-05, -2.239835778930436e-09, -2.2796948052319486e-10, -1.3014034720516664e-10, -6.724485406068325e-11, -2.828771461544768e-11, -8.230316985979058e-12, -1.2860181518060248e-12, -5.904638805814605e-14, -3.441640857040365e-16, -3.5919678855336773e-19, 2.995894423893269e-19, -5.904229023036841e-19, -1.5526161819121974e-19, -2.58826022056111e-20, 2.5882611419547912e-20, 1.5526174484115965e-19, 5.904268248281528e-19, -3.008159779003538e-19, 3.5556867749980033e-19, 3.395796168998508e-16, 5.772729539574173e-14, 1.251318991467548e-12, 8.0016469915638e-12, 2.7556008924309713e-11, 6.572596954617403e-11, 1.2760790220641367e-10, 2.2416638108973448e-10, 2.1751194822538707e-09, 1.2909209037930008e-05, 0.05610315341522171, 0.0]
-# Generate test data or run test
-if gen_data: 
 
+# fmt: on
+
+# Generate test data or run test
+if gen_data:
     # Generate test data, print to console and fail test
     for region_name, ds in regions.items():
         print(f'expected["{region_name}"] = {{}}')
@@ -163,32 +175,27 @@ if gen_data:
 
     success = False
 else:
-
     # Perform test
     failures = []
     for region_name, ds in regions.items():
-
         for variable in ["Pe", "NVd+"]:
-
             actual = ds[variable]
             reference = expected[region_name][variable]
 
             try:
                 np.testing.assert_allclose(actual, reference, rtol=rtol, atol=atol)
             except AssertionError as e:
-                failures.append({
-                    "region": region_name,
-                    "variable": variable,
-                    "error_msg": str(e)
-                })
-    
+                failures.append(
+                    {"region": region_name, "variable": variable, "error_msg": str(e)}
+                )
+
     if len(failures) > 0:
         print("2D-production test failures:")
         success = False
         for f in failures:
             print(f"\n{f['region']} [{f['variable']}]:")
             print(f["error_msg"])
-        
+
         exit(1)
 
     else:
@@ -196,4 +203,3 @@ else:
         if verbose:
             print("2D-production test: Passed")
         exit(0)
-
