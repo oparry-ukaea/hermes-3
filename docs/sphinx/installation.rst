@@ -319,11 +319,21 @@ Ubuntu:
    sudo apt update
    sudo apt install -y build-essential ca-certificates coreutils curl environment-modules gfortran git gpg lsb-release python3 python3-distutils python3-venv unzip zip
 
-Now, clone spack (the command below checks out version 0.23.1).
+Now, clone spack. You must use version v1.0.0 or newer. At the time of writing this section,
+version v1.1.0 has been tested:
 
 .. code-block:: bash
    
-   git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git -b releases/v0.23
+   git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git -b v1.1.0
+
+.. important::
+   If you have an existing Spack installation of a version before v1.0.0, you will need to uninstall it first.
+   Do this by uninstalling all packages and deleting the spack directory:
+
+   .. code-block:: bash
+
+      spack uninstall --all
+      rm -rf ~/.spack
 
 Initialise spack. Add this command to your .bashrc or similar to make spack available in all new shells:
 
@@ -336,7 +346,7 @@ The ``spack`` command should now be available; e.g.
 .. code-block:: bash
 
    spack --version
-    > 0.23.1 (2bfcc69fa870d3c6919be87593f22647981b648a)
+    > 1.1.0 (0c2be44e4ece21eb091ad5de4c97716b7c6d4c87)
 
 Libraries and executables associated with spack packages are installed to ``$SPACK_ROOT/opt/spack``
 by default (``$SPACK_ROOT`` is wherever you cloned spack to). Build files, however, are placed in
@@ -357,6 +367,8 @@ and edit it to include
       build_stage:
          - $spack/var/spack/stage
          - $user_cache_path/stage
+
+
 
 Install Hermes-3 and dependencies
 ~~~~~~~~~~~~~~~~~~~~
