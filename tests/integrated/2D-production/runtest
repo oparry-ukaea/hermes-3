@@ -1,35 +1,97 @@
 from boututils.run_wrapper import shell, launch_safe, getmpirun
 import numpy
+import shutil
+import zipfile
+import hashlib
 from pathlib import Path
+import urllib.request
 import xhermes
 
 gen_data = False
 rtol = 1e-6
 atol = 1e-8
 
-# Directories
+## Setup
 this_dir = Path(__file__).parent
 data_dir = this_dir / "data"
 hermes_exec = this_dir.parent.parent.parent / "hermes-3"
-output_path = data_dir / "BOUT.dmp.0.nc"
+output_path = data_dir / "BOUT.dmp.*.nc"
 
+zipfile_path = this_dir / "Hypnotoad_examples.zip"
+url = "https://zenodo.org/records/18301171/files/test-2D-production-v1.zip"
+expected_hash = "b8e2be76791fad1fe7fe8c8734b3020eb63e7da5d69a4fafdf7c9a4695785ff3"
+expected_filenames = [
+    "BOUT.restart.0.nc",
+    "BOUT.restart.1.nc",
+    "BOUT.restart.2.nc",
+    "BOUT.restart.3.nc",
+    "BOUT.restart.4.nc",
+    "BOUT.restart.5.nc",
+    "BOUT.restart.6.nc",
+    "BOUT.restart.7.nc",
+    "BOUT.restart.8.nc",
+    "BOUT.restart.9.nc",
+    "grid_test2.nc"
+    ]
+
+
+## Download files
+tmp_path = zipfile_path.with_name(zipfile_path.name + ".tmp")
+
+with urllib.request.urlopen(url, timeout=60) as response:
+    if response.status != 200:
+        raise RuntimeError(f"2D-Production test: download failed - HTTP {response.status}")
+    
+    # Copy bits of the file from response to a temp file
+    # This ensures no partial files are left if the download fails
+    with open(tmp_path, "wb") as out_file:
+        shutil.copyfileobj(response, out_file)
+
+# Rename temp file with the correct name
+tmp_path.replace(zipfile_path)
+
+with zipfile.ZipFile(zipfile_path, "r") as zf:
+
+    zip_contents = set(zf.namelist())
+    try:
+        # Extract only expected grids
+        for filename in expected_filenames:
+            if filename in zip_contents:
+                zf.extract(filename, path=this_dir)
+
+    except Exception as e:
+        print("2D-Production test: extracting test grids failed:", e)
+
+# Check hash
+with open(zipfile_path, "rb") as f:
+    file_hash = hashlib.sha256(f.read()).hexdigest()
+    print(file_hash)
+
+if file_hash != expected_hash:
+    raise RuntimeError("2D-Production test: downloaded zip file hash does not match expected value")
+
+
+## Run test
 if not Path("hermes-3").is_file():
   shell("ln -s ../../../hermes-3 hermes-3")
 
-# Run and exit if unsuccessful
 runcmd = getmpirun().split(" ")[0] + " --oversubscribe -np"
 
 s, out = launch_safe("./hermes-3 -d data", runcmd = runcmd, nproc=10, pipe=True)
 
 if s != 0:
-  print(" => Test failed: ")
+  print(" => 2D-Production test failed: ")
   print(out)
   exit(1)
 
-exit()
 
 # Load case
-ds = cs["test_change"].ds.isel(t=-1)
+ds = open_hermesdataset(
+    datapath = output_path,
+    gridpath = this_dir / "grid_test2.nc",
+    keep_yboundaries = True,
+    keep_xboundaries = True
+    ).isel(t=-1)
 m = ds.metadata
 
 # Testing at specific locations around the domain
@@ -109,10 +171,16 @@ else:
                     "error_msg": str(e)
                 })
     
-    if failures:
-        print("FAILURES:")
+    if len(failures) > 0:
+        print("2D-production test failures:")
+        success = False
         for f in failures:
             print(f"\n{f['region']} [{f['variable']}]:")
             print(f["error_msg"])
+        
+        exit(1)
+
     else:
-        print("All tests passed!")
+        success = True
+        exit(0)
+
