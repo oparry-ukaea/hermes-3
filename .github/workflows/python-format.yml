@@ -43,4 +43,4 @@ jobs:
 
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "Apply black changes"
+        commit_message: "Apply ruff format changes"
