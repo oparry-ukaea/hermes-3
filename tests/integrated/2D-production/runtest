@@ -173,7 +173,6 @@ if gen_data:
         print(f'expected["{region_name}"]["NVd+"] = {ds["NVd+"].values.tolist()}')
         print("")
 
-    success = False
 else:
     # Perform test
     failures = []
@@ -191,7 +190,6 @@ else:
 
     if len(failures) > 0:
         print("2D-production test failures:")
-        success = False
         for f in failures:
             print(f"\n{f['region']} [{f['variable']}]:")
             print(f["error_msg"])
@@ -199,7 +197,6 @@ else:
         exit(1)
 
     else:
-        success = True
         if verbose:
             print("2D-production test: Passed")
         exit(0)
