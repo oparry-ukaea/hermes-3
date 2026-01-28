@@ -109,7 +109,7 @@ void ClassicalDiffusion::transform_impl(GuardedOptions& state) {
   }
 }
 
-void ClassicalDiffusion::outputVars(Options &state) {
+void ClassicalDiffusion::outputVars(Options& state) {
 
   if (diagnose) {
     // Normalisations

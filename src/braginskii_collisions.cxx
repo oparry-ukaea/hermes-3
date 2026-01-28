@@ -20,7 +20,8 @@
 #include "../include/component.hxx"
 #include "../include/hermes_utils.hxx"
 
-BraginskiiCollisions::BraginskiiCollisions(const std::string& name, Options& alloptions, Solver*)
+BraginskiiCollisions::BraginskiiCollisions(const std::string& name, Options& alloptions,
+                                           Solver*)
     : Component({readOnly("species:{non_electrons}:density", Regions::Interior),
                  readIfSet("species:{non_electrons}:charge"),
                  readIfSet("species:{negative_ions}:temperature", Regions::Interior),

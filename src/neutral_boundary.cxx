@@ -319,7 +319,7 @@ void NeutralBoundary::transform_impl(GuardedOptions& state) {
 }
 
 void NeutralBoundary::outputVars(Options& state) {
-  
+
   // Normalisations
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
   auto Omega_ci = get<BoutReal>(state["Omega_ci"]);

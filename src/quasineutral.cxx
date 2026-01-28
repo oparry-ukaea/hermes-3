@@ -61,7 +61,7 @@ void Quasineutral::finally(const Options &state) {
   density = get<Field3D>(state["species"][name]["density"]);
 }
 
-void Quasineutral::outputVars(Options &state) {
+void Quasineutral::outputVars(Options& state) {
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
 
   // Save the density

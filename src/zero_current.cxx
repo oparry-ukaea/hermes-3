@@ -68,7 +68,7 @@ void ZeroCurrent::transform_impl(GuardedOptions& state) {
   set(species["velocity"], velocity);
 }
 
-void ZeroCurrent::outputVars(Options &state) {
+void ZeroCurrent::outputVars(Options& state) {
   auto Cs0 = get<BoutReal>(state["Cs0"]);
 
   // Save the velocity

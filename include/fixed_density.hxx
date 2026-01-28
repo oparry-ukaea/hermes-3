@@ -42,6 +42,7 @@ struct FixedDensity : public Component {
                     {"species", name},
                     {"source", "fixed_density"}});
   }
+
 private:
   std::string name; ///< Short name of species e.g "e"
 

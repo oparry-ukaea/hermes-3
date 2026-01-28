@@ -10,10 +10,10 @@ using bout::globals::mesh;
 BinormalSTPM::BinormalSTPM(std::string name, Options& alloptions,
                            [[maybe_unused]] Solver* solver)
     : Component({
-        readIfSet("species:{all_species}:{input}", Regions::Interior),
-        readOnly("species:{all_species}:AA"),
-        readWrite("species:{all_species}:{output}"),
-    }),
+          readIfSet("species:{all_species}:{input}", Regions::Interior),
+          readOnly("species:{all_species}:AA"),
+          readWrite("species:{all_species}:{output}"),
+      }),
       name(name) {
   auto& options = alloptions[name];
   const Options& units = alloptions["units"];

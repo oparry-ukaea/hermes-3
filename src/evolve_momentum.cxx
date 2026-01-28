@@ -17,7 +17,7 @@ EvolveMomentum::EvolveMomentum(std::string name, Options& alloptions, Solver* so
                  readOnly("species:{name}:density", Regions::Interior),
                  readWrite("species:{name}:{outputs}")}),
       name(name) {
-  
+
   // Evolve the momentum in time
   solver->add(NV, std::string("NV") + name);
 
@@ -87,7 +87,7 @@ void EvolveMomentum::transform_impl(GuardedOptions& state) {
   set(species["momentum"], NV);
 }
 
-void EvolveMomentum::finally(const Options &state) {
+void EvolveMomentum::finally(const Options& state) {
 
   auto& species = state["species"][name];
   BoutReal AA = get<BoutReal>(species["AA"]);
@@ -252,7 +252,7 @@ void EvolveMomentum::finally(const Options &state) {
   NV = NV_solver;
 }
 
-void EvolveMomentum::outputVars(Options &state) {
+void EvolveMomentum::outputVars(Options& state) {
   // Normalisations
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
   auto Omega_ci = get<BoutReal>(state["Omega_ci"]);

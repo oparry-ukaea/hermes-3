@@ -221,7 +221,8 @@ struct DetachmentController : public Component {
                     {"standard_name", "derivative_term"},
                     {"long_name", "detachment control derivative term"},
                     {"source", "detachment_controller"}});
-  }}
+    }
+  }
 
   void restartVars(Options& state) override {
 

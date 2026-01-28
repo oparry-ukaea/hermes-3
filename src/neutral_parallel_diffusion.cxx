@@ -163,7 +163,7 @@ void NeutralParallelDiffusion::transform_impl(GuardedOptions& state) {
   }
 }
 
-void NeutralParallelDiffusion::outputVars(Options &state) {
+void NeutralParallelDiffusion::outputVars(Options& state) {
 
   if (diagnose) {
     // Normalisations

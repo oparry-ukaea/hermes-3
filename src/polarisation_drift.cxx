@@ -275,7 +275,7 @@ void PolarisationDrift::transform_impl(GuardedOptions& state) {
   polarisationAdvection(state, phi_pol);
 }
 
-void PolarisationDrift::outputVars(Options &state) {
+void PolarisationDrift::outputVars(Options& state) {
   // Normalisations
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
   auto Tnorm = get<BoutReal>(state["Tnorm"]);
