@@ -73,7 +73,6 @@ SheathBoundarySimple::SheathBoundarySimple(std::string name, Options& alloptions
         writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
         writeBoundaryIfSet("species:{ions}:{ion_optional}"),
     }) {
-  AUTO_TRACE();
 
   Options& options = alloptions[name];
 
@@ -155,7 +154,6 @@ SheathBoundarySimple::SheathBoundarySimple(std::string name, Options& alloptions
 }
 
 void SheathBoundarySimple::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
 
   GuardedOptions allspecies = state["species"];
   GuardedOptions electrons = allspecies["e"];
@@ -718,7 +716,6 @@ void SheathBoundarySimple::transform_impl(GuardedOptions& state) {
 }
 
 void SheathBoundarySimple::outputVars(Options& state) {
-  AUTO_TRACE();
   // Normalisations
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
   auto Omega_ci = get<BoutReal>(state["Omega_ci"]);

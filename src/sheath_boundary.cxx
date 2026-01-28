@@ -60,7 +60,6 @@ SheathBoundary::SheathBoundary(std::string name, Options& alloptions, Solver*)
         writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
         writeBoundaryIfSet("species:{ions}:{ion_optional}"),
     }) {
-  AUTO_TRACE();
 
   Options& options = alloptions[name];
 
@@ -119,7 +118,6 @@ SheathBoundary::SheathBoundary(std::string name, Options& alloptions, Solver*)
 }
 
 void SheathBoundary::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
 
   GuardedOptions allspecies = state["species"];
   GuardedOptions electrons = allspecies["e"];

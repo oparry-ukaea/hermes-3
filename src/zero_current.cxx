@@ -8,7 +8,6 @@ ZeroCurrent::ZeroCurrent(std::string name, Options& alloptions, Solver*)
                  readIfSet("species:{all_species}:{inputs}", Regions::Interior),
                  readWrite(fmt::format("species:{}:velocity", name))}),
       name(name) {
-  AUTO_TRACE();
   Options &options = alloptions[name];
 
   charge = options["charge"].doc("Particle charge. electrons = -1");
@@ -19,7 +18,6 @@ ZeroCurrent::ZeroCurrent(std::string name, Options& alloptions, Solver*)
 }
 
 void ZeroCurrent::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
 
   // Current due to other species
   Field3D current;
@@ -71,7 +69,6 @@ void ZeroCurrent::transform_impl(GuardedOptions& state) {
 }
 
 void ZeroCurrent::outputVars(Options &state) {
-  AUTO_TRACE();
   auto Cs0 = get<BoutReal>(state["Cs0"]);
 
   // Save the velocity

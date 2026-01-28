@@ -64,7 +64,6 @@ SheathBoundaryInsulating::SheathBoundaryInsulating(std::string name, Options& al
         writeBoundaryIfSet("species:{ions}:{ion_optional}"),
         writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
     }) {
-  AUTO_TRACE();
 
   Options& options = alloptions[name];
 
@@ -101,7 +100,6 @@ SheathBoundaryInsulating::SheathBoundaryInsulating(std::string name, Options& al
 }
 
 void SheathBoundaryInsulating::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
 
   GuardedOptions allspecies = state["species"];
   GuardedOptions electrons = allspecies["e"];

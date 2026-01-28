@@ -25,7 +25,6 @@ BraginskiiCollisions::BraginskiiCollisions(const std::string& name, Options& all
                  readIfSet("species:{non_electrons}:charge"),
                  readIfSet("species:{negative_ions}:temperature", Regions::Interior),
                  readOnly("species:{all_species}:AA")}) {
-  AUTO_TRACE();
   const Options& units = alloptions["units"];
 
   // Normalisations
@@ -124,7 +123,6 @@ BraginskiiCollisions::BraginskiiCollisions(const std::string& name, Options& all
 ///       mass* variables are species masses in kg
 void BraginskiiCollisions::collide(GuardedOptions& species1, GuardedOptions& species2,
                                    const Field3D& nu_12) {
-  AUTO_TRACE();
 
   add(species1["collision_frequency"], nu_12); // Total collision frequency
   const std::string coll_name =
@@ -159,7 +157,6 @@ void BraginskiiCollisions::collide(GuardedOptions& species1, GuardedOptions& spe
 }
 
 void BraginskiiCollisions::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
 
   GuardedOptions allspecies = state["species"];
 
@@ -494,7 +491,6 @@ void BraginskiiCollisions::transform_impl(GuardedOptions& state) {
 }
 
 void BraginskiiCollisions::outputVars(Options& state) {
-  AUTO_TRACE();
 
   if (!diagnose) {
     return; // Don't save diagnostics
