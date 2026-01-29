@@ -59,21 +59,20 @@ BoutReal limitFree(BoutReal fm, BoutReal fc, BoutReal mode) {
 
 SheathBoundarySimple::SheathBoundarySimple(std::string name, Options& alloptions, Solver*)
     : Component({
-        readIfSet("species:e:{e_whole_domain}"),
-        writeBoundary("species:e:{e_boundary}"),
-        readWrite("species:e:energy_source"),
-        readWrite("species:e:energy_flow_ylow"),
-        writeBoundaryIfSet("species:e:{e_optional}"),
-        writeBoundaryReadInteriorIfSet("species:e:pressure"),
-        readIfSet("species:{all_species}:charge"),
-        readOnly("species:{ions}:AA"),
-        readWrite("species:{ions}:energy_source"),
-        readWrite("species:{ions}:energy_flow_ylow"),
-        writeBoundary("species:{ions}:{ion_boundary}"),
-        writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
-        writeBoundaryIfSet("species:{ions}:{ion_optional}"),
-    }) {
-  AUTO_TRACE();
+          readIfSet("species:e:{e_whole_domain}"),
+          writeBoundary("species:e:{e_boundary}"),
+          readWrite("species:e:energy_source"),
+          readWrite("species:e:energy_flow_ylow"),
+          writeBoundaryIfSet("species:e:{e_optional}"),
+          writeBoundaryReadInteriorIfSet("species:e:pressure"),
+          readIfSet("species:{all_species}:charge"),
+          readOnly("species:{ions}:AA"),
+          readWrite("species:{ions}:energy_source"),
+          readWrite("species:{ions}:energy_flow_ylow"),
+          writeBoundary("species:{ions}:{ion_boundary}"),
+          writeBoundaryReadInteriorIfSet("species:{ions}:pressure"),
+          writeBoundaryIfSet("species:{ions}:{ion_optional}"),
+      }) {
 
   Options& options = alloptions[name];
 
@@ -155,7 +154,6 @@ SheathBoundarySimple::SheathBoundarySimple(std::string name, Options& alloptions
 }
 
 void SheathBoundarySimple::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
 
   GuardedOptions allspecies = state["species"];
   GuardedOptions electrons = allspecies["e"];
@@ -722,7 +720,6 @@ void SheathBoundarySimple::transform_impl(GuardedOptions& state) {
 }
 
 void SheathBoundarySimple::outputVars(Options& state) {
-  AUTO_TRACE();
   // Normalisations
   auto Nnorm = get<BoutReal>(state["Nnorm"]);
   auto Omega_ci = get<BoutReal>(state["Omega_ci"]);
@@ -756,5 +753,4 @@ void SheathBoundarySimple::outputVars(Options& state) {
 
     }
   }
-
-  }
+}

@@ -6,7 +6,6 @@ ClassicalDiffusion::ClassicalDiffusion(std::string name, Options& alloptions, So
     : Component({readIfSet("species:{all_species}:{optional}"),
                  readOnly("species:e:{e_vals}"),
                  readWrite("species:{all_species}:{output}")}) {
-  AUTO_TRACE();
   Options& options = alloptions[name];
 
   Bsq = SQ(bout::globals::mesh->getCoordinates()->Bxy);
@@ -31,7 +30,6 @@ ClassicalDiffusion::ClassicalDiffusion(std::string name, Options& alloptions, So
 }
 
 void ClassicalDiffusion::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
   GuardedOptions allspecies = state["species"];
   
   // Particle diffusion coefficient
@@ -111,8 +109,7 @@ void ClassicalDiffusion::transform_impl(GuardedOptions& state) {
   }
 }
 
-void ClassicalDiffusion::outputVars(Options &state) {
-  AUTO_TRACE();
+void ClassicalDiffusion::outputVars(Options& state) {
 
   if (diagnose) {
     // Normalisations
