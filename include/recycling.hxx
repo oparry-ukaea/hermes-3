@@ -73,7 +73,7 @@ private:
   Field3D particle_flow_xlow; ///< Radial wall particle fluxes for recycling calc. No need
                               ///< to get poloidal from here, it's calculated from sheath
                               ///< velocity
-
+  Field3D debug;
   Field2D is_pump; ///< 1 = pump, 0 = no pump. Works only in SOL/PFR. Provided by user in
                    ///< grid file.
   /// Inputs

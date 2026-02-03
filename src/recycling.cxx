@@ -291,8 +291,7 @@ void Recycling::transform_impl(GuardedOptions& state) {
         // of plasma from FV::Div_par(N, V)
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
-          auto i = indexAt(Nn, mesh->yend, iy, iz); // Final domain cell
-          auto is = i.ym();                         // Second to final domain cell
+          auto i = indexAt(Nn, r.ind, mesh->yend, jz); // Final domain cell
           auto ig = i.yp();                         // First guard cell
 
           // Flux through surface [normalised m^-2 s^-1], should be positive
