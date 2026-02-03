@@ -292,7 +292,7 @@ void Recycling::transform_impl(GuardedOptions& state) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           auto i = indexAt(Nn, r.ind, mesh->yend, jz); // Final domain cell
-          auto ig = i.yp();                         // First guard cell
+          auto ig = i.yp();                            // First guard cell
 
           // Flux through surface [normalised m^-2 s^-1], should be positive
           BoutReal flux = 0.5 * (N[i] + N[i]) * 0.5 * (V[i] + V[i]);
@@ -315,10 +315,10 @@ void Recycling::transform_impl(GuardedOptions& state) {
           BoutReal ion_energy_flow = energy_flow_ylow[ig];
           debug = ion_energy_flow;
 
-              // Blend fast (ion energy) and thermal (constant energy) recycling
-              // Calculate returning neutral heat flow in [W]
-              BoutReal recycle_energy_flow =
-                  // Fast recycling part
+          // Blend fast (ion energy) and thermal (constant energy) recycling
+          // Calculate returning neutral heat flow in [W]
+          BoutReal recycle_energy_flow =
+              // Fast recycling part
               ion_energy_flow * channel.target_multiplier
                   * channel.target_fast_recycle_energy_factor
                   * channel.target_fast_recycle_fraction
