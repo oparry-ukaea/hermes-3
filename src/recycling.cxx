@@ -35,6 +35,19 @@ Recycling::Recycling(std::string name, Options& alloptions, Solver*)
   is_pump = 0.0;
   mesh->get(is_pump, std::string("is_pump"));
 
+  // Check if sheath_boundary_simple component is available and get gamma_i
+  if (alloptions.isSection("sheath_boundary_simple")) {
+    has_sheath_boundary_simple = true;
+    if (alloptions["sheath_boundary_simple"]["gamma_i"].isSet()) {
+      gamma_i = alloptions["sheath_boundary_simple"]["gamma_i"];
+    } else {
+      gamma_i = 3.5; // Default value
+    }
+  } else {
+    has_sheath_boundary_simple = false;
+    gamma_i = 0.0;
+  }
+
   for (const auto& species : species_list) {
     std::string from = trim(species, " \t\r()"); // The species name in the list
 
@@ -218,21 +231,23 @@ void Recycling::transform_impl(GuardedOptions& state) {
     // Recycling at the divertor target plates
     if (target_recycle) {
 
-      // Fast recycling needs to know how much energy the "from" species is losing to the
-      // boundary
-      if (species_from.isSet("energy_flow_ylow")) {
-        energy_flow_ylow = get<Field3D>(species_from["energy_flow_ylow"]);
-      } else {
-        energy_flow_ylow = 0;
-        if (channel.target_fast_recycle_fraction > 0) {
-          throw BoutException("Target fast recycle enabled but no sheath heat flow "
-                              "available in energy_flow_ylow! \nCurrently only "
-                              "sheath_boundary_simple is supported for fast recycling.");
+      if (!has_sheath_boundary_simple and (channel.target_fast_recycle_fraction > 0.0)) {
+        throw BoutException(
+            "Currently only sheath_boundary_simple is supported for fast recycling.");
+      }
+
+      if (has_sheath_boundary_simple) {
+        // Fast recycling needs to know how much energy the "from" species is losing to
+        // the boundary
+        if (species_from.isSet("energy_flow_ylow")) {
+          energy_flow_ylow = get<Field3D>(species_from["energy_flow_ylow"]);
+        } else {
+          energy_flow_ylow = 0.0;
         }
       }
 
-      channel.target_recycle_density_source = 0;
-      channel.target_recycle_energy_source = 0;
+      channel.target_recycle_density_source = 0.0;
+      channel.target_recycle_energy_source = 0.0;
 
       // Lower Y boundary
 
@@ -315,6 +330,9 @@ void Recycling::transform_impl(GuardedOptions& state) {
           BoutReal ion_energy_flow = energy_flow_ylow[ig];
           debug = ion_energy_flow;
 
+          // BoutReal nisheath = (N[i] + N[ig]) * 0.5;
+          // BoutReal visheath = (V[i] + V[ig]) * 0.5;
+
           // Blend fast (ion energy) and thermal (constant energy) recycling
           // Calculate returning neutral heat flow in [W]
           BoutReal recycle_energy_flow =
@@ -380,9 +398,9 @@ void Recycling::transform_impl(GuardedOptions& state) {
             }
 
             // Flow of recycled species back from the edge due to recycling
-            // SOL edge = LHS flow of inner guard cells on the high X side (mesh->xend+1)
-            // Recycling source is 0 for each cell where the flow goes into instead of out
-            // of the domain
+            // SOL edge = LHS flow of inner guard cells on the high X side
+            // (mesh->xend+1) Recycling source is 0 for each cell where the flow goes
+            // into instead of out of the domain
             BoutReal recycle_particle_flow = 0;
             if (radial_particle_outflow(mesh->xend + 1, iy, iz) > 0) {
               recycle_particle_flow =
@@ -390,8 +408,8 @@ void Recycling::transform_impl(GuardedOptions& state) {
             }
 
             BoutReal ion_energy_flow = radial_energy_outflow(
-                mesh->xend + 1, iy, iz); // Ion heat flow to wall in [W]. This is on xlow
-                                         // edge so take guard cell
+                mesh->xend + 1, iy, iz); // Ion heat flow to wall in [W]. This is on
+                                         // xlow edge so take guard cell
 
             // Blend fast (ion energy) and thermal (constant energy) recycling
             // Calculate returning neutral heat flow in [W]
@@ -482,8 +500,8 @@ void Recycling::transform_impl(GuardedOptions& state) {
     // Recycling at the PFR edge (2D/3D only)
     if (pfr_recycle) {
 
-      // PFR is flipped compared to edge: x=0 is at the PFR edge. Therefore outflow is in
-      // the negative coordinate direction.
+      // PFR is flipped compared to edge: x=0 is at the PFR edge. Therefore outflow is
+      // in the negative coordinate direction.
       Field3D radial_particle_outflow = particle_flow_xlow * -1;
       Field3D radial_energy_outflow = energy_flow_xlow * -1;
 
@@ -514,8 +532,8 @@ void Recycling::transform_impl(GuardedOptions& state) {
               }
 
               BoutReal ion_energy_flow = radial_energy_outflow(
-                  mesh->xstart, iy, iz); // Ion heat flow to wall in [W]. This is on xlow
-                                         // edge so take first domain cell
+                  mesh->xstart, iy, iz); // Ion heat flow to wall in [W]. This is on
+                                         // xlow edge so take first domain cell
 
               // Blend fast (ion energy) and thermal (constant energy) recycling
               // Calculate returning neutral heat flow in [W]
@@ -539,8 +557,8 @@ void Recycling::transform_impl(GuardedOptions& state) {
                 auto ig = i.xm();                           // First guard cell
 
                 // Free boundary condition on Nn, Pn, Tn
-                // These are NOT communicated back into state and will exist only in this
-                // component This will prevent neutrals leaking through cross-field
+                // These are NOT communicated back into state and will exist only in
+                // this component This will prevent neutrals leaking through cross-field
                 // transport from neutral_mixed or other components While enabling us to
                 // still calculate radial wall fluxes separately here
                 BoutReal nnguard = SQ(Nn[i]) / Nnlim[is];
@@ -566,8 +584,8 @@ void Recycling::transform_impl(GuardedOptions& state) {
                 BoutReal dv = coord->J[i] * coord->dx[i] * coord->dy[i] * coord->dz[i];
 
                 // Calculate particle and energy fluxes of neutrals hitting the pump
-                // Assume thermal velocity greater than perpendicular velocity and use it
-                // for flux calc
+                // Assume thermal velocity greater than perpendicular velocity and use
+                // it for flux calc
                 BoutReal pump_neutral_particle_flow =
                     v_th * nnsheath * dasheath; // [s^-1]
                 pump_neutral_particle_sink =
