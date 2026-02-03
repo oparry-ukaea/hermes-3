@@ -213,6 +213,7 @@ void Recycling::transform_impl(GuardedOptions& state) {
     energy_source = species_to.isSet("energy_source")
                         ? getNonFinal<Field3D>(species_to["energy_source"])
                         : 0.0;
+    debug = 0.0;
 
     // Recycling at the divertor target plates
     if (target_recycle) {
@@ -289,47 +290,45 @@ void Recycling::transform_impl(GuardedOptions& state) {
         // This calculation is supposed to be consistent with the flow
         // of plasma from FV::Div_par(N, V)
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+          auto i = indexAt(Nn, mesh->yend, iy, iz); // Final domain cell
+          auto is = i.ym();                         // Second to final domain cell
+          auto ig = i.yp();                         // First guard cell
+
           // Flux through surface [normalised m^-2 s^-1], should be positive
-          BoutReal flux = 0.5 * (N(r.ind, mesh->yend, jz) + N(r.ind, mesh->yend + 1, jz))
-                          * 0.5
-                          * (V(r.ind, mesh->yend, jz) + V(r.ind, mesh->yend + 1, jz));
+          BoutReal flux = 0.5 * (N[i] + N[i]) * 0.5 * (V[i] + V[i]);
 
           flux = std::max(flux, 0.0);
 
-          // Flow of recycled neutrals into domain [s-1]
-          BoutReal flow =
-              channel.target_multiplier * flux
-              * (J(r.ind, mesh->yend) + J(r.ind, mesh->yend + 1))
-              / (sqrt(g_22(r.ind, mesh->yend)) + sqrt(g_22(r.ind, mesh->yend + 1))) * 0.5
-              * (dx(r.ind, mesh->yend) + dx(r.ind, mesh->yend + 1)) * 0.5
-              * (dz(r.ind, mesh->yend) + dz(r.ind, mesh->yend + 1));
+          BoutReal daparsheath = (J[i] + J[ig]) / (sqrt(g_22[i]) + sqrt(g_22[ig])) * 0.5
+                                 * (dx[i] + dx[ig]) * 0.5 * (dz[i] + dz[ig]);
 
-          BoutReal volume = J(r.ind, mesh->yend) * dx(r.ind, mesh->yend)
-                            * dy(r.ind, mesh->yend) * dz(r.ind, mesh->yend);
+          BoutReal volume = J[i] * dx[i] * dy[i] * dz[i];
+
+          // Flow of recycled neutrals into domain [s-1]
+          BoutReal flow = channel.target_multiplier * flux * daparsheath;
 
           // Calculate sources in the final cell [m^-3 s^-1]
-          channel.target_recycle_density_source(r.ind, mesh->yend, jz) +=
-              flow / volume;                                      // For diagnostic
-          density_source(r.ind, mesh->yend, jz) += flow / volume; // For use in solver
+          channel.target_recycle_density_source[i] += flow / volume; // For diagnostic
+          density_source[i] += flow / volume;                        // For use in solver
 
           // Energy of recycled particles
-          BoutReal ion_energy_flow = energy_flow_ylow(
-              r.ind, mesh->yend + 1,
-              jz); // Ion heat flow to wall in [W]. This is yup end so take guard cell
+          BoutReal ion_energy_flow = energy_flow_ylow[ig];
+          debug = ion_energy_flow;
 
-          // Blend fast (ion energy) and thermal (constant energy) recycling
-          // Calculate returning neutral heat flow in [W]
-          BoutReal recycle_energy_flow =
+              // Blend fast (ion energy) and thermal (constant energy) recycling
+              // Calculate returning neutral heat flow in [W]
+              BoutReal recycle_energy_flow =
+                  // Fast recycling part
               ion_energy_flow * channel.target_multiplier
                   * channel.target_fast_recycle_energy_factor
-                  * channel.target_fast_recycle_fraction // Fast recycling part
-              + flow * (1 - channel.target_fast_recycle_fraction)
-                    * channel.target_energy; // Thermal recycling part
+                  * channel.target_fast_recycle_fraction
+              // Thermal recycling part
+              + flow * (1 - channel.target_fast_recycle_fraction) * channel.target_energy;
 
           // Divide heat flow in [W] by cell volume to get source in [m^-3 s^-1]
-          channel.target_recycle_energy_source(r.ind, mesh->yend, jz) +=
-              recycle_energy_flow / volume;
-          energy_source(r.ind, mesh->yend, jz) += recycle_energy_flow / volume;
+          channel.target_recycle_energy_source[i] += recycle_energy_flow / volume;
+          energy_source[i] += recycle_energy_flow / volume;
         }
       }
     }
@@ -633,7 +632,13 @@ void Recycling::outputVars(Options& state) {
 
     for (const auto& channel : channels) {
       // Save particle and energy source for the species created during recycling
-
+      set_with_attrs(state["debug"], debug,
+                     {{"time_dimension", "t"},
+                      {"units", "-"},
+                      {"conversion", 1},
+                      {"standard_name", "debug variable"},
+                      {"long_name", "debug variable"},
+                      {"source", "recycling"}});
       // Target recycling
       if (target_recycle) {
         set_with_attrs(
