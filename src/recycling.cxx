@@ -35,7 +35,10 @@ Recycling::Recycling(std::string name, Options& alloptions, Solver*)
   is_pump = 0.0;
   mesh->get(is_pump, std::string("is_pump"));
 
-  // Check if sheath_boundary_simple component is available and get gamma_i
+  // We need sheath heat flux for fast recycling to work. We can't get it because
+  // the advection component is in the finally() of evolve_pressure, so we must
+  // recalculate it. This is only possible for sheath_boundary_simple where 
+  // gamma is known. 
   if (alloptions.isSection("sheath_boundary_simple")) {
     has_sheath_boundary_simple = true;
     if (alloptions["sheath_boundary_simple"]["gamma_i"].isSet()) {
@@ -226,7 +229,11 @@ void Recycling::transform_impl(GuardedOptions& state) {
     energy_source = species_to.isSet("energy_source")
                         ? getNonFinal<Field3D>(species_to["energy_source"])
                         : 0.0;
-    debug = 0.0;
+    debug = zeroFrom(Nn);
+
+    output << "\n\n*********************\n\n";
+    output << gamma_i << "  " << has_sheath_boundary_simple;
+    output << "\n\n*********************\n\n";
 
     // Recycling at the divertor target plates
     if (target_recycle) {
@@ -311,12 +318,10 @@ void Recycling::transform_impl(GuardedOptions& state) {
 
           // Flux through surface [normalised m^-2 s^-1], should be positive
           BoutReal flux = 0.5 * (N[i] + N[i]) * 0.5 * (V[i] + V[i]);
-
           flux = std::max(flux, 0.0);
 
           BoutReal daparsheath = (J[i] + J[ig]) / (sqrt(g_22[i]) + sqrt(g_22[ig])) * 0.5
                                  * (dx[i] + dx[ig]) * 0.5 * (dz[i] + dz[ig]);
-
           BoutReal volume = J[i] * dx[i] * dy[i] * dz[i];
 
           // Flow of recycled neutrals into domain [s-1]
@@ -326,18 +331,18 @@ void Recycling::transform_impl(GuardedOptions& state) {
           channel.target_recycle_density_source[i] += flow / volume; // For diagnostic
           density_source[i] += flow / volume;                        // For use in solver
 
-          // Energy of recycled particles
-          BoutReal ion_energy_flow = energy_flow_ylow[ig];
-          debug = ion_energy_flow;
-
-          // BoutReal nisheath = (N[i] + N[ig]) * 0.5;
-          // BoutReal visheath = (V[i] + V[ig]) * 0.5;
+          // Calculate sheath ion heat flow [W]
+          BoutReal nisheath = (N[i] + N[ig]) * 0.5;
+          BoutReal tisheath = (T[i] + T[ig]) * 0.5;
+          BoutReal visheath = (V[i] + V[ig]) * 0.5;
+          BoutReal sheath_ion_heat_flow =
+              abs(gamma_i * nisheath * tisheath * visheath * daparsheath / volume);
 
           // Blend fast (ion energy) and thermal (constant energy) recycling
           // Calculate returning neutral heat flow in [W]
           BoutReal recycle_energy_flow =
               // Fast recycling part
-              ion_energy_flow * channel.target_multiplier
+              sheath_ion_heat_flow * channel.target_multiplier
                   * channel.target_fast_recycle_energy_factor
                   * channel.target_fast_recycle_fraction
               // Thermal recycling part
