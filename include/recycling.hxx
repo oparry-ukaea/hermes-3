@@ -62,12 +62,13 @@ private:
   bool target_recycle{false}, sol_recycle{false}, pfr_recycle{false},
       neutral_pump{false}; ///< Flags for enabling recycling in different regions
   bool diagnose;           ///< Save additional post-processing variables?
-  bool has_sheath_boundary_simple{false}; ///< Whether sheath_boundary_simple component is available
+  bool has_sheath_boundary_simple{
+      false}; ///< Whether sheath_boundary_simple component is available
 
   BoutReal density_floor,
       pressure_floor; ///< minimum values for Nn, Pn to avoid divide by zero
 
-  BoutReal gamma_i;  /// Sheath heat transmission coefficient
+  BoutReal gamma_i; /// Sheath heat transmission coefficient
 
   Field3D density_source,
       energy_source; ///< Recycling particle and energy sources for all locations

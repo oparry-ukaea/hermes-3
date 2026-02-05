@@ -37,8 +37,8 @@ Recycling::Recycling(std::string name, Options& alloptions, Solver*)
 
   // We need sheath heat flux for fast recycling to work. We can't get it because
   // the advection component is in the finally() of evolve_pressure, so we must
-  // recalculate it. This is only possible for sheath_boundary_simple where 
-  // gamma is known. 
+  // recalculate it. This is only possible for sheath_boundary_simple where
+  // gamma is known.
   if (alloptions.isSection("sheath_boundary_simple")) {
     has_sheath_boundary_simple = true;
     if (alloptions["sheath_boundary_simple"]["gamma_i"].isSet()) {
@@ -231,7 +231,6 @@ void Recycling::transform_impl(GuardedOptions& state) {
                         : 0.0;
     debug = zeroFrom(Nn);
 
-
     // Recycling at the divertor target plates
     if (target_recycle) {
 
@@ -302,7 +301,7 @@ void Recycling::transform_impl(GuardedOptions& state) {
       // Upper Y boundary
 
       for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-        
+
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           auto i = indexAt(Nn, r.ind, mesh->yend, jz); // Final domain cell
