@@ -231,9 +231,6 @@ void Recycling::transform_impl(GuardedOptions& state) {
                         : 0.0;
     debug = zeroFrom(Nn);
 
-    output << "\n\n*********************\n\n";
-    output << gamma_i << "  " << has_sheath_boundary_simple;
-    output << "\n\n*********************\n\n";
 
     // Recycling at the divertor target plates
     if (target_recycle) {
@@ -317,7 +314,7 @@ void Recycling::transform_impl(GuardedOptions& state) {
           auto ig = i.yp();                            // First guard cell
 
           // Flux through surface [normalised m^-2 s^-1], should be positive
-          BoutReal flux = 0.5 * (N[i] + N[i]) * 0.5 * (V[i] + V[i]);
+          BoutReal flux = 0.5 * (N[i] + N[ig]) * 0.5 * (V[i] + V[ig]);
           flux = std::max(flux, 0.0);
 
           BoutReal daparsheath = (J[i] + J[ig]) / (sqrt(g_22[i]) + sqrt(g_22[ig])) * 0.5
