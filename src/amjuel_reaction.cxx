@@ -22,10 +22,13 @@ BoutReal AmjuelReaction::eval_amjuel_nT_fit(
   BoutReal result = 0.0;
 
   BoutReal logT_n = 1.0; // log(T) ** n
-  for (size_t n = 0; n < coeff_table.size(); ++n) {
+  std::size_t num_n = coeff_table.size();
+  std::size_t num_T = coeff_table[0].size();
+  for (size_t n_idx = 0; n_idx < num_n; ++n_idx) {
     BoutReal logn_m = 1.0; // log(ntilde) ** m
-    for (size_t m = 0; m < coeff_table[n].size(); ++m) {
-      result += coeff_table[n][m] * logn_m * logT_n;
+    const auto& nrow = coeff_table[n_idx];
+    for (size_t T_idx = 0; T_idx < num_T; ++T_idx) {
+      result += nrow[T_idx] * logn_m * logT_n;
       logn_m *= logntilde;
     }
     logT_n *= logT;
@@ -46,9 +49,9 @@ BoutReal AmjuelReaction::eval_amjuel_T_fit(BoutReal T,
   const BoutReal lnT = log(T);
   BoutReal ln_sigmav = coeff_table[0];
   BoutReal lnT_n = lnT; // (lnT)^n
-
-  for (std::size_t n = 1; n < coeff_table.size(); n++) {
-    ln_sigmav += coeff_table[n] * lnT_n;
+  const std::size_t num_T = coeff_table.size();
+  for (std::size_t T_idx = 1; T_idx < num_T; T_idx++) {
+    ln_sigmav += coeff_table[T_idx] * lnT_n;
     lnT_n *= lnT;
   }
 
