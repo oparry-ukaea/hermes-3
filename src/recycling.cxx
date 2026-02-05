@@ -257,63 +257,58 @@ void Recycling::transform_impl(GuardedOptions& state) {
 
       for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          // Calculate flux through surface [normalised m^-2 s^-1],
-          // should be positive since V < 0.0
-          BoutReal flux =
-              -0.5 * (N(r.ind, mesh->ystart, jz) + N(r.ind, mesh->ystart - 1, jz)) * 0.5
-              * (V(r.ind, mesh->ystart, jz) + V(r.ind, mesh->ystart - 1, jz));
 
+          auto i = indexAt(Nn, r.ind, mesh->ystart, jz); // Final domain cell
+          auto ig = i.ym();                              // First guard cell
+
+          // Reproduce sheath advected particle flux from evolve_density
+          BoutReal flux = -0.5 * (N[i] + N[ig]) * 0.5 * (V[i] + V[ig]);
           flux = std::max(flux, 0.0);
 
-          // Flow of recycled neutrals into domain [s-1]
-          BoutReal flow =
-              channel.target_multiplier * flux
-              * (J(r.ind, mesh->ystart) + J(r.ind, mesh->ystart - 1))
-              / (sqrt(g_22(r.ind, mesh->ystart)) + sqrt(g_22(r.ind, mesh->ystart - 1)))
-              * 0.5 * (dx(r.ind, mesh->ystart) + dx(r.ind, mesh->ystart - 1)) * 0.5
-              * (dz(r.ind, mesh->ystart) + dz(r.ind, mesh->ystart - 1));
+          BoutReal daparsheath = (J[i] + J[ig]) / (sqrt(g_22[i]) + sqrt(g_22[ig])) * 0.5
+                                 * (dx[i] + dx[ig]) * 0.5 * (dz[i] + dz[ig]);
+          BoutReal volume = J[i] * dx[i] * dy[i] * dz[i];
 
-          BoutReal volume = J(r.ind, mesh->ystart) * dx(r.ind, mesh->ystart)
-                            * dy(r.ind, mesh->ystart) * dz(r.ind, mesh->ystart);
+          // Flow of recycled neutrals into domain [s-1]
+          BoutReal flow = channel.target_multiplier * flux * daparsheath;
 
           // Calculate sources in the final cell [m^-3 s^-1]
-          channel.target_recycle_density_source(r.ind, mesh->ystart, jz) +=
-              flow / volume;                                        // For diagnostic
-          density_source(r.ind, mesh->ystart, jz) += flow / volume; // For use in solver
+          channel.target_recycle_density_source[i] += flow / volume; // For diagnostic
+          density_source[i] += flow / volume;                        // For use in solver
 
-          // Energy of recycled particles
-          BoutReal ion_energy_flow =
-              energy_flow_ylow(r.ind, mesh->ystart, jz)
-              * -1; // This is ylow end so take first domain cell and flip sign
+          // Reproduce sheath advected energy flux from evolve_pressure
+          BoutReal nisheath = (N[i] + N[ig]) * 0.5;
+          BoutReal tisheath = (T[i] + T[ig]) * 0.5;
+          BoutReal visheath = (V[i] + V[ig]) * 0.5;
+          BoutReal sheath_ion_heat_flow =
+              abs(gamma_i * nisheath * tisheath * visheath * daparsheath / volume);
 
           // Blend fast (ion energy) and thermal (constant energy) recycling
           // Calculate returning neutral heat flow in [W]
           BoutReal recycle_energy_flow =
-              ion_energy_flow * channel.target_multiplier
+              // Fast recycling part
+              sheath_ion_heat_flow * channel.target_multiplier
                   * channel.target_fast_recycle_energy_factor
-                  * channel.target_fast_recycle_fraction // Fast recycling part
-              + flow * (1 - channel.target_fast_recycle_fraction)
-                    * channel.target_energy; // Thermal recycling part
+                  * channel.target_fast_recycle_fraction
+              // Thermal recycling part
+              + flow * (1 - channel.target_fast_recycle_fraction) * channel.target_energy;
 
           // Divide heat flow in [W] by cell volume to get source in [m^-3 s^-1]
-          channel.target_recycle_energy_source(r.ind, mesh->ystart, jz) +=
-              recycle_energy_flow / volume;
-          energy_source(r.ind, mesh->ystart, jz) += recycle_energy_flow / volume;
+          channel.target_recycle_energy_source[i] += recycle_energy_flow / volume;
+          energy_source[i] += recycle_energy_flow / volume;
         }
       }
 
       // Upper Y boundary
 
       for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-        // Calculate flux of ions into target from Ne and Vi boundary
-        // This calculation is supposed to be consistent with the flow
-        // of plasma from FV::Div_par(N, V)
+        
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           auto i = indexAt(Nn, r.ind, mesh->yend, jz); // Final domain cell
           auto ig = i.yp();                            // First guard cell
 
-          // Flux through surface [normalised m^-2 s^-1], should be positive
+          // Reproduce sheath advected particle flux from evolve_density
           BoutReal flux = 0.5 * (N[i] + N[ig]) * 0.5 * (V[i] + V[ig]);
           flux = std::max(flux, 0.0);
 
@@ -328,7 +323,7 @@ void Recycling::transform_impl(GuardedOptions& state) {
           channel.target_recycle_density_source[i] += flow / volume; // For diagnostic
           density_source[i] += flow / volume;                        // For use in solver
 
-          // Calculate sheath ion heat flow [W]
+          // Reproduce sheath advected energy flux from evolve_pressure
           BoutReal nisheath = (N[i] + N[ig]) * 0.5;
           BoutReal tisheath = (T[i] + T[ig]) * 0.5;
           BoutReal visheath = (V[i] + V[ig]) * 0.5;
