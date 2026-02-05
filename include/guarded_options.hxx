@@ -44,6 +44,14 @@ public:
   /// Get read-only access to the underlying Options object. Throws
   /// BoutException if there is not read-permission for this object.
   const Options& get(Regions region = Regions::All) const;
+
+  /**
+   * Get const ref to a value of type T.
+   * Throws BoutException if we don't have read permission, or if the type is wrong.
+   */
+  template <typename T>
+  const T& get_ref(Regions region = Regions::All) const;
+
   /// Get read-write access to the underlying Options object. Throws
   /// BoutException if there is not write-permission for this object.
   Options& getWritable(Regions region = Regions::All);
