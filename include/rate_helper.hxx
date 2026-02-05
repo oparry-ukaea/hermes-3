@@ -54,8 +54,7 @@ struct RateHelper {
    * @param region the region in which to calculate the rate
    */
   RateHelper(const GuardedOptions state, const Options& units,
-             const std::vector<std::string>& reactant_names, const Region<Ind3D> region,
-             const BoutReal density_floor = 0)
+             const std::vector<std::string>& reactant_names, const Region<Ind3D> region)
       : region(region) {
 
     // Compute / extract fields that are required as parameters for the rate calculations
