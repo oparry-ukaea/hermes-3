@@ -15,7 +15,6 @@ using bout::globals::mesh;
 NeutralFullVelocity::NeutralFullVelocity(const std::string& name, Options& alloptions,
                                          Solver* solver)
     : Component({readWrite("species:{name}:{outputs}")}), name(name) {
-  AUTO_TRACE();
 
   // This is used in both transform and finally functions
   coord = mesh->getCoordinates();
@@ -184,7 +183,7 @@ NeutralFullVelocity::NeutralFullVelocity(const std::string& name, Options& allop
   Tyr.allocate();
   Tyz.allocate();
 
-  for (int i = 0; i < mesh->LocalNx; i++)
+  for (int i = 0; i < mesh->LocalNx; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
       // Central differencing of coordinates
       BoutReal dRdtheta, dZdtheta;
@@ -237,7 +236,36 @@ NeutralFullVelocity::NeutralFullVelocity(const std::string& name, Options& allop
       Txz(i, j) = -dRdtheta / J;
       Tyr(i, j) = -dZdpsi / J;
       Tyz(i, j) = dRdpsi / J;
+
+      // Ensure that all fields are finite
+
+      if (!std::isfinite(Urx(i, j))) {
+        throw BoutException("Urx non-finite at ({}, {})\n", i, j);
+      }
+      if (!std::isfinite(Ury(i, j))) {
+        throw BoutException("Ury non-finite at ({}, {})\n", i, j);
+      }
+      if (!std::isfinite(Uzx(i, j))) {
+        throw BoutException("Uzx non-finite at ({}, {})\n", i, j);
+      }
+      if (!std::isfinite(Uzy(i, j))) {
+        throw BoutException("Uzy non-finite at ({}, {})\n", i, j);
+      }
+
+      if (!std::isfinite(Txr(i, j))) {
+        throw BoutException("Txr non-finite at ({}, {})\n", i, j);
+      }
+      if (!std::isfinite(Txz(i, j))) {
+        throw BoutException("Txz non-finite at ({}, {})\n", i, j);
+      }
+      if (!std::isfinite(Tyr(i, j))) {
+        throw BoutException("Tyr non-finite at ({}, {})\n", i, j);
+      }
+      if (!std::isfinite(Tyz(i, j))) {
+        throw BoutException("Tyz non-finite at ({}, {})\n", i, j);
+      }
     }
+  }
 
   Urx.applyBoundary("neumann");
   Ury.applyBoundary("neumann");
@@ -259,7 +287,6 @@ NeutralFullVelocity::NeutralFullVelocity(const std::string& name, Options& allop
 
 /// Modify the given simulation state
 void NeutralFullVelocity::transform_impl(GuardedOptions& state) {
-  AUTO_TRACE();
   mesh->communicate(Nn2D, Vn2D, Pn2D);
 
   // Boundary conditions
@@ -332,12 +359,14 @@ void NeutralFullVelocity::transform_impl(GuardedOptions& state) {
 
 /// Use the final simulation state to update internal state
 /// (e.g. time derivatives)
+/// Note: The evolving state (density, temperature, pressure, velocity)
+///       is not taken from `state`. These are calculated in
+///       `transform()` that must be called before `finally()`.
 void NeutralFullVelocity::finally(const Options& state) {
-  AUTO_TRACE();
   auto& localstate = state["species"][name];
-
+  
   ///////////////////////////////////////////////////////
-  // Calculate transport coefficeints from collision frequency
+  // Calculate transport coefficients from collision frequency
 
   Field2D Nn2D_floor = softFloor(Nn2D, density_floor);
   Field2D Pn2D_floor = softFloor(Pn2D, pressure_floor);
@@ -349,7 +378,6 @@ void NeutralFullVelocity::finally(const Options& state) {
                   / neutral_lmax; // Neutral-neutral collisions [normalised frequency]
 
     if (localstate.isSet("collision_frequency")) {
-
       // Collisionality
       // Braginskii mode: plasma - self collisions and ei, neutrals - CX, IZ
       if (collision_names.empty()) { // Calculate only once - at the beginning

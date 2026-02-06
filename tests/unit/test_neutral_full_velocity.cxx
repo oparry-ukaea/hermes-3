@@ -6,6 +6,8 @@
 
 #include "../../include/neutral_full_velocity.hxx"
 
+#include <bout/field_factory.hxx>  // For generating functions
+
 /// Global mesh
 namespace bout {
 namespace globals {
@@ -108,7 +110,10 @@ TEST_F(NeutralFullVelocityTest, CreateComponent) {
 
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource{
-          {{"Rxy", 1.0}, {"Zxy", 0.0}, {"hthe", 1.0}, {"Bpxy", 1.0}}});
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
 
   Options options{{"units",
                    {{"seconds", 1.0},
@@ -134,7 +139,10 @@ TEST_F(NeutralFullVelocityTest, Transform) {
 
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource{
-          {{"Rxy", 1.0}, {"Zxy", 0.0}, {"hthe", 1.0}, {"Bpxy", 1.0}}});
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
 
   Options options{{"units",
                    {{"seconds", 1.0},
@@ -157,12 +165,133 @@ TEST_F(NeutralFullVelocityTest, Transform) {
   ASSERT_TRUE(state["species"]["neutral"].isSet("temperature"));
 }
 
+TEST_F(NeutralFullVelocityTest, Finally) {
+  FakeSolver solver;
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource{
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
+
+  Options options{{"units",
+                   {{"seconds", 1.0},
+                    {"Tesla", 1.0},
+                    {"meters", 1.0},
+                    {"inv_meters_cubed", 1e19},
+                    {"eV", 100}}},
+                  {"neutral", {{"AA", 2.0}, {"constant_transport_coef", true}}}};
+
+  NeutralFullVelocity component("neutral", options, &solver);
+
+  Options state;
+  // Note: transform must be called before finally
+  component.transform(state);
+
+  component.finally(state);
+}
+
+TEST_F(NeutralFullVelocityTest, FinallyNonConstantTransportCoef) {
+  FakeSolver solver;
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource{
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
+
+  Options options{{"units",
+                   {{"seconds", 1.0},
+                    {"Tesla", 1.0},
+                    {"meters", 1.0},
+                    {"inv_meters_cubed", 1e19},
+                    {"eV", 100}}},
+                  {"neutral", {{"AA", 2.0}, {"constant_transport_coef", false}}}};
+
+  NeutralFullVelocity component("neutral", options, &solver);
+
+  Options state;
+  // Note: transform must be called before finally
+  component.transform(state);
+
+  component.finally(state);
+}
+
+TEST_F(NeutralFullVelocityTest, FinallyCollisionFrequencyNoCollisions) {
+  FakeSolver solver;
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource{
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
+
+  Options options{{"units",
+                   {{"seconds", 1.0},
+                    {"Tesla", 1.0},
+                    {"meters", 1.0},
+                    {"inv_meters_cubed", 1e19},
+                    {"eV", 100}}},
+                  {"neutral", {{"AA", 2.0}, {"constant_transport_coef", false}}}};
+
+  NeutralFullVelocity component("neutral", options, &solver);
+
+  Options state;
+  // Note: transform must be called before finally
+  component.transform(state);
+
+  state["species"]["neutral"]["collision_frequency"] = 1.0;
+
+  // No collisions specified
+  EXPECT_THROW(component.finally(state), BoutException);
+}
+
+TEST_F(NeutralFullVelocityTest, FinallyCollisionFrequencyMultispecies) {
+  FakeSolver solver;
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource{
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
+
+  Options options{{"units",
+                   {{"seconds", 1.0},
+                    {"Tesla", 1.0},
+                    {"meters", 1.0},
+                    {"inv_meters_cubed", 1e19},
+                    {"eV", 100}}},
+                  {"neutral",
+                   {{"AA", 2.0},
+                    {"constant_transport_coef", false},
+                    {"diffusion_collisions_mode", "multispecies"}}}};
+
+  NeutralFullVelocity component("neutral", options, &solver);
+
+  Options state;
+  // Note: transform must be called before finally
+  component.transform(state);
+
+  state["species"]["neutral"]["collision_frequency"] = 1.0;
+  state["species"]["neutral"]["collision_frequencies"]["neutral_d+_cx"] = 1.0;
+
+  // Collisions specified
+  component.finally(state);
+}
+
 TEST_F(NeutralFullVelocityTest, OutputVars) {
   FakeSolver solver;
 
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource{
-          {{"Rxy", 1.0}, {"Zxy", 0.0}, {"hthe", 1.0}, {"Bpxy", 1.0}}});
+          {{"Rxy", FieldFactory::get()->create2D("1 + x", Options::getRoot(), mesh)},
+           {"Zxy", FieldFactory::get()->create2D("y", Options::getRoot(), mesh)},
+           {"hthe", 1.0},
+           {"Bpxy", 1.0}}});
 
   Options options{{"units",
                    {{"seconds", 1.0},
