@@ -290,7 +290,7 @@ private:
   BoutReal density_product(Ind3D i, std::string exclude_sp = "") {
     BoutReal result = 1;
     for (const auto& [sp_name, dens] : this->reactant_densities) {
-      if (sp_name.compare(exclude_sp) == 0) {
+      if (sp_name == exclude_sp) {
         continue;
       }
       result *= (*dens)[i];
@@ -312,7 +312,7 @@ private:
                                 std::string exclude_sp = "") {
     BoutReal result = 1;
     for (const auto& [sp_name, dens] : this->reactant_densities) {
-      if (sp_name.compare(exclude_sp) == 0) {
+      if (sp_name == exclude_sp) {
         continue;
       }
       result *= cellLeft<hermes::Limiter>((*dens)[i], (*dens)[ym], (*dens)[yp]);
@@ -334,7 +334,7 @@ private:
                                  std::string exclude_sp = "") {
     BoutReal result = 1;
     for (const auto& [sp_name, dens] : this->reactant_densities) {
-      if (sp_name.compare(exclude_sp) == 0) {
+      if (sp_name == exclude_sp) {
         continue;
       }
       result *= cellRight<hermes::Limiter>((*dens)[i], (*dens)[ym], (*dens)[yp]);
