@@ -78,6 +78,7 @@ struct RateHelper {
     }
 
     // Extract and store reactant densities
+    this->reactant_names = reactant_names;
     for (const auto& reactant_name : reactant_names) {
       this->reactant_densities[reactant_name] =
           &state["species"][reactant_name]["density"].get_ref<Field3D>();
@@ -98,7 +99,7 @@ struct RateHelper {
     // Set up map to store results: one collision frequency per reactant + reaction rate
     std::string first_key = str_keys(this->rate_params)[0];
     result["rate"] = emptyFrom(*this->rate_params[first_key]);
-    for (const std::string& reactant_name : str_keys(this->reactant_densities)) {
+    for (const std::string& reactant_name : this->reactant_names) {
       result[freq_lbl(reactant_name)] = emptyFrom(*this->rate_params[first_key]);
     }
 
@@ -136,7 +137,7 @@ struct RateHelper {
 
                 // collision freqs. at centre, left, right
                 for (const std::string& reactant_name :
-                     str_keys(this->reactant_densities)) {
+                     this->reactant_names) {
                   std::string lbl = freq_lbl(reactant_name);
                   BoutReal nprod = density_product(i, reactant_name);
                   BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
@@ -171,7 +172,7 @@ struct RateHelper {
 
                 // collision freqs. at centre, left, right
                 for (const std::string& reactant_name :
-                     str_keys(this->reactant_densities)) {
+                     this->reactant_names) {
                   std::string lbl = freq_lbl(reactant_name);
                   BoutReal nprod = density_product(i, reactant_name);
                   cell_data[lbl].centre = rate_calc_func(nprod, ne, Te);
@@ -216,6 +217,9 @@ private:
 
   /// Reactant densities, keyed by species name (stored as pointers to avoid copying)
   std::map<std::string, const Field3D*> reactant_densities;
+
+  /// Reactant names in the order provided to the constructor
+  std::vector<std::string> reactant_names;
 
   // Rate parameter fields (stored as pointers to avoid copying)
   std::map<std::string, const Field3D*> rate_params;
