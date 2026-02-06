@@ -82,6 +82,7 @@ struct RateHelper {
     for (const auto& reactant_name : reactant_names) {
       this->reactant_densities[reactant_name] =
           &state["species"][reactant_name]["density"].get_ref<Field3D>();
+      this->freq_labels.push_back(freq_lbl(reactant_name));
     }
   }
 
@@ -113,6 +114,7 @@ struct RateHelper {
     std::visit(
         [this, &cell_data, &do_averaging, &result](auto&& rate_calc_func) {
           auto J = result["rate"].getCoordinates()->J;
+          std::vector<std::string> prop_keys = str_keys(result);
           BOUT_FOR(i, region) {
 
             auto yp = i.yp();
@@ -136,9 +138,9 @@ struct RateHelper {
                 }
 
                 // collision freqs. at centre, left, right
-                for (const std::string& reactant_name :
-                     this->reactant_names) {
-                  std::string lbl = freq_lbl(reactant_name);
+                for (size_t j = 0; j < this->reactant_names.size(); ++j) {
+                  const std::string& reactant_name = this->reactant_names[j];
+                  const std::string& lbl = freq_labels[j];
                   BoutReal nprod = density_product(i, reactant_name);
                   BoutReal nprodL = density_product_left(i, ym, yp, reactant_name);
                   BoutReal nprodR = density_product_right(i, ym, yp, reactant_name);
@@ -171,9 +173,9 @@ struct RateHelper {
                 }
 
                 // collision freqs. at centre, left, right
-                for (const std::string& reactant_name :
-                     this->reactant_names) {
-                  std::string lbl = freq_lbl(reactant_name);
+                for (size_t j = 0; j < this->reactant_names.size(); ++j) {
+                  const std::string& reactant_name = this->reactant_names[j];
+                  const std::string& lbl = freq_labels[j];
                   BoutReal nprod = density_product(i, reactant_name);
                   cell_data[lbl].centre = rate_calc_func(nprod, ne, Te);
                   if (do_averaging) {
@@ -195,7 +197,7 @@ struct RateHelper {
             }
 
             // Compute averages for each property and store in result map
-            for (const std::string& prop : str_keys(result)) {
+            for (const std::string& prop : prop_keys) {
               if (do_averaging) {
                 result[prop][i] = 4. / 6 * cell_data[prop].centre
                                   + (Ji + J[ym]) / (12. * Ji) * cell_data[prop].left
@@ -220,6 +222,9 @@ private:
 
   /// Reactant names in the order provided to the constructor
   std::vector<std::string> reactant_names;
+
+  /// Pre-computed collision frequency labels for each reactant
+  std::vector<std::string> freq_labels;
 
   // Rate parameter fields (stored as pointers to avoid copying)
   std::map<std::string, const Field3D*> rate_params;
