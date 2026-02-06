@@ -6,7 +6,7 @@
 
 #include "../../include/neutral_full_velocity.hxx"
 
-#include <bout/field_factory.hxx>  // For generating functions
+#include <bout/field_factory.hxx> // For generating functions
 
 /// Global mesh
 namespace bout {
@@ -306,12 +306,11 @@ TEST_F(NeutralFullVelocityTest, OutputVars) {
   Options state;
   component.transform(state);
 
-  Options outputs {
-    {"Nnorm", get<BoutReal>(options["units"]["inv_meters_cubed"])},
-    {"Tnorm", get<BoutReal>(options["units"]["eV"])},
-    {"Omega_ci", 1./get<BoutReal>(options["units"]["seconds"])},
-    {"Cs0", get<BoutReal>(options["units"]["meters"]) /
-     get<BoutReal>(options["units"]["seconds"])}};
+  Options outputs{{"Nnorm", get<BoutReal>(options["units"]["inv_meters_cubed"])},
+                  {"Tnorm", get<BoutReal>(options["units"]["eV"])},
+                  {"Omega_ci", 1. / get<BoutReal>(options["units"]["seconds"])},
+                  {"Cs0", get<BoutReal>(options["units"]["meters"])
+                              / get<BoutReal>(options["units"]["seconds"])}};
   component.outputVars(outputs);
 
   ASSERT_TRUE(outputs.isSet("Urx"));

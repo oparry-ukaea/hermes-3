@@ -364,7 +364,7 @@ void NeutralFullVelocity::transform_impl(GuardedOptions& state) {
 ///       `transform()` that must be called before `finally()`.
 void NeutralFullVelocity::finally(const Options& state) {
   auto& localstate = state["species"][name];
-  
+
   ///////////////////////////////////////////////////////
   // Calculate transport coefficients from collision frequency
 
