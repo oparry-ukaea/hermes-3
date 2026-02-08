@@ -1,7 +1,7 @@
-#
 
-nout = 5                     # Number of output timesteps
-timestep = 0.0001        
+# Run one RHS
+nout = 0                  
+timestep = 1        
 
 MZ = 1
 NXPE = 1
