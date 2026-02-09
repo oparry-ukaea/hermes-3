@@ -219,7 +219,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
   }
 
 protected:
-  void transform_additional(GuardedOptions& state, RatesMap& rate_calc_results) override {
+  void transform_additional(GuardedOptions& state, const RateData& rate_data) override {
     std::string ion_reactant =
         this->parser->get_single_species(species_filter::reactants, species_filter::ion);
     std::string ion_product =
@@ -251,24 +251,22 @@ protected:
     // and atom1 != atom2
     auto ion2_velocity = get<Field3D>(ion2["velocity"]);
     add(ion2["energy_source"],
-        0.5 * Aatom * rate_calc_results["rate"] * SQ(ion2_velocity - atom1_velocity));
+        0.5 * Aatom * rate_data.rate * SQ(ion2_velocity - atom1_velocity));
 
     auto atom2_velocity = get<Field3D>(atom2["velocity"]);
     add(atom2["energy_source"],
-        0.5 * Aion * rate_calc_results["rate"] * SQ(atom2_velocity - ion1_velocity));
+        0.5 * Aion * rate_data.rate * SQ(atom2_velocity - ion1_velocity));
 
-    // Set 'collision_frequencies' values (only atomic one is written as a diagnostic)
-    std::string atom_cf_key = fmt::format("{:s}:collision_frequency", atom_reactant);
+    // Set 'collision_frequencies' values
     std::string atom_cf_state_lbl =
         fmt::format("collision_frequencies:{:s}_{:s}_cx", atom_reactant, ion_reactant);
     update_source<set>(state, atom_reactant, ReactionDiagnosticType::collision_freq,
-                       atom_cf_state_lbl, rate_calc_results[atom_cf_key]);
+                       atom_cf_state_lbl, rate_data.coll_freq(atom_reactant));
 
-    std::string ion_cf_key = fmt::format("{:s}:collision_frequency", ion_reactant);
     std::string ion_cf_state_lbl =
         fmt::format("collision_frequencies:{:s}_{:s}_cx", ion_reactant, atom_reactant);
     update_source<set>(state, ion_reactant, ReactionDiagnosticType::collision_freq,
-                       ion_cf_state_lbl, rate_calc_results[ion_cf_key]);
+                       ion_cf_state_lbl, rate_data.coll_freq(ion_reactant));
   }
 
 private:

@@ -213,7 +213,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
   Field3D first_reactant = get<Field3D>(state["species"][reactant_names[0]]["density"]);
 
   // Create rate helper and compute reaction rate, collision frequencies
-  RatesMap rate_calc_results;
+  RateData rate_calc_results;
   RateParamsTypes rate_params_type = get_rate_params_type();
   if (rate_params_type == RateParamsTypes::ET) {
     throw BoutException("RateParamsTypes::ET not implemented");
@@ -225,7 +225,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
     };
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
         state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
-    rate_helper.calc_rates(calc_rate, rate_calc_results);
+    rate_calc_results = rate_helper.calc_rates(calc_rate);
   } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
       BoutReal result =
@@ -236,23 +236,16 @@ void Reaction::transform_impl(GuardedOptions& state) {
     auto rate_helper = RateHelper<RateParamsTypes::T>(
         state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
-    rate_helper.calc_rates(calc_rate, rate_calc_results, false);
+    rate_calc_results = rate_helper.calc_rates(calc_rate, false);
   } else {
     throw BoutException("Unhandled RateParamsTypes in Reaction::transform()");
   }
 
   // Set collision frequencies
-  for (auto& [key, val] : rate_calc_results) {
-    if (key.compare("rate") != 0) {
-      auto sp_typestr = strsplit(key, ':');
-      if (sp_typestr.size() > 1) {
-        std::string sp_name = trim(sp_typestr.front());
-        update_source<set<Field3D>>(state, sp_name,
-                                    ReactionDiagnosticType::collision_freq, val);
-      } else {
-        throw BoutException("Expected calc_rates results keys to be ':'-separated");
-      }
-    }
+  for (const auto& reactant_name : reactant_names) {
+    update_source<set<Field3D>>(state, reactant_name,
+                                ReactionDiagnosticType::collision_freq,
+                                rate_calc_results.coll_freq(reactant_name));
   }
 
   // Subclasses perform any additional transform tasks
@@ -264,7 +257,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
     int pop_change = this->parser->pop_change(sp_name);
     if (pop_change != 0) {
       // Density sources
-      density_source = pfactors.at(sp_name) * pop_change * rate_calc_results["rate"];
+      density_source = pfactors.at(sp_name) * pop_change * rate_calc_results.rate;
       update_source<add<Field3D>>(state, sp_name, ReactionDiagnosticType::density_src,
                                   density_source);
     }
@@ -284,10 +277,10 @@ void Reaction::transform_impl(GuardedOptions& state) {
     energy_source = 0.0;
     if (pop_change_s < 0) {
       // For species with net loss, sources follows directly from pop change
-      momentum_source = pop_change_s * rate_calc_results["rate"]
+      momentum_source = pop_change_s * rate_calc_results.rate
                         * get<BoutReal>(state["species"][sp_name]["AA"])
                         * get<Field3D>(state["species"][sp_name]["velocity"]);
-      energy_source = pop_change_s * rate_calc_results["rate"] * (3. / 2)
+      energy_source = pop_change_s * rate_calc_results.rate * (3. / 2)
                       * get<Field3D>(state["species"][sp_name]["temperature"]);
     } else if (pop_change_s > 0) {
       // Species with net gain receive a proportion of the momentum and energy lost by
@@ -299,12 +292,12 @@ void Reaction::transform_impl(GuardedOptions& state) {
         if (pop_change_r < 0) {
           momentum_source += -pop_change_r * pfactors.at(rsp_name)
                              * this->momentum_channels[rsp_name][sp_name]
-                             * rate_calc_results["rate"]
+                             * rate_calc_results.rate
                              * get<BoutReal>(state["species"][rsp_name]["AA"])
                              * get<Field3D>(state["species"][rsp_name]["velocity"]);
           energy_source += -pop_change_r * pfactors.at(rsp_name)
                            * this->energy_channels[rsp_name][sp_name]
-                           * rate_calc_results["rate"] * (3. / 2)
+                           * rate_calc_results.rate * (3. / 2)
                            * get<Field3D>(state["species"][rsp_name]["temperature"]);
         }
       }

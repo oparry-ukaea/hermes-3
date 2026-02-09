@@ -107,9 +107,9 @@ RateParamsTypes AmjuelReaction::get_rate_params_type() const {
 }
 
 void AmjuelReaction::transform_additional(GuardedOptions& state,
-                                          RatesMap& rate_calc_results) {
+                                          const RateData& rate_calc_results) {
 
-  auto rate = rate_calc_results["rate"];
+  auto rate = rate_calc_results.rate;
 
   // Amjuel-based reactions are assumed to have exactly 2 reactants, for now.
   std::vector<std::string> reactant_species =

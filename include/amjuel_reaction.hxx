@@ -71,7 +71,8 @@ protected:
 
   RateParamsTypes get_rate_params_type() const final;
 
-  void transform_additional(GuardedOptions& state, RatesMap& rate_calc_results) override;
+  void transform_additional(GuardedOptions& state,
+                            const RateData& rate_calc_results) override;
 
 private:
   /// Data object

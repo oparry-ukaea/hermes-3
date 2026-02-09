@@ -173,10 +173,10 @@ protected:
    * above those implemented in Reaction::transform. (Subclasses MAY define)
    *
    * @param state
-   * @param reaction_rate
+   * @param rate_calc_results
    */
   virtual void transform_additional([[maybe_unused]] GuardedOptions& state,
-                                    [[maybe_unused]] RatesMap& rate_calc_results) {}
+                                    [[maybe_unused]] const RateData& rate_calc_results) {}
 
   /**
    * @brief Update both a species source term and the corresponding diagnostics (if any
@@ -185,7 +185,7 @@ protected:
    */
   template <OPTYPE operation>
   void update_source(GuardedOptions& state, const std::string& sp_name,
-                     ReactionDiagnosticType type, Field3D& fld) {
+                     ReactionDiagnosticType type, const Field3D& fld) {
 
     update_source<operation>(state, sp_name, type, state_labels.at(type), fld);
   }
@@ -205,7 +205,7 @@ protected:
    */
   template <OPTYPE operation>
   void update_source(GuardedOptions& state, const std::string& sp_name,
-                     ReactionDiagnosticType type, std::string& lbl, Field3D& fld) {
+                     ReactionDiagnosticType type, std::string& lbl, const Field3D& fld) {
     // Update species data
     operation(state["species"][sp_name][lbl], fld);
 
