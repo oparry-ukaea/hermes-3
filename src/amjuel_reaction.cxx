@@ -107,9 +107,10 @@ RateParamsTypes AmjuelReaction::get_rate_params_type() const {
 }
 
 void AmjuelReaction::transform_additional(GuardedOptions& state,
-                                          const RateData& rate_calc_results) {
+                                          const RateData& rate_data) {
 
-  auto rate = rate_calc_results.rate;
+  // Extract the rate
+  Field3D rate = rate_data.rate;
 
   // Amjuel-based reactions are assumed to have exactly 2 reactants, for now.
   std::vector<std::string> reactant_species =
@@ -202,30 +203,17 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
   update_source<subtract<Field3D>>(state, "e", ReactionDiagnosticType::energy_loss,
                                    energy_loss);
 
-  // Collision frequencies
+  // Collision frequencies [s^-1]
 
-  // Same as reaction_rate but without the n1 factor: returns atom/ion collisionality in
-  // [s^-1]
-  Field3D heavy_particle_frequency = cellAverage(
-      [&](BoutReal ne, BoutReal te) {
-        return ne * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
-               * rate_multiplier;
-      },
-      region_no_bndry)(n_e, T_e);
-
-  // Same as reaction_rate but without the ne factor: returns electron collisionality in
-  // [s^-1]
-  Field3D electron_frequency = cellAverage(
-      [&](BoutReal ne, BoutReal n1, BoutReal te) {
-        return n1 * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
-               * rate_multiplier;
-      },
-      region_no_bndry)(n_e, n_rh, T_e);
-
-  // Set collision frequency on the neutral species (must be exactly 1 of them if this
-  // function hasn't been overridden)
+  // Set on the neutral species for both ionisation and recombination
   std::string neutral_species = parser->get_single_species(species_filter::neutral);
-  set(state["species"][neutral_species]["collision_frequencies"]
-           [rh.name() + "_" + ph.name() + "_" + this->short_reaction_type],
-      heavy_particle_frequency);
+  std::string heavy_cf_lbl =
+      fmt::format("{:s}_{:s}_{:s}", heavy_reactant_species, heavy_product_species,
+                  this->short_reaction_type);
+  set(state["species"][neutral_species]["collision_frequencies"][heavy_cf_lbl],
+      rate_data.coll_freq(rh.name()));
+
+  // N.B. nothing is done with the electron collision frequency; presumably we want to
+  // update it in the state?!
+  Field3D electron_frequency = rate_data.coll_freq("e");
 }
