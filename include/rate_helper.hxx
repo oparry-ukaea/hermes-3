@@ -150,25 +150,28 @@ struct RateHelper {
             using RateFuncType = std::decay_t<decltype(rate_calc_func)>;
             if constexpr (std::is_same_v<RateFuncType, OneDRateFunc>) {
               if constexpr (RateParamsType == RateParamsTypes::T) {
-                BoutReal T = get_rate_param(Teff_name, i);
-                BoutReal TL = get_rate_param_left(Teff_name, i, ym, yp);
-                BoutReal TR = get_rate_param_right(Teff_name, i, ym, yp);
+                CellData T_data = compute_rate_param(Teff_name, i, ym, yp, do_averaging);
 
                 CellData mass_actions = compute_mass_actions(i, ym, yp, do_averaging);
-                cell_data["rate"].centre = rate_calc_func(mass_actions.centre, T);
+                cell_data["rate"].centre =
+                    rate_calc_func(mass_actions.centre, T_data.centre);
                 if (do_averaging) {
-                  cell_data["rate"].left = rate_calc_func(mass_actions.left, TL);
-                  cell_data["rate"].right = rate_calc_func(mass_actions.right, TR);
+                  cell_data["rate"].left = rate_calc_func(mass_actions.left, T_data.left);
+                  cell_data["rate"].right =
+                      rate_calc_func(mass_actions.right, T_data.right);
                 }
 
                 // collision freqs. at centre, left, right
                 for (const auto& reactant : this->reactant_names) {
-                  CellData dens_prods =
-                      compute_density_products(i, ym, yp, do_averaging, reactant);
-                  cell_data[reactant].centre = rate_calc_func(dens_prods.centre, T);
+                  CellData coll_freq_dens = compute_collision_freq_density(
+                      i, ym, yp, do_averaging, reactant, mass_actions);
+                  cell_data[reactant].centre =
+                      rate_calc_func(coll_freq_dens.centre, T_data.centre);
                   if (do_averaging) {
-                    cell_data[reactant].left = rate_calc_func(dens_prods.left, TL);
-                    cell_data[reactant].right = rate_calc_func(dens_prods.right, TR);
+                    cell_data[reactant].left =
+                        rate_calc_func(coll_freq_dens.left, T_data.left);
+                    cell_data[reactant].right =
+                        rate_calc_func(coll_freq_dens.right, T_data.right);
                   }
                 }
               } else {
@@ -177,33 +180,33 @@ struct RateHelper {
               }
             } else if constexpr (std::is_same_v<RateFuncType, TwoDRateFunc>) {
               if constexpr (RateParamsType == RateParamsTypes::nT) {
-                BoutReal ne = get_rate_param("e:density", i);
-                BoutReal ne_left = get_rate_param_left("e:density", i, ym, yp);
-                BoutReal ne_right = get_rate_param_right("e:density", i, ym, yp);
-                BoutReal Te = get_rate_param("e:temperature", i);
-                BoutReal Te_left = get_rate_param_left("e:temperature", i, ym, yp);
-                BoutReal Te_right = get_rate_param_right("e:temperature", i, ym, yp);
+                CellData ne_data =
+                    compute_rate_param("e:density", i, ym, yp, do_averaging);
+                CellData Te_data =
+                    compute_rate_param("e:temperature", i, ym, yp, do_averaging);
 
                 // reaction rates at centre, left, right
                 CellData mass_actions = compute_mass_actions(i, ym, yp, do_averaging);
-                cell_data["rate"].centre = rate_calc_func(mass_actions.centre, ne, Te);
+                cell_data["rate"].centre =
+                    rate_calc_func(mass_actions.centre, ne_data.centre, Te_data.centre);
                 if (do_averaging) {
                   cell_data["rate"].left =
-                      rate_calc_func(mass_actions.left, ne_left, Te_left);
+                      rate_calc_func(mass_actions.left, ne_data.left, Te_data.left);
                   cell_data["rate"].right =
-                      rate_calc_func(mass_actions.right, ne_right, Te_right);
+                      rate_calc_func(mass_actions.right, ne_data.right, Te_data.right);
                 }
 
                 // collision freqs. at centre, left, right
                 for (const auto& reactant : this->reactant_names) {
-                  CellData dens_prods =
-                      compute_density_products(i, ym, yp, do_averaging, reactant);
-                  cell_data[reactant].centre = rate_calc_func(dens_prods.centre, ne, Te);
+                  CellData dens_prods = compute_collision_freq_density(
+                      i, ym, yp, do_averaging, reactant, mass_actions);
+                  cell_data[reactant].centre =
+                      rate_calc_func(dens_prods.centre, ne_data.centre, Te_data.centre);
                   if (do_averaging) {
                     cell_data[reactant].left =
-                        rate_calc_func(dens_prods.left, ne_left, Te_left);
+                        rate_calc_func(dens_prods.left, ne_data.left, Te_data.left);
                     cell_data[reactant].right =
-                        rate_calc_func(dens_prods.right, ne_right, Te_right);
+                        rate_calc_func(dens_prods.right, ne_data.right, Te_data.right);
                   }
                 }
 
@@ -314,23 +317,43 @@ private:
   }
 
   /**
-   * @brief Compute the product of all reactant densities at centre, left, and right
-   * positions in a single pass, optionally excluding one species.
+   * @brief Compute the density product to use in a collision frequency by dividing the
+   * total mass action factor by a specific reactant's density.
    *
    * @param i central index
    * @param ym neighbour 1 index
    * @param yp neighbour 2 index
    * @param do_averaging whether to compute left and right values
-   * @param exclude_sp optional species name to exclude from the product
-   * @return CellData struct containing centre, left, and right products
+   * @param reactant_name name of the reactant to exclude from the product
+   * @param mass_actions pre-computed mass action factor
+   * @return CellData struct containing centre, left, and right values
    */
-  CellData compute_density_products(Ind3D i, Ind3D ym, Ind3D yp, bool do_averaging,
-                                    std::string exclude_sp = "") {
+  CellData compute_collision_freq_density(Ind3D i, Ind3D ym, Ind3D yp, bool do_averaging,
+                                          const std::string& reactant_name,
+                                          const CellData& mass_actions) {
+    const auto& dens = *this->reactant_densities.at(reactant_name);
+    CellData result = mass_actions;
+    result.centre /= dens[i];
+    if (do_averaging) {
+      result.left /= cellLeft<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
+      result.right /= cellRight<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
+    }
+    return result;
+  }
+
+  /**
+   * @brief Compute the product of all reactant densities at centre, left, and right
+   * positions.
+   *
+   * @param i central index
+   * @param ym neighbour 1 index
+   * @param yp neighbour 2 index
+   * @param do_averaging whether to compute left and right values
+   * @return CellData struct containing centre, left, and right mass action factors
+   */
+  CellData compute_mass_actions(Ind3D i, Ind3D ym, Ind3D yp, bool do_averaging) {
     CellData result{1, 1, 1};
     for (const auto& [sp_name, dens] : this->reactant_densities) {
-      if (sp_name == exclude_sp) {
-        continue;
-      }
       result.centre *= (*dens)[i];
       if (do_averaging) {
         result.left *= cellLeft<hermes::Limiter>((*dens)[i], (*dens)[ym], (*dens)[yp]);
@@ -341,57 +364,25 @@ private:
   }
 
   /**
-   * @brief Compute the mass action factor (product of all reactant densities) at
-   * centre, left, and right positions.
+   * @brief Extract the value of a rate parameter at centre, left, and right positions.
    *
+   * @param name name of the parameter (label in state["species"])
    * @param i central index
    * @param ym neighbour 1 index
    * @param yp neighbour 2 index
    * @param do_averaging whether to compute left and right values
-   * @return CellData struct containing centre, left, and right mass action factors
+   * @return CellData struct containing centre, left, and right values
    */
-  CellData compute_mass_actions(Ind3D i, Ind3D ym, Ind3D yp, bool do_averaging) {
-    return compute_density_products(i, ym, yp, do_averaging);
-  }
-
-  /**
-   * @brief Extract the (cell-centre) value of a rate parameter.
-   *
-   * @param name name of the parameter (label in state["species"])
-   * @param i central index
-   * @return BoutReal
-   */
-  BoutReal get_rate_param(const std::string& name, Ind3D i) {
-    return (*this->rate_params[name])[i];
-  }
-
-  /**
-   * @brief Extract the value of a rate parameter at the left of a cell.
-   *
-   * @param name name of the parameter (label in state["species"])
-   * @param i central index
-   * @param ym neighbour 1 index
-   * @param yp neighbour 2 index
-   * @return BoutReal
-   */
-  BoutReal get_rate_param_left(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
-    return cellLeft<hermes::Limiter>((*this->rate_params[name])[i],
-                                     (*this->rate_params[name])[ym],
-                                     (*this->rate_params[name])[yp]);
-  }
-
-  /**
-   * @brief Extract the value of a rate parameter at the right of a cell.
-   * @param name name of the parameter (label in state["species"])
-   * @param i central index
-   * @param ym neighbour 1 index
-   * @param yp neighbour 2 index
-   * @return BoutReal
-   */
-  BoutReal get_rate_param_right(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
-    return cellRight<hermes::Limiter>((*this->rate_params[name])[i],
-                                      (*this->rate_params[name])[ym],
-                                      (*this->rate_params[name])[yp]);
+  CellData compute_rate_param(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp,
+                              bool do_averaging) {
+    const auto& field = *this->rate_params[name];
+    CellData result;
+    result.centre = field[i];
+    if (do_averaging) {
+      result.left = cellLeft<hermes::Limiter>(field[i], field[ym], field[yp]);
+      result.right = cellRight<hermes::Limiter>(field[i], field[ym], field[yp]);
+    }
+    return result;
   }
 };
 
