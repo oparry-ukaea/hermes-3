@@ -90,8 +90,7 @@ struct RateHelper {
       // add_rate_param("e:energy", energy);
     } else if constexpr (RateParamsType == RateParamsTypes::nT) {
       for (auto field_lbl : {"e:density", "e:temperature"}) {
-        add_rate_param(field_lbl,
-                       state["species"][field_lbl].template get_ref<Field3D>());
+        add_rate_param(field_lbl, state["species"][field_lbl].template GetRef<Field3D>());
       }
     } else if constexpr (RateParamsType == RateParamsTypes::T) {
       calc_Teff(state, units, reactant_names, Teff_storage);
@@ -106,7 +105,7 @@ struct RateHelper {
     this->num_reactants = reactant_names.size();
     for (const auto& reactant : reactant_names) {
       this->reactant_densities[reactant] =
-          &state["species"][reactant]["density"].get_ref<Field3D>();
+          &state["species"][reactant]["density"].GetRef<Field3D>();
     }
   }
 
@@ -303,7 +302,7 @@ private:
     BoutReal Tnorm = get<BoutReal>(units["eV"]);
     for (auto& sp : heavy_reactant_names) {
       const Field3D& temperature =
-          state["species"][sp]["temperature"].template get_ref<Field3D>();
+          state["species"][sp]["temperature"].template GetRef<Field3D>();
       BoutReal AA = get<BoutReal>(state["species"][sp]["AA"]);
       Teff += (temperature / AA) * Tnorm;
     }

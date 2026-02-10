@@ -93,7 +93,7 @@ const Options& GuardedOptions::get([[maybe_unused]] Regions region) const {
 }
 
 template <typename T>
-const T& GuardedOptions::get_ref([[maybe_unused]] Regions region) const {
+const T& GuardedOptions::GetRef([[maybe_unused]] Regions region) const {
 #if CHECKLEVEL >= 1
   const std::string name = options->str();
   auto [permission, varname] = permissions->getHighestPermission(name, region);
@@ -141,10 +141,10 @@ bool GuardedOptions::operator!=(const GuardedOptions& other) const {
   return !(*this == other);
 }
 // Explicit template instantiations for commonly used types
-template const Field3D& GuardedOptions::get_ref<Field3D>(Regions region) const;
-template const Field2D& GuardedOptions::get_ref<Field2D>(Regions region) const;
-template const FieldPerp& GuardedOptions::get_ref<FieldPerp>(Regions region) const;
-template const BoutReal& GuardedOptions::get_ref<BoutReal>(Regions region) const;
-template const int& GuardedOptions::get_ref<int>(Regions region) const;
-template const bool& GuardedOptions::get_ref<bool>(Regions region) const;
-template const std::string& GuardedOptions::get_ref<std::string>(Regions region) const;
+template const Field3D& GuardedOptions::GetRef<Field3D>(Regions region) const;
+template const Field2D& GuardedOptions::GetRef<Field2D>(Regions region) const;
+template const FieldPerp& GuardedOptions::GetRef<FieldPerp>(Regions region) const;
+template const BoutReal& GuardedOptions::GetRef<BoutReal>(Regions region) const;
+template const int& GuardedOptions::GetRef<int>(Regions region) const;
+template const bool& GuardedOptions::GetRef<bool>(Regions region) const;
+template const std::string& GuardedOptions::GetRef<std::string>(Regions region) const;
