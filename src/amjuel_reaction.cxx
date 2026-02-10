@@ -109,6 +109,8 @@ RateParamsTypes AmjuelReaction::get_rate_params_type() const {
 void AmjuelReaction::transform_additional(GuardedOptions& state,
                                           RatesMap& rate_calc_results) {
 
+  auto rate = rate_calc_results["rate"];
+
   // Amjuel-based reactions are assumed to have exactly 2 reactants, for now.
   std::vector<std::string> reactant_species =
       parser->get_species(species_filter::reactants);
@@ -161,7 +163,7 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
   // The greater the difference in velocities of the underlying species,
   // the wider the resultant distribution, which corresponds to an
   // increase in temperature and therefore internal energy.
-  add(ph["energy_source"], 0.5 * AA_rh * rate_calc_results["rate"] * SQ(v_rh - v_ph));
+  add(ph["energy_source"], 0.5 * AA_rh * rate * SQ(v_rh - v_ph));
 
   // Energy source for electrons due to pop change
   GuardedOptions electron = state["species"]["e"];
@@ -179,23 +181,23 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
       // kinetic energy converted to an internal energy source of that species.
       auto v_e = get<Field3D>(electron["velocity"]);
       auto m_e = get<BoutReal>(electron["AA"]);
-      add(electron["energy_source"],
-          0.5 * m_e * e_pop_change * rate_calc_results["rate"] * SQ(v_e));
+      add(electron["energy_source"], 0.5 * m_e * e_pop_change * rate * SQ(v_e));
     }
   }
 
   // Electron energy loss (radiation, ionisation potential)
   Field3D n_e = get<Field3D>(electron["density"]);
+  auto region_no_bndry = n_e.getRegion("RGN_NOBNDRY");
+
   Field3D energy_loss = cellAverage(
       [&](BoutReal nrh, BoutReal ne, BoutReal te) {
         return nrh * ne * eval_sigma_vE_nT(te * Tnorm, ne * Nnorm) * Nnorm
                / (Tnorm * FreqNorm) * radiation_multiplier;
       },
-      n_e.getRegion("RGN_NOBNDRY"))(n_rh, n_e, T_e);
+      region_no_bndry)(n_rh, n_e, T_e);
 
   // Loss is reduced by heating
-  energy_loss -= (amjuel_data.electron_heating / Tnorm) * rate_calc_results["rate"]
-                 * radiation_multiplier;
+  energy_loss -= (amjuel_data.electron_heating / Tnorm) * rate * radiation_multiplier;
 
   update_source<subtract<Field3D>>(state, "e", ReactionDiagnosticType::energy_loss,
                                    energy_loss);
@@ -209,7 +211,7 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
         return ne * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
                * rate_multiplier;
       },
-      n_e.getRegion("RGN_NOBNDRY"))(n_e, T_e);
+      region_no_bndry)(n_e, T_e);
 
   // Same as reaction_rate but without the ne factor: returns electron collisionality in
   // [s^-1]
@@ -218,7 +220,7 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
         return n1 * eval_sigma_v_nT(te * Tnorm, ne * Nnorm) * Nnorm / FreqNorm
                * rate_multiplier;
       },
-      n_e.getRegion("RGN_NOBNDRY"))(n_e, n_rh, T_e);
+      region_no_bndry)(n_e, n_rh, T_e);
 
   // Set collision frequency on the neutral species (must be exactly 1 of them if this
   // function hasn't been overridden)
