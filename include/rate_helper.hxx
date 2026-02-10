@@ -67,26 +67,22 @@ struct RateHelper {
       // add_rate_param("e:energy", energy);
     } else if constexpr (RateParamsType == RateParamsTypes::nT) {
       for (auto field_lbl : {"e:density", "e:temperature"}) {
-        add_rate_param(field_lbl, get<Field3D>(state["species"][field_lbl]));
+        add_rate_param(field_lbl,
+                       state["species"][field_lbl].template get_ref<Field3D>());
       }
     } else if constexpr (RateParamsType == RateParamsTypes::T) {
-      Field3D Teff;
-      calc_Teff(state, units, reactant_names, Teff);
-      add_rate_param("Teff", Teff);
+      calc_Teff(state, units, reactant_names, Teff_storage);
+      add_rate_param("Teff", Teff_storage);
     } else {
       // Compile-time error if any other RateParamsType enum exists
       static_assert(dependent_false<RateParamsType>, "Unhandled RateParamsType");
     }
 
-    // Extract and store reactant densities, applying the supplied density floor
-    std::transform(
-        reactant_names.begin(), reactant_names.end(),
-        std::inserter(this->reactant_densities, this->reactant_densities.end()),
-        [&](const auto& reactant_name) {
-          return make_pair(reactant_name,
-                           floor(get<Field3D>(state["species"][reactant_name]["density"]),
-                                 density_floor));
-        });
+    // Extract and store reactant densities
+    for (const auto& reactant_name : reactant_names) {
+      this->reactant_densities[reactant_name] =
+          &state["species"][reactant_name]["density"].get_ref<Field3D>();
+    }
   }
 
   /**
@@ -102,9 +98,9 @@ struct RateHelper {
 
     // Set up map to store results: one collision frequency per reactant + reaction rate
     std::string first_key = str_keys(this->rate_params)[0];
-    result["rate"] = emptyFrom(this->rate_params[first_key]);
+    result["rate"] = emptyFrom(*this->rate_params[first_key]);
     for (const std::string& reactant_name : str_keys(this->reactant_densities)) {
-      result[freq_lbl(reactant_name)] = emptyFrom(this->rate_params[first_key]);
+      result[freq_lbl(reactant_name)] = emptyFrom(*this->rate_params[first_key]);
     }
 
     // Temporary storage for central,left,right vals of each property at each cell index
@@ -219,20 +215,23 @@ private:
   /// Function to calculate reaction rate as a function of n_e, T_e
   RateFuncVariant rate_calc_func;
 
-  /// Reactant densities, keyed by species name
-  std::map<std::string, Field3D> reactant_densities;
+  /// Reactant densities, keyed by species name (stored as pointers to avoid copying)
+  std::map<std::string, const Field3D*> reactant_densities;
 
-  // Rate parameter fields
-  std::map<std::string, Field3D> rate_params;
+  // Rate parameter fields (stored as pointers to avoid copying)
+  std::map<std::string, const Field3D*> rate_params;
+
+  // Storage for Teff when RateParamsType == T (needed to keep the object alive)
+  Field3D Teff_storage;
 
   /**
    * @brief Store a field associated with a rate parameter
    *
    * @param field_lbl Label/tag associated with the field
-   * @param fld the field object
+   * @param fld reference to the field object
    */
   void add_rate_param(const std::string& field_lbl, const Field3D& fld) {
-    this->rate_params.insert(std::make_pair(field_lbl, fld));
+    this->rate_params.insert(std::make_pair(field_lbl, &fld));
   }
 
   /**
@@ -258,9 +257,10 @@ private:
     Teff = 0.0;
     BoutReal Tnorm = get<BoutReal>(units["eV"]);
     for (auto& sp : heavy_reactant_names) {
-      Teff += (get<Field3D>(state["species"][sp]["temperature"])
-               / get<Field3D>(state["species"][sp]["AA"]))
-              * Tnorm;
+      const Field3D& temperature =
+          state["species"][sp]["temperature"].template get_ref<Field3D>();
+      BoutReal AA = get<BoutReal>(state["species"][sp]["AA"]);
+      Teff += (temperature / AA) * Tnorm;
     }
 
     // Clamp values
@@ -285,7 +285,7 @@ private:
       if (sp_name.compare(exclude_sp) == 0) {
         continue;
       }
-      result *= dens[i];
+      result *= (*dens)[i];
     }
     return result;
   }
@@ -307,7 +307,7 @@ private:
       if (sp_name.compare(exclude_sp) == 0) {
         continue;
       }
-      result *= cellLeft<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
+      result *= cellLeft<hermes::Limiter>((*dens)[i], (*dens)[ym], (*dens)[yp]);
     }
     return result;
   }
@@ -329,7 +329,7 @@ private:
       if (sp_name.compare(exclude_sp) == 0) {
         continue;
       }
-      result *= cellRight<hermes::Limiter>(dens[i], dens[ym], dens[yp]);
+      result *= cellRight<hermes::Limiter>((*dens)[i], (*dens)[ym], (*dens)[yp]);
     }
     return result;
   }
@@ -352,7 +352,7 @@ private:
    * @return BoutReal
    */
   BoutReal get_rate_param(const std::string& name, Ind3D i) {
-    return this->rate_params[name][i];
+    return (*this->rate_params[name])[i];
   }
 
   /**
@@ -365,9 +365,9 @@ private:
    * @return BoutReal
    */
   BoutReal get_rate_param_left(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
-    return cellLeft<hermes::Limiter>(this->rate_params[name][i],
-                                     this->rate_params[name][ym],
-                                     this->rate_params[name][yp]);
+    return cellLeft<hermes::Limiter>((*this->rate_params[name])[i],
+                                     (*this->rate_params[name])[ym],
+                                     (*this->rate_params[name])[yp]);
   }
 
   /**
@@ -379,9 +379,9 @@ private:
    * @return BoutReal
    */
   BoutReal get_rate_param_right(const std::string& name, Ind3D i, Ind3D ym, Ind3D yp) {
-    return cellRight<hermes::Limiter>(this->rate_params[name][i],
-                                      this->rate_params[name][ym],
-                                      this->rate_params[name][yp]);
+    return cellRight<hermes::Limiter>((*this->rate_params[name])[i],
+                                      (*this->rate_params[name])[ym],
+                                      (*this->rate_params[name])[yp]);
   }
 
   /**
