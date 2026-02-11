@@ -282,14 +282,14 @@ private:
    * @brief Compute the effective temperature (in eV) of heavy reactants.
    *
    * @details Used to scale different isotope masses and finite neutral particle
-   temperatures by using the effective temperature (Amjuel p43) T_eff = (M/M_1)T_1 +
-   (M/M_2)T_2
+   * temperatures by using the effective temperature (Amjuel p43)
+   *   T_eff = (M/M_1)T_1 + (M/M_2)T_2
    *
    * @param[in] state
    * @param[in] reactant_names names of all reactant species
    * @param[inout] Teff Field3D object in which to store the result
    *
-   * @todo read clamp values from json?
+   * @todo read clamp values from json
    */
   void calc_Teff(const GuardedOptions state, const Options& units,
                  const std::vector<std::string>& reactant_names, Field3D& Teff) {
