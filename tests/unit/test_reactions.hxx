@@ -226,18 +226,21 @@ protected:
 
     // N.B. No attempt to set the correct masses for heavy species; always set to 1
     std::string comp_name("test" + this->lbl);
+    Field3D e_vel(1.0);
+    Field3D hp_dens(1.0);
+    Field3D hp_temp(1.0);
     Options state{
         {comp_name, {{"type", this->reaction_str}}},
         {"units", {{"eV", 1.0}, {"inv_meters_cubed", 1.0}, {"seconds", 1.0}}},
         {"species",
-         {{"e", {{"AA", 1. / 1836}, {"velocity", 1.0}}},
+         {{"e", {{"AA", 1. / 1836}, {"velocity", e_vel}}},
           {this->heavy_reactant,
            {{"AA", 1.0}, {"charge", this->heavy_sp_charges.at(this->heavy_reactant)}}},
           {this->heavy_product,
            {{"AA", 1.0},
             {"charge", this->heavy_sp_charges.at(this->heavy_product)},
-            {"density", 1.0},
-            {"temperature", 1.0}}}}}};
+            {"density", hp_dens},
+            {"temperature", hp_temp}}}}}};
 
     // Linear functions for various fields that are inputs to the reaction transforms
     state["species"]["e"]["density"] = FieldFactory::get()->create3D(

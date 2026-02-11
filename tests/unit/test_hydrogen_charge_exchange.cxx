@@ -35,17 +35,19 @@ TEST_F(HydrogenCXTest, RateAt1eV) {
 
   HydrogenChargeExchange<'h', 'h'> component("test", options, nullptr);
 
+  Field3D atom_dens(1.0), atom_temp(0.0), atom_vel(0.0);
+  Field3D ion_dens(1.0), ion_temp(1.0), ion_vel(0.0);
   Options state{{"species",
                  {{"h",
                    {{"AA", 1.0},
-                    {"density", 1.0},
-                    {"temperature", 0.0}, // cold atoms
-                    {"velocity", 0.0}}},
+                    {"density", atom_dens},
+                    {"temperature", atom_temp},
+                    {"velocity", atom_vel}}},
                   {"h+",
                    {{"AA", 1.0},
-                    {"density", 1.0},
-                    {"temperature", 1.0}, // lnT = 0.0
-                    {"velocity", 0.0}}}}},
+                    {"density", ion_dens},
+                    {"temperature", ion_temp}, // lnT = 0.0
+                    {"velocity", ion_vel}}}}},
                 {"units", {{"eV", 1.0}}}};
 
   component.transform(state);
