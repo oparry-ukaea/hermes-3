@@ -121,16 +121,16 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
   std::string heavy_reactant_species =
       parser->get_single_species(reactant_species, species_filter::heavy);
   GuardedOptions rh = state["species"][heavy_reactant_species];
-  BoutReal AA_rh = rh["AA"].GetRef<BoutReal>();
-  Field3D n_rh = rh["density"].GetRef<Field3D>();
-  Field3D v_rh = rh["velocity"].GetRef<Field3D>();
+  const BoutReal AA_rh = get<BoutReal>(rh["AA"]);
+  const Field3D& n_rh = rh["density"].GetRef<Field3D>();
+  const Field3D& v_rh = rh["velocity"].GetRef<Field3D>();
 
   // Amjuel-based reactions are assumed to have exactly 1 heavy product unless this
   // function has been overridden
   std::string heavy_product_species =
       parser->get_single_species(species_filter::heavy, species_filter::products);
   GuardedOptions ph = state["species"][heavy_product_species];
-  Field3D v_ph = ph["velocity"].GetRef<Field3D>();
+  const Field3D& v_ph = ph["velocity"].GetRef<Field3D>();
 
   // Kinetic energy transfer to thermal energy
   //
@@ -167,7 +167,7 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
 
   // Energy source for electrons due to pop change
   GuardedOptions electron = state["species"]["e"];
-  Field3D T_e = electron["temperature"].GetRef<Field3D>();
+  const Field3D& T_e = electron["temperature"].GetRef<Field3D>();
   const int e_pop_change = this->parser->pop_change("e");
   if (e_pop_change != 0) {
     if (electron.isSet("velocity")) {
@@ -179,14 +179,14 @@ void AmjuelReaction::transform_additional(GuardedOptions& state,
       // For recombination:
       // Electrons with some velocity are incorporated into a neutral species with their
       // kinetic energy converted to an internal energy source of that species.
-      Field3D v_e = electron["velocity"].GetRef<Field3D>();
-      BoutReal m_e = electron["AA"].GetRef<BoutReal>();
+      const Field3D& v_e = electron["velocity"].GetRef<Field3D>();
+      const BoutReal m_e = get<BoutReal>(electron["AA"]);
       add(electron["energy_source"], 0.5 * m_e * e_pop_change * rate * SQ(v_e));
     }
   }
 
   // Electron energy loss (radiation, ionisation potential)
-  Field3D n_e = electron["density"].GetRef<Field3D>();
+  const Field3D& n_e = electron["density"].GetRef<Field3D>();
   auto region_no_bndry = n_e.getRegion("RGN_NOBNDRY");
 
   Field3D energy_loss = cellAverage(
