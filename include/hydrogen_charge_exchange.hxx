@@ -84,6 +84,7 @@ struct HydrogenChargeExchange : public AmjuelReaction {
   HydrogenChargeExchange([[maybe_unused]] std::string name, Options& alloptions, Solver*)
       : AmjuelReaction(name, "cx", "H.2_3.1.8", alloptions) {
 
+    this->do_parallel_averaging = false;
     this->includes_sigma_v_e = false;
     /* This is useful for testing the impact of enabling the neutral momentum equation.
      * When set to true, CX behaves as if using diffusive neutrals but the neutral

@@ -62,6 +62,10 @@ protected:
   std::multimap<std::pair<std::string, ReactionDiagnosticType>, ReactionDiagnostic>
       diagnostics;
 
+  /// Whether to use parallel averaging when calculating reaction rates
+  /// (Default to true)
+  bool do_parallel_averaging = true;
+
   /// Whether or not reaction data includes <sigma v E>
   /// (Default to true as a reminder to override eval_sigma_vE_nT)
   bool includes_sigma_v_e = true;

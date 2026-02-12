@@ -229,7 +229,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
     };
     auto rate_helper = RateHelper<RateParamsTypes::nT>(
         state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
-    rate_calc_results = rate_helper.calc_rates(calc_rate);
+    rate_calc_results = rate_helper.calc_rates(calc_rate, this->do_parallel_averaging);
   } else if (rate_params_type == RateParamsTypes::T) {
     OneDRateFunc calc_rate = [&](BoutReal mass_action, BoutReal Teff) {
       BoutReal result =
@@ -240,7 +240,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
     auto rate_helper = RateHelper<RateParamsTypes::T>(
         state, units, reactant_names, first_reactant.getRegion("RGN_NOBNDRY"));
 
-    rate_calc_results = rate_helper.calc_rates(calc_rate, false);
+    rate_calc_results = rate_helper.calc_rates(calc_rate, this->do_parallel_averaging);
   } else {
     throw BoutException("Unhandled RateParamsTypes in Reaction::transform()");
   }
