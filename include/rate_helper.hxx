@@ -17,7 +17,7 @@ BOUT_ENUM_CLASS(RateParamsTypes, T, ET, nT)
 
 /// Struct to hold pre-averaged data for each cell
 struct CellData {
-  CellData() : centre(0), left(0), right(0) {}
+  CellData() : CellData(0, 0, 0) {}
   CellData(BoutReal c, BoutReal l, BoutReal r) : centre(c), left(l), right(r) {}
   BoutReal centre, left, right;
 };
@@ -43,8 +43,8 @@ struct RateData {
    * @throws BoutException if reactant name not found
    */
   const Field3D& coll_freq(const std::string& reactant_name) const {
-    auto it = collision_frequencies.find(reactant_name);
-    if (it == collision_frequencies.end()) {
+    auto it = this->collision_frequencies.find(reactant_name);
+    if (it == this->collision_frequencies.end()) {
       throw BoutException(
           fmt::format("Collision frequency not found for reactant '{}'", reactant_name));
     }
@@ -79,7 +79,14 @@ struct RateHelper {
    */
   RateHelper(const GuardedOptions state, const Options& units,
              const std::vector<std::string>& reactant_names, const Region<Ind3D> region)
-      : region(region) {
+      : num_reactants(reactant_names.size()), reactant_names(reactant_names),
+        region(region) {
+
+    // Extract and store reactant densities
+    for (const auto& reactant : reactant_names) {
+      this->reactant_densities[reactant] =
+          &state["species"][reactant]["density"].GetRef<Field3D>();
+    }
 
     // Compute / extract fields that are required as parameters for the rate calculations
     if constexpr (RateParamsType == RateParamsTypes::ET) {
@@ -98,14 +105,6 @@ struct RateHelper {
     } else {
       // Compile-time error if any other RateParamsType enum exists
       static_assert(dependent_false<RateParamsType>, "Unhandled RateParamsType");
-    }
-
-    // Extract and store reactant densities
-    this->reactant_names = reactant_names;
-    this->num_reactants = reactant_names.size();
-    for (const auto& reactant : reactant_names) {
-      this->reactant_densities[reactant] =
-          &state["species"][reactant]["density"].GetRef<Field3D>();
     }
   }
 
@@ -245,8 +244,9 @@ struct RateHelper {
   }
 
 private:
-  /// region in which to calculate the rate
-  const Region<Ind3D> region;
+  /// Size of reactant_names, cached to avoid repeated .size() calls
+  size_t num_reactants;
+
   /// Function to calculate reaction rate as a function of n_e, T_e
   RateFuncVariant rate_calc_func;
 
@@ -256,11 +256,8 @@ private:
   /// Reactant names in the order provided to the constructor
   std::vector<std::string> reactant_names;
 
-  /// Size of reactant_names, cached to avoid repeated .size() calls
-  size_t num_reactants;
-
-  /// Pre-computed collision frequency labels for each reactant
-  std::vector<std::string> freq_labels;
+  /// region in which to calculate the rate
+  const Region<Ind3D> region;
 
   // Rate parameter fields (stored as pointers to avoid copying)
   std::map<std::string, const Field3D*> rate_params;
