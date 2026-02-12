@@ -1,7 +1,7 @@
 
 # Run one RHS
-nout = 0                  
-timestep = 1        
+nout = 1                  
+timestep = 0.1        
 
 MZ = 1
 NXPE = 1
