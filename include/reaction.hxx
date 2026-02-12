@@ -205,7 +205,7 @@ protected:
    */
   template <OPTYPE operation>
   void update_source(GuardedOptions& state, const std::string& sp_name,
-                     ReactionDiagnosticType type, std::string& lbl, const Field3D& fld) {
+                     ReactionDiagnosticType type, const std::string& lbl, const Field3D& fld) {
     // Update species data
     operation(state["species"][sp_name][lbl], fld);
 
@@ -216,8 +216,8 @@ protected:
         Field3D diag_src_fld = match->second.transform(fld);
         // Apply the update to the diagnostic field in the state, then copy it to the
         // diagnostic
-        operation(state[match->second.name], diag_src_fld);
-        match->second.set_data(getNonFinal<Field3D>(state[match->second.name]));
+        operation(state[match->second.get_name()], diag_src_fld);
+        match->second.set_data(getNonFinal<Field3D>(state[match->second.get_name()]));
       }
     }
   }

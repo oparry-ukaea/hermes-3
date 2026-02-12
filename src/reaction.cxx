@@ -71,26 +71,30 @@ Reaction::Reaction(std::string name, Options& options)
  *
  * @param sp_name Species with which the diagnostic will be associated
  * @param diag_name Label used in the output (and to store it temporarily in the state)
- * @param description Description to use as the 'long_name' output attribute
- * @param type enum identifying the diagnostic type, also used to determine source name
+ * @param diag_desc Description to use as the 'long_name' output attribute
+ * @param diag_type enum identifying the diagnostic type, also used to determine source
+ * name
  * @param data_source Name to use as the 'source' output attribute
+ * @param standard_name Optional string to use as the 'standard_name' output attribute.
+ * Defaults to diag_name.
  * @param transformer Optional transformer function to use when modifying the diagnostic
  * (default is 'negate', i.e. the diagnostic has the opposite sign to the source)
- * @param standard_name Optional string to use as the 'standard_name' output attribute
  */
 void Reaction::add_diagnostic(const std::string& sp_name, const std::string& diag_name,
-                              const std::string& description, ReactionDiagnosticType type,
+                              const std::string& diag_desc,
+                              ReactionDiagnosticType diag_type,
                               const std::string& data_source,
                               DiagnosticTransformerType transformer,
                               const std::string& standard_name) {
-  std::pair<std::string, ReactionDiagnosticType> diag_key = std::make_pair(sp_name, type);
+  std::pair<std::string, ReactionDiagnosticType> diag_key =
+      std::make_pair(sp_name, diag_type);
   if (standard_name.empty()) {
     this->diagnostics.insert(
-        std::make_pair(diag_key, ReactionDiagnostic(diag_name, description, type,
+        std::make_pair(diag_key, ReactionDiagnostic(diag_name, diag_desc, diag_type,
                                                     data_source, transformer)));
   } else {
     this->diagnostics.insert(std::make_pair(
-        diag_key, ReactionDiagnostic(diag_name, description, type, data_source,
+        diag_key, ReactionDiagnostic(diag_name, diag_desc, diag_type, data_source,
                                      standard_name, transformer)));
   }
   setPermissions(readWrite(diag_name));
@@ -324,7 +328,7 @@ void Reaction::transform_impl(GuardedOptions& state) {
 void Reaction::zero_diagnostics(GuardedOptions& state) {
   if (this->diagnose) {
     for (auto& [key, diag] : diagnostics) {
-      set<Field3D>(state[diag.name], 0.0);
+      set<Field3D>(state[diag.get_name()], 0.0);
     }
   }
 }
