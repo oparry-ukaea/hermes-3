@@ -905,6 +905,19 @@ and core/pfr boundaries. If the test fails, it will print the degree of error at
 The test file can be used to generate the test data if `gen_data` is set to `True` in the beginning
 of the script. 
 
+2D-recycling
+~~~~~~~~~~~~~~
+
+This test uses the same restart file as 2D-production, but tests target recycling by reproducing the relevant
+recycling.cxx section in Python. It compares the source of recycled neutral density and energy between
+the calculation and the reference simulation. In the future, this test will be extended to radial recycling.
+
+The test file can be used to generate the test data if `gen_data` is set to `True` in the beginning
+of the script.
+
+This test also plots results and can be used to help with developing the recycling component. There
+is a `plot` flag near the beginning of the file. 
+
 1D fluid (MMS)
 ~~~~~~~~~~~~~~
 
