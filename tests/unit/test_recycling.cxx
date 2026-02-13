@@ -19,59 +19,96 @@ using namespace bout::globals;
 #include <bout/field_factory.hxx> // For generating functions
 
 // Reuse the "standard" fixture for FakeMesh
-// using RecyclingTest = FakeMeshFixture;
+using RecyclingTest = FakeMeshFixture;
 
-class RecyclingTest : public FakeMeshFixture {
-public:
-  RecyclingTest()
-      : FakeMeshFixture(),
-        state({{"units",
-                {{"eV", 1.0},
-                 {"meters", 1.0},
-                 {"seconds", 1.0},
-                 {"inv_meters_cubed", 1e19}}},
-               {"test", {{"species", "d+"}}},
-               {"d+",
-                {{"recycle_as", "d"},
-                 {"target_recycle", true},
-                 {"density", 1},
-                 {"temperature", 1},
-                 {"velocity", 1},
-                 {"AA", 2}}},
-               {"d", {{"density", 1}, {"temperature", 1}, {"velocity", 1}, {"AA", 2}}}}),
-        component("test", state, nullptr) {}
-  Options state;
-  Recycling component;
-};
+// class RecyclingTest : public FakeMeshFixture {
+// public:
+//   RecyclingTest()
+//       : FakeMeshFixture(),
+//         state({
+//             {"units",
+//              {{"eV", 1.0},
+//               {"meters", 1.0},
+//               {"seconds", 1.0},
+//               {"inv_meters_cubed", 1e19}}},
+
+//              {"test", {{"species", "d+"}}},
+
+//             //  {"species",
+
+//             //   {"d+",
+//             //    {{"recycle_as", "d"},
+//             //     {"target_recycle", true},
+//             //     {"density", 1},
+//             //     {"temperature", 1},
+//             //     {"velocity", 1},
+//             //     {"AA", 2}}},
+
+//             //   {"d", {{"density", 1}, {"temperature", 1}, {"velocity", 1}, {"AA",
+//             2}}}}}
+
+//         }),
+//         component("test", state, nullptr) {}
+//   Options state;
+//   Recycling component;
+// };
 
 TEST_F(RecyclingTest, CreateComponent) {
-  Options state;
-  state["units"]["eV"] = 5;           // Normalisation temperature
-  state["recycling"]["species"] = ""; // No species to recycle
+  Options options;
+  options["units"]["eV"] = 5;           // Normalisation temperature
+  options["recycling"]["species"] = ""; // No species to recycle
 
-  Recycling component("recycling", state, nullptr);
+  Recycling component("recycling", options, nullptr);
 }
 
-// Make sure that increasing the recycling fraction
-// will increase the recycling source
-TEST_F(RecyclingTest, RecycleFractionChange) {
+// Increase velocity, pressure and temperature
+// and check that recycled density and energy sources increase
+TEST_F(RecyclingTest, RecycleSourceChange) {
+  Options options;
+  options["units"]["eV"] = 1.0;
+  options["test"]["species"] = "d+";
+  options["d+"]["recycle_as"] = "d";
+  options["d+"]["target_recycle"] = true;
+
   Options state1;
   Options state2;
 
-  state1 = state.copy();
-  state2 = state.copy();
+  state1["species"]["d+"]["AA"] = 2.0;
+  state1["species"]["d+"]["density"] = 1.0;
 
-  state1["species"]["d+"]["target_recycle_multiplier"] = 0.5;
-  state2["species"]["d+"]["target_recycle_multiplier"] = 1.0;
+  state1["species"]["d"]["AA"] = 2.0;
+  state1["species"]["d"]["density"] = 1.0;
+  state1["species"]["d"]["velocity"] = 1.0;
+  state1["species"]["d"]["temperature"] = 1.0;
+  state1["species"]["d"]["pressure"] = 1.0;
 
+  state2 = state1.copy();
+  state1["species"]["d+"]["velocity"] = 1.0;
+  state1["species"]["d+"]["temperature"] = 1.0;
+  state1["species"]["d+"]["pressure"] = 1.0;
+
+  state2["species"]["d+"]["velocity"] = 2.0;
+  state2["species"]["d+"]["pressure"] = 2.0;
+  state2["species"]["d+"]["temperature"] = 2.0;
+
+  Recycling component("test", options, nullptr);
   component.declareAllSpecies({"d+", "d"});
   component.transform(state1);
   component.transform(state2);
 
-  Field3D source1 = state1["species"]["d"]["density_source"];
-  Field3D source2 = state2["species"]["d"]["density_source"];
+  Field3D density_source1 = state1["species"]["d"]["density_source"];
+  Field3D density_source2 = state2["species"]["d"]["density_source"];
 
-  BOUT_FOR_SERIAL(i, source1.getRegion("RGN_NOBNDRY")) {
-    ASSERT_GT(source2[i], source1[i]);
+  Field3D energy_source1 = state1["species"]["d"]["energy_source"];
+  Field3D energy_source2 = state2["species"]["d"]["energy_source"];
+
+  for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+      auto i = indexAt(density_source1, r.ind, mesh->yend, jz);
+
+      ASSERT_GT(density_source2[i], density_source1[i]);
+      ASSERT_GT(energy_source2[i], energy_source1[i]);
+    }
   }
 }
