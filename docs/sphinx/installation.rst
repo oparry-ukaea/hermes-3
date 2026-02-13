@@ -378,19 +378,17 @@ To add gcc to your user-level package list, and register it as a compiler that s
 If you don't do this, the below instructions should still work, but spack will modify the (version-controlled)
 environment file, spack.yaml, to include the gcc installation details.
 
-.. attention::
+.. important::
    Version 1.1.0 of spack sets the built-in package repository to version `releases/v2025.11`.
    The PETSc package in that version has a bug, related to the Hypre dependency, which causes the installation of BOUT++ to fail.
-   To workaround this you can use the `develop` version of the spack-packages repo instead.
-   Edit [SPACK_INSTALL]/etc/spack/defaults/base/repos.yaml as follows:
+   To work around this you can use the `develop` version of the spack-packages repo instead.
+   Edit $SPACK_ROOT/etc/spack/defaults/base/repos.yaml as follows:
 
    .. code-block:: yaml
 
       repos:
          builtin:
-            git: https://github.com/spack/spack-packages.git
-            branch: develop
-            # branch: releases/v2025.11
+            git: https://github.com/spack/spack-packages.git branch: develop # branch: releases/v2025.11
 
    and then run `spack repo update`.
 
