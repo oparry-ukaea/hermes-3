@@ -21,38 +21,6 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using RecyclingTest = FakeMeshFixture;
 
-// class RecyclingTest : public FakeMeshFixture {
-// public:
-//   RecyclingTest()
-//       : FakeMeshFixture(),
-//         state({
-//             {"units",
-//              {{"eV", 1.0},
-//               {"meters", 1.0},
-//               {"seconds", 1.0},
-//               {"inv_meters_cubed", 1e19}}},
-
-//              {"test", {{"species", "d+"}}},
-
-//             //  {"species",
-
-//             //   {"d+",
-//             //    {{"recycle_as", "d"},
-//             //     {"target_recycle", true},
-//             //     {"density", 1},
-//             //     {"temperature", 1},
-//             //     {"velocity", 1},
-//             //     {"AA", 2}}},
-
-//             //   {"d", {{"density", 1}, {"temperature", 1}, {"velocity", 1}, {"AA",
-//             2}}}}}
-
-//         }),
-//         component("test", state, nullptr) {}
-//   Options state;
-//   Recycling component;
-// };
-
 TEST_F(RecyclingTest, CreateComponent) {
   Options options;
   options["units"]["eV"] = 5;           // Normalisation temperature
