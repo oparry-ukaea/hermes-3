@@ -1,0 +1,22 @@
+@startuml
+
+/' Objects '/
+
+class RateHelper <template<typename LimiterType=hermes::Limiter, typename IdxType=Ind3D>> {
+	+RateHelper(const Options& state, const vector<string>& reactant_species, RateFunctionType rate_calc_func, const Region<IdxType> region)
+	-n_e : F3D
+	-T_e : F3D
+	-n_reactants : vector<F3D>
+	+calc_rate() : F3D
+	-rate_calc_func : RateFunctionType
+}
+
+enum species_filter {
+	consumed
+	heavy
+	produced
+	products
+	reactants
+}
+
+@enduml

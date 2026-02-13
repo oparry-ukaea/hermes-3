@@ -1,0 +1,77 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+class ReactionParser {
+	+ReactionParser(const string& reaction_str)
+	-reaction_str : const string
+	+get_pop_changes() : map<string , int>&
+	-pop_changes : map<string, int>
+	+get_reaction_str() : string {query}
+	+get_species(FilterTypes ... filters) : vector<string> {query}
+}
+
+class AmjuelData {
+	-AmjuelData(const string& short_reaction_type, const string& data_label)
+	-electron_heating : BoutReal
+	-rad_coeffs : vector<vector<BoutReal>>
+	-rate_coeffs : vector<vector<BoutReal>>
+}
+
+class AmjuelReaction {
+	+AmjuelReaction(string name, string short_reaction_type, string amjuel_lbl, string from_species, string to_species, Options& opts)
+	-amjuel_data : const AmjuelData
+	#eval_electron_energy_loss_rate(BoutReal T, BoutReal n) : BoutReal
+	#eval_rate(BoutReal T, BoutReal n, const vector<vector<BoutReal>>& coeff_table) : BoutReal
+	#eval_reaction_rate(BoutReal T, BoutReal n) : BoutReal
+	#get_electron_heating() : BoutReal {query}
+	#transform_additional(Options& state, F3D& reaction_rate, F3D& momentum, F3D& energy, F3D& energy_loss) : void
+}
+
+
+abstract class Reaction {
+	+Reaction(string name, Options& opts)
+	#{abstract} eval_electron_energy_loss_rate(BoutReal T, BoutReal n) : BoutReal
+	#{abstract} eval_reaction_rate(BoutReal T, BoutReal n) : BoutReal
+	-pfactors : map<string, BoutReal>
+	#parser : unique_ptr<ReactionParser>
+	#set_diagnostic_fields(F3D& reaction_rate, F3D& momentum, F3D& energy, F3D& energy_loss) : void
+	+transform(Options& state) : void
+	#transform_additional(Options& state, F3D& reaction_rate, F3D& momentum, F3D& energy, F3D& energy_loss) : void
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+Reaction <|-- AmjuelReaction
+
+
+
+
+
+/' Aggregation relationships '/
+
+AmjuelReaction *-- AmjuelData
+
+
+Reaction o-- ReactionParser
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+
+class AmjuelHeIonisation01 {
+	+AmjuelHeIonisation01(string name, Options& opts, Solver*)
+}
+
+
+class AmjuelHeRecombination10 {
+	+AmjuelHeRecombination10(string name, Options& opts, Solver*)
+}
+
+
+class AmjuelHIsotopeIonisation <template<char Isotope>> {
+	+AmjuelHIsotopeIonisation(string name, Options& opts, Solver*)
+	+set_diagnostic_fields(F3D& reaction_rate, F3D& momentum, F3D& energy, F3D& energy_loss) : void
+}
+
+
+class AmjuelHIsotopeReaction <template<char Isotope>> {
+	+AmjuelHIsotopeReaction(string name, string short_reaction_type, string amjuel_label, string from_species, string to_species, Options& opts)
+	#long_reaction_type : const string
+	#radiation_suffix : string
+	#reaction_suffix : string
+	+outputVars(Options& state) : void
+}
+
+
+class AmjuelHIsotopeRecombination <template<char Isotope>> {
+	+AmjuelHIsotopeRecombination(string name, Options& opts, Solver*)
+	+set_diagnostic_fields(F3D& reaction_rate, F3D& momentum, F3D& energy, F3D& energy_loss) : void
+}
+
+
+class AmjuelReaction {
+	+AmjuelReaction(string name, string short_reaction_type, string amjuel_lbl, string from_species, string to_species, Options& opts)
+	-amjuel_data : const AmjuelData
+	#eval_electron_energy_loss_rate(BoutReal T, BoutReal n) : BoutReal
+	#eval_rate(BoutReal T, BoutReal n, const vector<vector<BoutReal>>& coeff_table) : BoutReal
+	#eval_reaction_rate(BoutReal T, BoutReal n) : BoutReal
+	#get_electron_heating() : BoutReal {query}
+	#transform_additional(Options& state, F3D& reaction_rate, F3D& momentum, F3D& energy, F3D& energy_loss) : void
+}
+
+
+/' Inheritance relationships '/
+
+AmjuelHIsotopeReaction <|-- AmjuelHIsotopeIonisation
+
+
+AmjuelHIsotopeReaction <|-- AmjuelHIsotopeRecombination
+
+
+AmjuelReaction <|-- AmjuelHeIonisation01
+
+
+AmjuelReaction <|-- AmjuelHeRecombination10
+
+
+AmjuelReaction <|-- AmjuelHIsotopeReaction
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

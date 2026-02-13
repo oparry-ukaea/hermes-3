@@ -6,8 +6,8 @@
 
 #include "amjuel_reaction.hxx"
 
-static std::map<std::string, std::string> long_reaction_types_map = {
-    {"cx", "charge exchange"}, {"iz", "ionisation"}, {"rec", "recombination"}};
+// static std::map<std::string, std::string> long_reaction_types_map = {
+//     {"cx", "charge exchange"}, {"iz", "ionisation"}, {"rec", "recombination"}};
 
 /**
  * @brief Base class for ionisation and recombination reaction Components for Hydrogen
