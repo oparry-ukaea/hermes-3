@@ -229,7 +229,6 @@ void Recycling::transform_impl(GuardedOptions& state) {
     energy_source = species_to.isSet("energy_source")
                         ? getNonFinal<Field3D>(species_to["energy_source"])
                         : 0.0;
-    debug = zeroFrom(Nn);
 
     // Recycling at the divertor target plates
     if (target_recycle) {
@@ -644,14 +643,7 @@ void Recycling::outputVars(Options& state) {
     BoutReal Pnorm = SI::qe * Tnorm * Nnorm; // Pressure normalisation
 
     for (const auto& channel : channels) {
-      // Save particle and energy source for the species created during recycling
-      set_with_attrs(state["debug"], debug,
-                     {{"time_dimension", "t"},
-                      {"units", "-"},
-                      {"conversion", 1},
-                      {"standard_name", "debug variable"},
-                      {"long_name", "debug variable"},
-                      {"source", "recycling"}});
+
       // Target recycling
       if (target_recycle) {
         set_with_attrs(
