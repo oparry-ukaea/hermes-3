@@ -1,4 +1,4 @@
-name: format-command
+name: Format code and commit changes
 
 on:
   pull_request:
