@@ -140,6 +140,7 @@ bool GuardedOptions::operator==(const GuardedOptions& other) const {
 bool GuardedOptions::operator!=(const GuardedOptions& other) const {
   return !(*this == other);
 }
+using mytype = std::string;
 // Explicit template instantiations for commonly used types
 template const Field3D& GuardedOptions::GetRef<Field3D>(Regions region) const;
 template const Field2D& GuardedOptions::GetRef<Field2D>(Regions region) const;
@@ -147,4 +148,4 @@ template const FieldPerp& GuardedOptions::GetRef<FieldPerp>(Regions region) cons
 template const BoutReal& GuardedOptions::GetRef<BoutReal>(Regions region) const;
 template const int& GuardedOptions::GetRef<int>(Regions region) const;
 template const bool& GuardedOptions::GetRef<bool>(Regions region) const;
-template const std::string& GuardedOptions::GetRef<std::string>(Regions region) const;
+template const mytype& GuardedOptions::GetRef<mytype>(Regions region) const;
