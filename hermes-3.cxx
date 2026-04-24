@@ -82,8 +82,11 @@
 #include "include/zero_current.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/constants.hxx>
 #include <bout/field_factory.hxx>
+#include <chrono>
+#include <thread>
 
 #include "include/recalculate_metric.hxx"
 
@@ -169,6 +172,18 @@ private:
 };
 
 int Hermes::init(bool restarting) {
+
+  std::cout << "Waiting at startup" << std::endl;
+  int wait_s_per_it = 1;
+  int wait_steps = 20;
+  for (auto ii = wait_steps; ii > 0; ii--) {
+    std::cout << ii << std::endl;
+    int rank;
+    bout::globals::mpi->MPI_Comm_rank(BoutComm::get(), &rank);
+    if (rank == 0)
+      std::this_thread::sleep_for(std::chrono::seconds(wait_s_per_it));
+  }
+  bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
   auto &options = Options::root()["hermes"];
   
