@@ -269,9 +269,9 @@ void Reaction::transform_impl(GuardedOptions& state) {
 
   // Set collision frequencies
   for (const auto& reactant_name : reactant_names) {
-    update_source<set<Field3D>>(state, reactant_name,
-                                ReactionDiagnosticType::collision_freq,
-                                rate_calc_results.coll_freq(reactant_name));
+    update_state_and_diagnostics<set<Field3D>>(
+        state, reactant_name, ReactionDiagnosticType::collision_freq,
+        rate_calc_results.coll_freq(reactant_name));
   }
 
   // Subclasses perform any additional transform tasks
@@ -284,8 +284,8 @@ void Reaction::transform_impl(GuardedOptions& state) {
     if (pop_change != 0) {
       // Density sources
       density_source = pfactors.at(sp_name) * pop_change * rate_calc_results.rate;
-      update_source<add<Field3D>>(state, sp_name, ReactionDiagnosticType::density_src,
-                                  density_source);
+      update_state_and_diagnostics<add<Field3D>>(
+          state, sp_name, ReactionDiagnosticType::density_src, density_source);
     }
   }
 
@@ -330,10 +330,10 @@ void Reaction::transform_impl(GuardedOptions& state) {
     }
 
     // Update sources
-    update_source<add<Field3D>>(state, sp_name, ReactionDiagnosticType::momentum_src,
-                                momentum_source);
-    update_source<add<Field3D>>(state, sp_name, ReactionDiagnosticType::energy_src,
-                                energy_source);
+    update_state_and_diagnostics<add<Field3D>>(
+        state, sp_name, ReactionDiagnosticType::momentum_src, momentum_source);
+    update_state_and_diagnostics<add<Field3D>>(
+        state, sp_name, ReactionDiagnosticType::energy_src, energy_source);
   }
 }
 
