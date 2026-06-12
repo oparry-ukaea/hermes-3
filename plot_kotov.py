@@ -1,6 +1,7 @@
 import xhermes
 from pathlib import Path
 import matplotlib.pyplot as plt
+import os
 
 this_dir = Path(__file__).parent
 
@@ -57,7 +58,7 @@ class DashBoard:
         print(f"Saved plot to {outpath}")
 
 
-def last_output_dashboard(ds, fname):
+def last_output_dashboard(ds, outpath):
     dashboard = DashBoard(ds, ncols=2)
 
     dashboard.add_panel("Densities", ylabel="Density [m^-3]", yscale="log")
@@ -72,10 +73,10 @@ def last_output_dashboard(ds, fname):
     dashboard.add_plot("Temperatures", "Td", "Neutrals")
     dashboard.add_plot("Temperatures", "Td2", "Molecules")
 
-    dashboard.save(this_dir / fname, dpi=300)
+    dashboard.save(outpath, dpi=300)
 
 
-def all_outputs_dashboard(ds, fname):
+def all_outputs_dashboard(ds, outpath):
     dashboard = DashBoard(ds, ncols=2)
 
     dashboard.add_panel("Ne", ylabel="Density [m^-3]", yscale="log", plot_legend=False)
@@ -90,7 +91,7 @@ def all_outputs_dashboard(ds, fname):
     dashboard.add_panel("Nd2", ylabel="Density [m^-3]", yscale="log", plot_legend=False)
     dashboard.add_plot("Nd2", "Nd2", "Molecules")
 
-    dashboard.save(this_dir / fname, dpi=300)
+    dashboard.save(outpath, dpi=300)
 
 
 def animation(ds, flds, outpath=None, **kws):
@@ -116,17 +117,18 @@ def animation(ds, flds, outpath=None, **kws):
 if __name__ == "__main__":
     lbl = "NPD_all"
     data_dir = f"/home/oparry/code/arch-H3/kotov_testing/{lbl}"
-
+    output_dir = this_dir / lbl
+    os.makedirs(output_dir, exist_ok=True)
     ds_orig = xhermes.open(data_dir, unnormalise=False)
     ds = ds_orig.hermes.extract_1d_tokamak_geometry()
 
-    # last_output_dashboard(ds.isel(t=-1), "kotov_last_output.png")
-    # all_outputs_dashboard(ds.isel(pos=slice(2, -2)), "kotov_evo.png")
+    last_output_dashboard(ds.isel(t=-1), output_dir / "kotov_last_output.png")
+    # all_outputs_dashboard(ds.isel(pos=slice(2, -2)), output_dir / "kotov_evo.png")
 
     animation(
         ds_orig,
-        [["Ne", "Nd", "Nd+", "Nd2"]],
-        outpath=this_dir / "kotov_animation",
+        [["Ne", "Nd", "Nd+", "Nd2"], ["Te", "Td", "Td+", "Td2"]],
+        outpath=output_dir / "kotov_animation",
         logscale=True,
         fps=8,
         tight_layout=False,
