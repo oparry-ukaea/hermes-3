@@ -238,7 +238,7 @@ def reconstruct_target_recycle(name):
     """
     ### Indexing
     xslice = slice(3, -3)
-    i_index = xhermes.slice_poloidal(ds, name)
+    i_index = xhermes.selector_poloidal(ds, name)
 
     # i = final domain cell
     # g = guard cell
