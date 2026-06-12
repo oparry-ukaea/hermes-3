@@ -412,7 +412,7 @@ endif()
 
 # Compile-time options
 
-set(SLOPE_LIMITERS MinMod MC Upwind Superbee)
+set(SLOPE_LIMITERS MinMod MC Upwind Superbee VanAlbada WENO3)
 set(HERMES_SLOPE_LIMITER
     MC
     CACHE STRING "Set advection slope limiter")
