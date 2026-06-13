@@ -1,6 +1,6 @@
 /*
-    Copyright B.Dudson, J.Leddy, University of York, September 2016
-              email: benjamin.dudson@york.ac.uk
+    Copyright 2016 - 2026 BOUT++ contributors
+              email: dudson2@llnl.gov
 
     This file is part of Hermes.
 
@@ -22,13 +22,19 @@
 #include <mpi.h>
 
 #include "../include/div_ops.hxx"
+#include "../include/hermes_build_config.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field.hxx>
+#include <bout/field3d.hxx>
 #include <bout/fv_ops.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/region.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>
@@ -1688,7 +1694,7 @@ const Field3D Div_n_g_bxGrad_f_B_XZ(const Field3D& n, const Field3D& g, const Fi
           // Not at a boundary
           if (vR > 0.0) {
             // Flux out into next cell
-            BoutReal flux = vR * s.R * gR;
+            const BoutReal flux = vR * s.R * gR;
             result(i, j, k) += flux / (coord->dx(i, j) * coord->J(i, j));
             result(i + 1, j, k) -= flux / (coord->dx(i + 1, j) * coord->J(i + 1, j));
           }
@@ -1717,7 +1723,7 @@ const Field3D Div_n_g_bxGrad_f_B_XZ(const Field3D& n, const Field3D& g, const Fi
           // Not at a boundary
 
           if (vL < 0.0) {
-            BoutReal flux = vL * s.L * gL;
+            const BoutReal flux = vL * s.L * gL;
             result(i, j, k) -= flux / (coord->dx(i, j) * coord->J(i, j));
             result(i - 1, j, k) += flux / (coord->dx(i - 1, j) * coord->J(i - 1, j));
           }
@@ -1734,12 +1740,12 @@ const Field3D Div_n_g_bxGrad_f_B_XZ(const Field3D& n, const Field3D& g, const Fi
         MC(s);
 
         if (vU > 0.0) {
-          BoutReal flux = vU * s.R * gU / (coord->J(i, j) * coord->dz(i, j));
+          const BoutReal flux = vU * s.R * gU / (coord->J(i, j) * coord->dz(i, j));
           result(i, j, k) += flux;
           result(i, j, kp) -= flux;
         }
         if (vD < 0.0) {
-          BoutReal flux = vD * s.L * gD / (coord->J(i, j) * coord->dz(i, j));
+          const BoutReal flux = vD * s.L * gD / (coord->J(i, j) * coord->dz(i, j));
           result(i, j, k) -= flux;
           result(i, j, km) += flux;
         }
@@ -1750,8 +1756,6 @@ const Field3D Div_n_g_bxGrad_f_B_XZ(const Field3D& n, const Field3D& g, const Fi
   return result;
 }
 
-constexpr int CONDUCTION_METHOD = 0;
-
 Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
                                bool bndry_flux) {
   TRACE("FV::Div_par_K_Grad_par_mod");
@@ -1760,7 +1764,7 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
 
   Mesh* mesh = Kin.getMesh();
 
-  bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
+  const bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
 
   const auto& K = use_parallel_slices ? Kin : toFieldAligned(Kin, "RGN_NOX");
   const auto& f = use_parallel_slices ? fin : toFieldAligned(fin, "RGN_NOX");
@@ -1784,30 +1788,30 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
 
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
         || (i.y() != mesh->yend)) {
+      BoutReal flux = 0.0;
 
-      if constexpr (CONDUCTION_METHOD == 0) {
-        BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
-        BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-        BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+      if constexpr (hermes::conduction_method == hermes::ConductionMethod::Original) {
+        const BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
+        const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
 
-        BoutReal gradient = 2. * (fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+        const BoutReal gradient =
+            2. * (fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
 
-        BoutReal flux = c * J * gradient / g_22;
-
-        result[i] += flux / (coord->dy[i] * coord->J[i]);
-
-      } else if constexpr (CONDUCTION_METHOD == 1) {
+        flux = c * J * gradient / g_22;
+      } else if constexpr (hermes::conduction_method
+                           == hermes::ConductionMethod::ProductJK) {
         // Intended to reduce sensitivity of result to K in small cells
-        BoutReal cJ =
+        const BoutReal cJ =
             0.5 * (K[i] * coord->J[i] + Kup[iyp] * coord->J[iyp]); // K * J at boundary
-        BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
 
-        BoutReal gradient = 2. * (fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+        const BoutReal gradient =
+            2. * (fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
 
-        BoutReal flux = cJ * gradient / g_22;
-
-        result[i] += flux / (coord->dy[i] * coord->J[i]);
-      } else if constexpr (CONDUCTION_METHOD == 2) {
+        flux = cJ * gradient / g_22;
+      } else if constexpr (hermes::conduction_method
+                           == hermes::ConductionMethod::Harmonic) {
         // Harmonic average (serial resistance)
         const BoutReal cond_i = K[i] * coord->J[i] / (coord->g_22[i] * coord->dy[i]);
         const BoutReal cond_iyp =
@@ -1820,10 +1824,9 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
                 ? 2.0 * cond_i * cond_iyp / denom
                 : 0.0;
 
-        const BoutReal flux = C_edge * (fup[iyp] - f[i]);
-
-        result[i] += flux / (coord->dy[i] * coord->J[i]);
+        flux = C_edge * (fup[iyp] - f[i]);
       }
+      result[i] += flux / (coord->dy[i] * coord->J[i]);
     }
 
     // Calculate flux at lower surface
@@ -1831,23 +1834,27 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
         || (i.y() != mesh->ystart)) {
       BoutReal flux = 0.0;
 
-      if constexpr (CONDUCTION_METHOD == 0) {
-        BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
-        BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
-        BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+      if constexpr (hermes::conduction_method == hermes::ConductionMethod::Original) {
+        const BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
+        const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
 
-        BoutReal gradient = 2. * (f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
+        const BoutReal gradient =
+            2. * (f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
 
         flux = c * J * gradient / g_22;
-      } else if constexpr (CONDUCTION_METHOD == 1) {
-        BoutReal cJ =
+      } else if constexpr (hermes::conduction_method
+                           == hermes::ConductionMethod::ProductJK) {
+        const BoutReal cJ =
             0.5 * (K[i] * coord->J[i] + Kdown[iym] * coord->J[iym]); // K * J at boundary
-        BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
 
-        BoutReal gradient = 2. * (f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
+        const BoutReal gradient =
+            2. * (f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
 
         flux = cJ * gradient / g_22;
-      } else if constexpr (CONDUCTION_METHOD == 2) {
+      } else if constexpr (hermes::conduction_method
+                           == hermes::ConductionMethod::Harmonic) {
         const BoutReal cond_i = K[i] * coord->J[i] / (coord->g_22[i] * coord->dy[i]);
         const BoutReal cond_iym =
             Kdown[iym] * coord->J[iym] / (coord->g_22[iym] * coord->dy[iym]);
