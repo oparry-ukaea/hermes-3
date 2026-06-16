@@ -19,8 +19,5 @@ do
     fi
 done
 
-# Install xBOUT to make sure we get latest master version
-pip3 install  --user git+https://github.com/boutproject/xBOUT.git@v0.3.7
-# Install xHermes for Hermes-3 python
-pip3 install  --user git+https://github.com/boutproject/xhermes.git
+pip3 install --user -r .github/requirements-ci-master.txt
 
