@@ -50,7 +50,7 @@ jobs:
               updated = new_updated
 
           if changed:
-              requirements_path.write_text(updated)
+              requirements_path.write_text(updated.rstrip('\n') + '\n')
           PY
 
       - name: Create pull request

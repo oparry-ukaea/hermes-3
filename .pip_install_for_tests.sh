@@ -20,4 +20,3 @@ do
 done
 
 pip3 install --user -r .github/requirements-ci-master.txt
-
