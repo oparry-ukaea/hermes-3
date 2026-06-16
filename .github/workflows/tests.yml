@@ -77,7 +77,7 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_tests.sh
+          ./ci/pip_install.sh
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
       - name: Run tests
