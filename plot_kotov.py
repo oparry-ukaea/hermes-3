@@ -73,6 +73,12 @@ def last_output_dashboard(ds, outpath):
     dashboard.add_plot("Temperatures", "Td", "Neutrals")
     dashboard.add_plot("Temperatures", "Td2", "Molecules")
 
+    dashboard.add_panel("Pressures", ylabel="Pressure", yscale="log")
+    dashboard.add_plot("Pressures", "Pe", "Electrons")
+    dashboard.add_plot("Pressures", "Pd+", "Ions")
+    dashboard.add_plot("Pressures", "Pd", "Neutrals")
+    dashboard.add_plot("Pressures", "Pd2", "Molecules")
+
     dashboard.save(outpath, dpi=300)
 
 
@@ -119,18 +125,27 @@ if __name__ == "__main__":
     data_dir = f"/home/oparry/code/arch-H3/kotov_testing/{lbl}"
     output_dir = this_dir / lbl
     os.makedirs(output_dir, exist_ok=True)
-    ds_orig = xhermes.open(data_dir, unnormalise=False)
+    try:
+        ds_orig = xhermes.open(data_dir, unnormalise=True)
+    except IOError:
+        raise IOError(f"Error when trying to read data from {data_dir}.")
     ds = ds_orig.hermes.extract_1d_tokamak_geometry()
 
     last_output_dashboard(ds.isel(t=-1), output_dir / "kotov_last_output.png")
     # all_outputs_dashboard(ds.isel(pos=slice(2, -2)), output_dir / "kotov_evo.png")
 
+    anim_outpath = output_dir / "kotov_animation"
     animation(
         ds_orig,
-        [["Ne", "Nd", "Nd+", "Nd2"], ["Te", "Td", "Td+", "Td2"]],
-        outpath=output_dir / "kotov_animation",
+        [
+            ["Ne", "Nd", "Nd+", "Nd2"],
+            ["Te", "Td", "Td+", "Td2"],
+            ["Pe", "Pd", "Pd+", "Pd2"],
+        ],
+        outpath=anim_outpath,
         logscale=True,
         fps=8,
         tight_layout=False,
         controls=None,
     )
+    print(f"Saved animation to {anim_outpath}.gif")
