@@ -22,5 +22,11 @@ else
     mkdir -p "$run_dir"
 fi
 
+
+echo "data_dir : $data_dir"
+echo "    exec : $exec"
+echo "    NMPI : $NMPI"
+echo " run_dir : $run_dir"
+
 cd "$run_dir"
 mpirun -n $NMPI $exec -d "$data_dir"
