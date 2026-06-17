@@ -2,6 +2,7 @@
 
 lbl='NPD_all'
 build='kotov'
+NMPI=5
 
 build_dir="$H3/builds/$build"
 data_dir="$H3/builds/$build/tests/integrated/1D-kotov/data"
@@ -22,4 +23,4 @@ else
 fi
 
 cd "$run_dir"
-$exec -d "$data_dir"
+mpirun -n $NMPI $exec -d "$data_dir"
