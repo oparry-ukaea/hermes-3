@@ -1,7 +1,7 @@
 #!/bin/bash
 
 lbl='NPD_diss-only'
-build='kotov'
+build='kotov_diss-only'
 NMPI=5
 
 build_dir="$H3/builds/$build"
