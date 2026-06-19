@@ -1,6 +1,6 @@
 #!/bin/bash
 
-lbl='NPD_all'
+lbl='NPD_diss-only'
 build='kotov'
 NMPI=5
 
