@@ -274,13 +274,6 @@ type = (
         d+ + e -> d,           # Recombination of Deuterium ions
         d + d+ -> d+ + d,      # Charge exchange between Deuterium atoms and ions
         d2 + e -> 2d + e,      # Dissociation of Deuterium molecules
-        d2 + e -> d2+ + 2e,    # Non-dissociative ionisation of Deuterium molecules
-        d2 + e -> d + d+ + 2e, # Dissociative ionisation of molecular Deuterium
-        d2 + d+ -> d2+ + d,    # Charge exchange between Deuterium molecules and ions
-        d2+ + e -> d + d+ + e, # Dissociation of molecular Deuterium ions
-        d2+ + e -> 2d+ + 2e,   # Dissociative ionisation of molecular Deuterium ions
-        d2+ + e -> 2d,         # Dissociative recombination of molecular Deuterium ions
-        d2 + d+ -> d2 + d+     # Elastic collisions between Deuterium molecules and ions
        )
 
 # -----------------------------------------------
