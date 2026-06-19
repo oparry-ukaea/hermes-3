@@ -69,25 +69,25 @@ Tnorm = 100 #electron-volts
 [solver]
 
 #### HIGH ORDER IN TIME, SLOWER SOLVER CVODE
-# type = cvode                     # CVODE time-accurate solver
-# use_precon = true                # Enable solution acceleration with preconditioning
-# mxstep = 1e9                     # Solver timeout
+type = cvode                     # CVODE time-accurate solver
+use_precon = true                # Enable solution acceleration with preconditioning
+mxstep = 1e9                     # Solver timeout
 ####
 
 #### FIRST ORDER IN TIME, FASTER SOLVER BEULER
-type = beuler                    # Backward Euler steady-state solver
-snes_type = newtonls             # Newton iterations
-ksp_type = gmres                 # GMRES method
-pc_type = hypre                  # Preconditioner type
-pc_hypre_type = euclid           # Hypre preconditioner type
-max_nonlinear_iterations = 10    # Max Newton iterations per timestep
-lag_jacobian = 500               # How long to wait before Jacobian recalculation per Newton iteration
+#type = beuler                    # Backward Euler steady-state solver
+#snes_type = newtonls             # Newton iterations
+#ksp_type = gmres                 # GMRES method
+#pc_type = hypre                  # Preconditioner type
+#pc_hypre_type = euclid           # Hypre preconditioner type
+#max_nonlinear_iterations = 10    # Max Newton iterations per timestep
+#lag_jacobian = 500               # How long to wait before Jacobian recalculation per Newton iteration
 
 # Tolerances
 atol = 1e-7                      # Absolute tolerance (controls small numbers)
 rtol = 1e-5                      # Relative tolerance (primary convergence control)
 
-matrix_free_operator = true
+#matrix_free_operator = true
 
 ######################################### Deuterium ions #########################################
 [d+]
