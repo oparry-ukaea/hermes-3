@@ -1,6 +1,6 @@
 #!/bin/bash
 
-lbl='NPD_all'
+lbl='NPD_off'
 build='kotov'
 NMPI=5
 
