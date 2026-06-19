@@ -18,15 +18,13 @@ if [ -d "$run_dir" ]; then
         echo "Aborted"
         exit 1
     fi
-else
-    mkdir -p "$run_dir"
+    rm -rf "$run_dir"
 fi
+cp -r "$data_dir" "$run_dir"
 
-
-echo "data_dir : $data_dir"
 echo "    exec : $exec"
 echo "    NMPI : $NMPI"
 echo " run_dir : $run_dir"
 
 cd "$run_dir"
-mpirun -n $NMPI $exec -d "$data_dir"
+mpirun -n $NMPI $exec
