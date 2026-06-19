@@ -46,10 +46,10 @@ struct NeutralParallelDiffusion : public Component {
                    .doc("Output additional diagnostics?")
                    .withDefault<bool>(false);
 
-    diffusion_collisions_mode =
-        options["diffusion_collisions_mode"]
-            .doc("Can be afn: CX and IZ, or multispecies: CX and nn, ni, ne (if enabled)")
-            .withDefault<std::string>("afn");
+    diffusion_collisions_mode = options["diffusion_collisions_mode"]
+                                    .doc("Can be all, afn: CX and IZ, or multispecies: "
+                                         "CX and nn, ni, ne (if enabled)")
+                                    .withDefault<std::string>("afn");
 
     equation_fix = options["equation_fix"]
                        .doc("Fix correcting pressure advection and conductivity factors?")
