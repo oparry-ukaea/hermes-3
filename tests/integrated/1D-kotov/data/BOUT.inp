@@ -264,6 +264,7 @@ source = `Pd+:source`
 [neutral_parallel_diffusion]
 # Diffusive enhancement due to recycled neutrals flowing normal to target wall
 dneut = 10   # measure of field line incidence angle: (B / Bpol)^2
+diffusion_collisions_mode = all
 
 # -----------------------------------------------
 [reactions]
