@@ -76,9 +76,13 @@ void NeutralParallelDiffusion::transform_impl(GuardedOptions& state) {
           }
         }
 
+      } else if (diffusion_collisions_mode == "all") {
+        for (const auto& collision : species["collision_frequencies"].getChildren()) {
+          collision_names[species_name].push_back(collision.first);
+        }
       } else {
         throw BoutException(
-            "\tdiffusion_collisions_mode for {:s} must be either multispecies or afn",
+            "\tdiffusion_collisions_mode for {:s} must be 'all', multispecies or afn",
             species_name);
       }
 
