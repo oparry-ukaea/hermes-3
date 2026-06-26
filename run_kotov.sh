@@ -7,6 +7,16 @@ NMPI=5
 build_dir="$H3/builds/$build"
 data_dir="$H3/builds/$build/tests/integrated/1D-kotov/data"
 exec="$build_dir/hermes-3"
+if [ ! -f "$exec" ]; then
+    echo "Executable $exec not found, please build it first"
+    exit 1
+fi
+
+if [ ! -d "$data_dir" ]; then
+    echo "Data directory $data_dir not found, please build it first"
+    exit 1
+fi
+
 
 mkdir -p "$ARCHH3/kotov_testing"
 run_dir="$ARCHH3/kotov_testing/$lbl"
@@ -27,4 +37,4 @@ echo "    NMPI : $NMPI"
 echo " run_dir : $run_dir"
 
 cd "$run_dir"
-mpirun -n $NMPI $exec
+mpirun -n $NMPI $exec -d .
