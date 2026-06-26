@@ -1,21 +1,38 @@
 #include "../include/external_apar.hxx"
+#include "../include/component.hxx"
+#include "../include/guarded_options.hxx"
+#include "../include/permissions.hxx"
 
+#include <bout/bout_types.hxx>
 #include <bout/constants.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
+
+#include <string>
 
 ExternalApar::ExternalApar(std::string name, Options& alloptions,
-                           Solver* UNUSED(solver))
-  : Component({readWrite("fields:Apar_flutter")}) {
+                           [[maybe_unused]] Solver* solver)
+    : Component({readWrite("fields:Apar_flutter")}) {
+
+  auto& options = alloptions[name];
+  const std::string apar_name = options["apar_name"]
+                                    .doc("Name of the Apar field in the mesh file")
+                                    .withDefault("external_apar");
 
   // Read a 3D field from the input e.g. mesh file
   // Store in member variable
-  bout::globals::mesh->get(external_apar, "external_apar");
+  bout::globals::mesh->get(external_apar, apar_name);
 
-  // Normalise
+  // Normalise and scale
   const Options& units = alloptions["units"];
   const BoutReal rho_s0 = units["meters"];
   const BoutReal Bnorm = units["Tesla"];
-  external_apar /= Bnorm * rho_s0;
+
+  const BoutReal scale =
+      options["scale"].doc("Multiply external Apar by this factor").withDefault(1.0);
+
+  external_apar *= scale / (Bnorm * rho_s0);
 }
 
 void ExternalApar::transform_impl(GuardedOptions& state) {
