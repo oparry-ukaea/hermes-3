@@ -4,6 +4,7 @@
 #include "../include/permissions.hxx"
 
 #include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
@@ -22,7 +23,10 @@ ExternalApar::ExternalApar(std::string name, Options& alloptions,
 
   // Read a 3D field from the input e.g. mesh file
   // Store in member variable
-  bout::globals::mesh->get(external_apar, apar_name);
+  if (bout::globals::mesh->get(external_apar, apar_name) != 0) {
+    throw BoutException(
+        "Couldn't read `{}` in external_apar. See the `apar_name` option.", apar_name);
+  }
 
   // Normalise and scale
   const Options& units = alloptions["units"];
