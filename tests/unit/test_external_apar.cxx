@@ -132,6 +132,6 @@ TEST_F(ExternalAparTest, OutputScale) {
                            (4.0 * external_apar / (Bnorm * Lnorm))));
 
   ASSERT_TRUE(output_state["external_apar"].attributes.contains("conversion"));
-  ASSERT_FLOAT_EQ(output_state["external_apar"].attributes["conversion"].as<BoutReal>(),
-                  Bnorm * Lnorm);
+  ASSERT_DOUBLE_EQ(output_state["external_apar"].attributes["conversion"].as<BoutReal>(),
+                   Bnorm * Lnorm);
 }
