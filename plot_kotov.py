@@ -85,16 +85,24 @@ def last_output_dashboard(ds, outpath):
 def all_outputs_dashboard(ds, outpath):
     dashboard = DashBoard(ds, ncols=2)
 
-    dashboard.add_panel("Ne", ylabel="Density [m^-3]", yscale="log", plot_legend=False)
+    dashboard.add_panel(
+        "Ne", ylabel="Density [normalised]", yscale="log", plot_legend=False
+    )
     dashboard.add_plot("Ne", "Ne", "Electrons")
 
-    dashboard.add_panel("Nd", ylabel="Density [m^-3]", yscale="log", plot_legend=False)
+    dashboard.add_panel(
+        "Nd", ylabel="Density [normalised]", yscale="log", plot_legend=False
+    )
     dashboard.add_plot("Nd", "Nd", "Neutrals")
 
-    dashboard.add_panel("Nd+", ylabel="Density [m^-3]", yscale="log", plot_legend=False)
+    dashboard.add_panel(
+        "Nd+", ylabel="Density [normalised]", yscale="log", plot_legend=False
+    )
     dashboard.add_plot("Nd+", "Nd+", "Ions")
 
-    dashboard.add_panel("Nd2", ylabel="Density [m^-3]", yscale="log", plot_legend=False)
+    dashboard.add_panel(
+        "Nd2", ylabel="Density [normalised]", yscale="log", plot_legend=False
+    )
     dashboard.add_plot("Nd2", "Nd2", "Molecules")
 
     dashboard.save(outpath, dpi=300)
@@ -126,7 +134,7 @@ if __name__ == "__main__":
     output_dir = this_dir / lbl
     os.makedirs(output_dir, exist_ok=True)
     try:
-        ds_orig = xhermes.open(data_dir, unnormalise=True)
+        ds_orig = xhermes.open(data_dir, unnormalise=False)
     except IOError:
         raise IOError(f"Error when trying to read data from {data_dir}.")
     ds = ds_orig.hermes.extract_1d_tokamak_geometry()
