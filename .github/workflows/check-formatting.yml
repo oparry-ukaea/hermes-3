@@ -9,10 +9,7 @@ jobs:
     if: ${{ !endsWith(github.head_ref, '-rc') }}
     runs-on: ubuntu-latest
     steps:
-      # Checkout the pull request branch, also include all history.
-      # Need to specify the head repository explicitly, otherwise checkout
-      # defaults to this repository, which fails to find the branch when the
-      # pull request comes from a fork.
+      # Checkout the pull request branch, also include all history
       - uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
