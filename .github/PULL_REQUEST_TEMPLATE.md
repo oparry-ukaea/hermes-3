@@ -1,17 +1,17 @@
-## Purpose
+### Purpose
 <!-- What problem does this PR solve, or what capability does it add? Provide a link to any relevant issues or pull requests. -->
 
-## Change Summary
+### Change Summary
 <!-- Briefly describe what was changed. -->
 
-## Validation
+### Validation
 <!-- How did you verify this works? Include relevant tests, manual checks, or analysis. If not tested, say why. -->
 
-## AI Assistance
-<!-- Were AI tools used during development? If yes, briefly describe how, and how you verified their output. -->
+### AI Assistance
+<!-- Were AI tools used during development? If yes, briefly describe how, and how you verified their output. Remove this section if your PR does not contain AI-generated content. -->
 
-## Documentation
+### Documentation
 <!-- What documentation was updated? If none, explain why no documentation changes were needed. -->
 
-## Review Notes
+### Review Notes
 <!-- Anything reviewers should pay particular attention to? For example: risks, limitations, things you're not sure about. -->
