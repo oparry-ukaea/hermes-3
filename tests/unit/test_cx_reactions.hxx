@@ -10,7 +10,6 @@ namespace hermes {
 struct ConcreteCXReaction : public CXReaction {
   using CXReaction::CXReaction;
   static constexpr auto type = "test_cx_reaction";
-  std::string typeName() const final { return type; }
 };
 
 /**

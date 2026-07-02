@@ -73,6 +73,8 @@ struct Reaction : public ReactionBase {
    */
   void outputVars(Options& state) final;
 
+  std::string typeName() const final { return parser->get_reaction_str(); }
+
 protected:
   /// Reaction string parser
   std::unique_ptr<ReactionParser> parser;

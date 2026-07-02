@@ -112,43 +112,30 @@ struct RecReaction : public IznRecReaction {
 } // namespace hermes
 
 namespace {
-// hermes::IznReaction and hermes::IznRecReaction couldn't inherit
-// from NamedComponent while keeping the function implementations in
-// the .cxx file. Instead we apply CRTP here.
-template <typename T>
-struct IznReaction : public hermes::IznReaction {
-  using hermes::IznReaction::IznReaction;
-  std::string typeName() const final { return T::type; }
-};
-template <typename T>
-struct RecReaction : public hermes::RecReaction {
-  using hermes::RecReaction::RecReaction;
-  std::string typeName() const final { return T::type; }
-};
 
 /// Register components for Hydrogen isotope ionisation and recombination
-struct IznH : public IznReaction<IznH> {
-  using IznReaction<IznH>::IznReaction;
+struct IznH : public hermes::IznReaction {
+  using IznReaction::IznReaction;
   static constexpr auto type = "h + e -> h+ + 2e";
 };
-struct IznD : public IznReaction<IznD> {
-  using IznReaction<IznD>::IznReaction;
+struct IznD : public hermes::IznReaction {
+  using IznReaction::IznReaction;
   static constexpr auto type = "d + e -> d+ + 2e";
 };
-struct IznT : public IznReaction<IznT> {
-  using IznReaction<IznT>::IznReaction;
+struct IznT : public hermes::IznReaction {
+  using IznReaction::IznReaction;
   static constexpr auto type = "t + e -> t+ + 2e";
 };
-struct RecH : public RecReaction<RecH> {
-  using RecReaction<RecH>::RecReaction;
+struct RecH : public hermes::RecReaction {
+  using RecReaction::RecReaction;
   static constexpr auto type = "h+ + e -> h";
 };
-struct RecD : public RecReaction<RecD> {
-  using RecReaction<RecD>::RecReaction;
+struct RecD : public hermes::RecReaction {
+  using RecReaction::RecReaction;
   static constexpr auto type = "d+ + e -> d";
 };
-struct RecT : public RecReaction<RecT> {
-  using RecReaction<RecT>::RecReaction;
+struct RecT : public hermes::RecReaction {
+  using RecReaction::RecReaction;
   static constexpr auto type = "t+ + e -> t";
 };
 RegisterComponent<IznH> register_izn_h;
@@ -159,12 +146,12 @@ RegisterComponent<RecD> register_rec_d;
 RegisterComponent<RecT> register_rec_t;
 
 /// Register components for Helium ionisation and recombination
-struct IznHe : public IznReaction<IznHe> {
-  using IznReaction<IznHe>::IznReaction;
+struct IznHe : public hermes::IznReaction {
+  using IznReaction::IznReaction;
   static constexpr auto type = "he + e -> he+ + 2e";
 };
-struct RecHe : public RecReaction<RecHe> {
-  using RecReaction<RecHe>::RecReaction;
+struct RecHe : public hermes::RecReaction {
+  using RecReaction::RecReaction;
   static constexpr auto type = "he+ + e -> he";
 };
 RegisterComponent<IznHe> register_izn_he;
@@ -175,8 +162,8 @@ RegisterComponent<RecHe> register_rec_he;
  Currently missing energy loss / radiation data
 */
 /// Register components for Helium ionisation and recombination
-// struct IznHe2 : public IznReaction<IznHe2> {
-//   using IznReaction<IznHe2>::IznReaction;
+// struct IznHe2 : public hermes::IznReaction {
+//   using IznReaction::IznReaction;
 //   static constexpr auto type = "e + h2+ -> he+2 + 2e";
 // };
 // RegisterComponent<IxnHe2> register_izn_hep;
@@ -184,8 +171,8 @@ RegisterComponent<RecHe> register_rec_he;
 /*
  He+2 recombination is not included yet
 */
-// struct RecHe2 : public RecReaction<RecHe2> {
-//   using RecReaction<RecHe2>::RecReaction;
+// struct RecHe2 : public hermes::RecReaction {
+//   using RecReaction::RecReaction;
 //   static constexpr auto type = "he+2 + e -> he+";
 // };
 // RegisterComponent<RecHe2>register_rec_hep2;

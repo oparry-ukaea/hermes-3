@@ -9,13 +9,11 @@ namespace hermes {
 struct ConcreteIznReaction : public IznReaction {
   using IznReaction::IznReaction;
   static constexpr auto type = "test_izn_reaction";
-  std::string typeName() const final { return type; }
 };
 
 struct ConcreteRecReaction : public RecReaction {
   using RecReaction::RecReaction;
   static constexpr auto type = "test_rec_reaction";
-  std::string typeName() const final { return type; }
 };
 
 /**
