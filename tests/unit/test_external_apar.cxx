@@ -17,9 +17,6 @@ extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
-// The unit tests use the global mesh
-using namespace bout::globals;
-
 // Reuse the "standard" fixture for FakeMesh
 using ExternalAparTest = FakeMeshFixture;
 
@@ -107,7 +104,7 @@ TEST_F(ExternalAparTest, TransformAddScale) {
                            2.0 + (4.0 * external_apar / (Bnorm * Lnorm))));
 }
 
-TEST_F(ExternalAparTest, OutputScale) {
+TEST_F(ExternalAparTest, OutputScaleWithTransform) {
   const BoutReal Bnorm = 2.0;
   const BoutReal Lnorm = 1.0e-3;
   Options options = {{"units", {{"Tesla", Bnorm}, {"meters", Lnorm}}},
@@ -119,8 +116,37 @@ TEST_F(ExternalAparTest, OutputScale) {
 
   ExternalApar component("test", options, nullptr);
 
+  // Check that transform doesn't do anything funky to the output
   Options state{{"fields", {{"Apar_flutter", 2.0}}}};
   component.transform(state);
+
+  Options output_state{{"Bnorm", Bnorm}, {"rho_s0", Lnorm}};
+  component.outputVars(output_state);
+
+  ASSERT_TRUE(output_state.isSet("external_apar"));
+
+  // Did not add the existing Apar, only external Apar
+  ASSERT_TRUE(IsFieldEqual(get<Field3D>(output_state["external_apar"]),
+                           (4.0 * external_apar / (Bnorm * Lnorm))));
+
+  ASSERT_TRUE(output_state["external_apar"].attributes.contains("conversion"));
+  ASSERT_DOUBLE_EQ(output_state["external_apar"].attributes["conversion"].as<BoutReal>(),
+                   Bnorm * Lnorm);
+}
+
+TEST_F(ExternalAparTest, OutputScaleNoTransform) {
+  const BoutReal Bnorm = 2.0;
+  const BoutReal Lnorm = 1.0e-3;
+  Options options = {{"units", {{"Tesla", Bnorm}, {"meters", Lnorm}}},
+                     {"test", {{"scale", 4.0}}}};
+
+  const BoutReal external_apar = 3.1;
+  dynamic_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource{{{"external_apar", external_apar}}});
+
+  ExternalApar component("test", options, nullptr);
+
+  // Check that calling transform isn't necessary
 
   Options output_state{{"Bnorm", Bnorm}, {"rho_s0", Lnorm}};
   component.outputVars(output_state);
