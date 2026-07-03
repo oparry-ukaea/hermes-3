@@ -278,6 +278,7 @@ void SheathBoundarySimple::transform_impl(GuardedOptions& state) {
     }
 
     phi.allocate();
+    phi.setDirectionY(YDirectionType::Aligned);
 
     // ion_sum now contains the ion current, sum Z_i n_i C_i over all ion species
     // at mesh->ystart and mesh->yend indices
