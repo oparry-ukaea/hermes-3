@@ -6,6 +6,7 @@
 
 #include "component.hxx"
 #include "hermes_utils.hxx"
+#include "integrate.hxx"
 #include <bout/constants.hxx>
 
 using bout::globals::mesh;
@@ -315,8 +316,6 @@ struct Tungsten_adas {
   static constexpr std::string_view type = "tungsten";
 };
 } // namespace
-
-// FIXME: Add logic to build type name from CoolingCurve::type
 
 /// Set ion densities from electron densities
 ///
