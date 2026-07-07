@@ -19,7 +19,13 @@ spack:
   packages:
     all:
       providers:
-        mpi: [ mpich, openmpi ]
+        mpi: [mpich, openmpi]
+    boutpp:
+      package_attributes:
+        build_directory: ../../builds/spack/boutpp
+    hermes-3:
+      package_attributes:
+        build_directory: ./builds/spack/hermes-3
   develop:
     boutpp:
       path: ./external/BOUT-dev
