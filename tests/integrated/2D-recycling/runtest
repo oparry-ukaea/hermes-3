@@ -30,7 +30,6 @@ atol = 1e-8
 ### Setup
 this_dir = Path(__file__).parent
 data_dir = this_dir / "data"
-hermes_exec = this_dir.parent.parent.parent / "hermes-3"
 output_path = data_dir / "BOUT.dmp.*.nc"
 
 zipfile_path = this_dir / "test-2D-recycling.zip"
@@ -124,7 +123,9 @@ if not debug:
     # which does not enforce slot limits and does not support --oversubscribe)
     os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "yes"
 
-    s, out = launch_safe("./hermes-3 -d data", runcmd=runcmd, nproc=10, pipe=True)
+    s, out = launch_safe(
+        "../../../hermes-3 -d data", runcmd=runcmd, nproc=10, pipe=True
+    )
 
     if s != 0:
         print(" => 2D-recycling test failed: ")
