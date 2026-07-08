@@ -116,7 +116,7 @@ if not debug:
     t_extract = time()
     if verbose:
         print(
-            f"2D-Production test: zip extraction took {t_extract - t_download:.2f} seconds"
+            f"2D-recycling test: zip extraction took {t_extract - t_download:.2f} seconds"
         )
 
     # Allow oversubscription for OpenMPI via env var (silently ignored by MPICH,
