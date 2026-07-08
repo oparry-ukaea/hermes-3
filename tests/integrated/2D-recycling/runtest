@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boututils.run_wrapper import launch_safe, getmpirun
+from boututils.run_wrapper import launch_safe
 import numpy as np
 import matplotlib.pyplot as plt
 import shutil
@@ -111,7 +111,6 @@ if not debug:
         checkHash()
 
     extractZip()
-    runcmd = getmpirun().split(" ")[0] + " -np"
 
     t_extract = time()
     if verbose:
@@ -123,9 +122,7 @@ if not debug:
     # which does not enforce slot limits and does not support --oversubscribe)
     os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "yes"
 
-    s, out = launch_safe(
-        "../../../hermes-3 -d data", runcmd=runcmd, nproc=10, pipe=True
-    )
+    s, out = launch_safe("../../../hermes-3 -d data", nproc=10, pipe=True)
 
     if s != 0:
         print(" => 2D-recycling test failed: ")
