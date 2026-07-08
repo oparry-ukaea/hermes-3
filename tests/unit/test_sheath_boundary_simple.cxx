@@ -25,13 +25,6 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using SheathBoundarySimpleTest = FakeMeshFixture;
 
-TEST_F(SheathBoundarySimpleTest, CreateComponent) {
-  Options options;
-  options["units"]["eV"] = 1.0; // Voltage normalisation
-
-  SheathBoundarySimple component("test", options, nullptr);
-}
-
 // Reuse the tests for SheathBoundary that will still apply to SheathBoundarySimple
 
 TEST_F(SheathBoundarySimpleTest, DontSetPotential) {

@@ -210,6 +210,7 @@ struct ConcreteComponentTests : public FakeMeshFixture,
                                                    bout::globals::mesh)},
              {"hthe", 1.0},
              {"Bpxy", 1.0},
+             {"Bxy", 1.0},
              {"external_apar", 1.0}}});
     if (required_params.isSection(typname)) {
       options[objname] = required_params[typname].copy();
@@ -251,6 +252,7 @@ const Options ConcreteComponentTests::required_params{
       {"scaling_factors_for_temperature_feedback", ""}}},
     {"transform", {{"transforms", ""}}},
     {"upstream_density_feedback", {{"density_upstream", 1.}}},
+    {"zero_current", {{"charge", 1.}}},
 };
 
 // Check the result of the Component::typeName() function is the
