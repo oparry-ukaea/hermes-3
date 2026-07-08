@@ -55,7 +55,6 @@ struct SOLKITHydrogenChargeExchangeIsotope : public SOLKITHydrogenChargeExchange
     substitutePermissions("readvals", {"AA", "density"});
   }
 
-  //FIXME: Need to figure out how to consturct type name at compile-time
   static constexpr char type[] = {'s', 'o',     'l', 'k',     'i', 't', ' ',     Isotope,
                                   ' ', '+',     ' ', Isotope, '+', ' ', '-',     '>',
                                   ' ', Isotope, '+', ' ',     '+', ' ', Isotope, '\0'};
