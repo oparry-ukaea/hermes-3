@@ -86,8 +86,7 @@ FieldlineGeometry::FieldlineGeometry(std::string name, Options& options, Solver*
                             readWrite("fieldline_geometry_dlpol"),
                             readWrite("fieldline_geometry_cell_side_area"),
                             readWrite("fieldline_geometry_cell_volume")}) {
-  Options& geo_options =
-      options["fieldline_geometry"];       // Get options specific to fieldline_geometry
+  Options& geo_options = options[name];    // Get options specific to this component
   const Options& units = options["units"]; // Get unit options
   BoutReal Lnorm = get<BoutReal>(
       units["meters"]); // Get the length normalization factor from the units options

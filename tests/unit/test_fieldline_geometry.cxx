@@ -28,7 +28,9 @@ Options makeOptions(const std::string& lambda_int, const std::string& fieldline_
   options["units"]["meters"] = 1.0;
   options["units"]["Tesla"] = 1.0;
 
-  Options& geo = options["fieldline_geometry"];
+  // The component reads its input from the section named after the component
+  // (here "test", matching the name passed to the constructor below).
+  Options& geo = options["test"];
   geo["lambda_int"] = lambda_int;
   geo["fieldline_radius"] = fieldline_radius;
   geo["poloidal_magnetic_field"] = poloidal_magnetic_field;
