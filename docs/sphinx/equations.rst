@@ -880,11 +880,11 @@ SI units.
      - :math:`m^{-1}`
      - ``limiter_gradient_floor`` (10)
      - ``limiter_gradient_ceiling`` (100)
-   * - :math:`\nabla_{\perp,\parallel} v_{\parallel n}`
+   * - :math:`\nabla_{\perp,\parallel} v_{\parallel n} / \bar{v}_n`
      - :math:`\eta_{n,\max}`
-     - :math:`s^{-1}`
-     - ``limiter_gradient_floor_eta`` (9.5788e4)
-     - ``limiter_gradient_ceiling_eta`` (1e12)
+     - :math:`m^{-1}`
+     - ``limiter_gradient_floor`` (10)
+     - ``limiter_gradient_ceiling`` (100)
 
 Raising a floor or lowering a ceiling improves robustness but changes the
 answer, so both should be checked for convergence.
@@ -1008,16 +1008,13 @@ Flux limiter options
      - Explicit cap on :math:`\eta_n` in :math:`Pa\,s`
    * - ``limiter_gradient_floor``
      - 10
-     - :math:`g_{\min}` for :math:`D_n` and :math:`\kappa_n`, in :math:`m^{-1}`
+     - :math:`g_{\min}` for every perpendicular channel, in :math:`m^{-1}`
+   * - ``limiter_gradient_floor_ratio``
+     - 40
+     - Parallel floor is ``limiter_gradient_floor`` divided by this
    * - ``limiter_gradient_ceiling``
      - 100
-     - :math:`g_{\max}` for :math:`D_n` and :math:`\kappa_n`, in :math:`m^{-1}`
-   * - ``limiter_gradient_floor_eta``
-     - 9.5788e4
-     - :math:`g_{\min}` for :math:`\eta_n`, in :math:`s^{-1}`
-   * - ``limiter_gradient_ceiling_eta``
-     - 1e12
-     - :math:`g_{\max}` for :math:`\eta_n`, in :math:`s^{-1}`
+     - :math:`g_{\max}` for every channel, in :math:`m^{-1}`
 
 Setting a flux limit fraction or an explicit cap below zero disables it.
 

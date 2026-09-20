@@ -59,9 +59,6 @@ private:
   BoutReal limiter_gradient_floor_ratio; ///< Perpendicular floor / parallel floor
   BoutReal limiter_gradient_floor_par;   ///< Parallel floor, derived from the two above
   BoutReal limiter_gradient_ceiling;     ///< Ceiling for gradient in every denominator
-  bool legacy_regularisation;            ///< Use the pre-unification scheme
-  BoutReal limiter_gradient_floor_eta;   ///< Legacy viscous floor [1/s]
-  BoutReal limiter_gradient_ceiling_eta; ///< Legacy viscous ceiling [1/s]
   BoutReal diffusion_limit;              ///< Explicit cap on Dnn [m^2/s]
   BoutReal conduction_limit;             ///< Explicit cap on kappa_n [m^-1 s^-1]
   BoutReal viscosity_limit;              ///< Explicit cap on eta_n [Pa s]

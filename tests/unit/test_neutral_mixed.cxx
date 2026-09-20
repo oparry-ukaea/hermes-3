@@ -293,8 +293,6 @@ Options runNeutralMixedTest(Options options, bool with_collisions = false) {
   };
   loosen("limiter_gradient_floor", 1e-10);
   loosen("limiter_gradient_ceiling", 1e10);
-  loosen("limiter_gradient_floor_eta", 1e-10);
-  loosen("limiter_gradient_ceiling_eta", 1e10);
 
   NeutralMixed component("d", options, &solver);
 
