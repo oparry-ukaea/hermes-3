@@ -3,6 +3,7 @@
 # Python script to run and analyse 2D energy test
 
 import sys
+from pathlib import Path
 
 import numpy as np
 from boutdata.collect import collect
@@ -21,9 +22,7 @@ shell("rm data/BOUT.dmp.*.nc")
 s, out = launch_safe("./hermes-3 -d data", nproc=nproc, pipe=True)
 
 # Save output to log file
-f = open("run.log", "w")
-f.write(out)
-f.close()
+Path("run.log").write_text(out)
 
 # Collect data
 pe = collect("Pe", path=path, info=False)

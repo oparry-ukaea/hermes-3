@@ -87,13 +87,11 @@ if __name__ == "__main__":
 
     vx, vz, xx, yy = calculate_SI(path)
 
-    f = open("Velocity.dat", "wb")
-    pickle.dump(vx, f)
-    f.close()
+    with open("Velocity.dat", "wb") as f:
+        pickle.dump(vx, f)
 
-    f = open("Position.dat", "wb")
-    pickle.dump(xx, f)
-    f.close()
+    with open("Position.dat", "wb") as f:
+        pickle.dump(xx, f)
 
     try:
         import matplotlib.pyplot as plt
