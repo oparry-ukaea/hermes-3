@@ -222,7 +222,7 @@ def run_manufactured_solutions_test(test_input):
             if interactive_plots:
                 plt.show()
             plt.close()
-    except:
+    except:  # noqa: E722, S110
         # Plotting could fail for any number of reasons, and the actual
         # error raised may depend on, among other things, the current
         # matplotlib backend, so catch everything
@@ -546,7 +546,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
             if interactive_plots:
                 plt.show()
             plt.close()
-    except:
+    except:  # noqa: E722, S110
         # Plotting could fail for any number of reasons, and the actual
         # error raised may depend on, among other things, the current
         # matplotlib backend, so catch everything

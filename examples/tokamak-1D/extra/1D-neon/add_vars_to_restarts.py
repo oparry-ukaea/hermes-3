@@ -20,11 +20,9 @@ with DataFile(
             # but is not in the restart file
             try:
                 value = opts[varname].evaluate_scalar("function")
-            except:
+            except ValueError, TypeError, KeyError:
                 print(
-                    "Failed to evaluate value for {}: {}",
-                    varname,
-                    opts[varname]["function"],
+                    f"Failed to evaluate value for {varname}: {opts[varname]['function']}"
                 )
                 continue
             print(f"Writing field {varname} to restart file with value {value}")

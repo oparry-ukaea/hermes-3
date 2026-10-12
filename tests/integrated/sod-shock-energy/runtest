@@ -81,44 +81,43 @@ if plotting:
             InsetPosition,
             mark_inset,
         )
-
-        # Create x_exact and rho_exact for plotting
-
-        # Region 1
-        x_exact = [0, pos12]
-        rho_exact = [rho1, rho1]
-
-        # Region 2
-        x2 = np.linspace(pos12, pos23, endpoint=True)
-        c = G * ((x0 - x2) / time) + (1 - G) * cs1
-        rho_exact2 = rho1 * (c / cs1) ** (2 / (gamma - 1))
-
-        x_exact += list(x2)
-        rho_exact += list(rho_exact2)
-
-        # Regions 3, 4, 5
-
-        x_exact += [pos23, pos34, pos34, pos45, pos45, 1]
-        rho_exact += [rho3, rho3, rho4, rho4, rho5, rho5]
-
-        fig, ax1 = plt.subplots()
-        ax1.plot(x_exact, rho_exact, "k")
-
-        ax2 = plt.axes([0, 0, 1, 1])
-        ax2.plot(x_exact, rho_exact, "k")
-        ax2.set_xlim(0.82, 0.9)
-        ax2.set_ylim(0.11, 0.25)
-
-        # Manually set the position and relative size of the inset axes within ax1
-        ip = InsetPosition(ax1, [0.01, 0.03, 0.4, 0.4])
-        ax2.set_axes_locator(ip)
-        # Mark the region corresponding to the inset axes on ax1 and draw lines
-        # in grey linking the two axes.
-        mark_inset(ax1, ax2, loc1=2, loc2=4, fc="none", ec="0.5")
-    except:
-        raise
+    except ImportError:
         print("WARNING: Could not import Matplotlib")
         plotting = False
+
+    # Create x_exact and rho_exact for plotting
+
+    # Region 1
+    x_exact = [0, pos12]
+    rho_exact = [rho1, rho1]
+
+    # Region 2
+    x2 = np.linspace(pos12, pos23, endpoint=True)
+    c = G * ((x0 - x2) / time) + (1 - G) * cs1
+    rho_exact2 = rho1 * (c / cs1) ** (2 / (gamma - 1))
+
+    x_exact += list(x2)
+    rho_exact += list(rho_exact2)
+
+    # Regions 3, 4, 5
+
+    x_exact += [pos23, pos34, pos34, pos45, pos45, 1]
+    rho_exact += [rho3, rho3, rho4, rho4, rho5, rho5]
+
+    fig, ax1 = plt.subplots()
+    ax1.plot(x_exact, rho_exact, "k")
+
+    ax2 = plt.axes([0, 0, 1, 1])
+    ax2.plot(x_exact, rho_exact, "k")
+    ax2.set_xlim(0.82, 0.9)
+    ax2.set_ylim(0.11, 0.25)
+
+    # Manually set the position and relative size of the inset axes within ax1
+    ip = InsetPosition(ax1, [0.01, 0.03, 0.4, 0.4])
+    ax2.set_axes_locator(ip)
+    # Mark the region corresponding to the inset axes on ax1 and draw lines
+    # in grey linking the two axes.
+    mark_inset(ax1, ax2, loc1=2, loc2=4, fc="none", ec="0.5")
 
 # Perform simulations at required resolutions
 
