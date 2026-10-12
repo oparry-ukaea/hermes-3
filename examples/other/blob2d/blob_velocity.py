@@ -41,7 +41,7 @@ def blob_velocity(n, method="COM", return_index=False):
             x[i] = np.sum(np.sum(data[:, :], axis=1) * (np.arange(size[1]))) / ntot
 
     else:
-        raise ValueError("Invalid method {}".format(method))
+        raise ValueError(f"Invalid method {method}")
 
     vx = Calc.deriv(x)
     vz = Calc.deriv(z)

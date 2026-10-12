@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import sys
+
 from boutdata.mms import Div_par, Grad_par, x, y, z
 from job_functions import run_manufactured_solutions_test
 from perpendicular_laplacian import (
@@ -58,6 +60,6 @@ success, output_message = run_manufactured_solutions_test(test_input)
 
 print(output_message)
 if success:
-    exit(0)
+    sys.exit(0)
 else:
-    exit(1)
+    sys.exit(1)

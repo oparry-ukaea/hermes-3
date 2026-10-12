@@ -39,6 +39,6 @@ for case in ["uniform", "nonuniform", "nonuniform_area"]:
     # Flux at boundaries should match
     diff = abs(np.sum(dq_sh * J * dy) - np.sum(dq_snb * J * dy))
     assert diff < 1e-10
-    print("Passed ({})".format(diff))
+    print(f"Passed ({diff})")
 
 exit(0)

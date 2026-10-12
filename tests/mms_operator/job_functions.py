@@ -45,7 +45,7 @@ def run_manufactured_solutions_test(test_input):
         os.system("mkdir " + base_test_dir)
     workdirs = []
     # make test for each resolution based on template file
-    for i in range(0, ntest):
+    for i in range(ntest):
         workdir = f"{base_test_dir}/slab-mms-test-{i}"
         workdirs.append(workdir)
         # create directory
@@ -53,7 +53,7 @@ def run_manufactured_solutions_test(test_input):
             os.system("mkdir " + workdir)
         # copy template
         file = workdir + "/BOUT.inp"
-        os.system(f"cp BOUT.inp.template " + file)
+        os.system("cp BOUT.inp.template " + file)
         # update with mesh values for test
         nn = nnbase * (i + 1)  # number of points in each grid
         dd = 2.0 * np.pi / nn  # y z grid spacing, z, y on [0, 2pi]
@@ -92,7 +92,7 @@ def run_manufactured_solutions_test(test_input):
    # information about differential operators
    n_operators = {n_operators}
    """
-            for i in range(0, n_operators):
+            for i in range(n_operators):
                 mesh_string += f"""
    differential_operator_name_{i} = {differential_operator_test_list[i][0]}          
    expected_result_{i} = {differential_operator_test_list[i][1]}
@@ -109,7 +109,7 @@ def run_manufactured_solutions_test(test_input):
         )
         print(cmd)
         # Launch using MPI
-        s, out = launch_safe(cmd, nproc=1, mthread=1, pipe=True)
+        s, _out = launch_safe(cmd, nproc=1, mthread=1, pipe=True)
         if s != 0:
             print(f"Command exited with status {s}. STDOUT printed below:")
             with open(workdir + "/output.txt") as f:
@@ -122,13 +122,13 @@ def run_manufactured_solutions_test(test_input):
     s = slice(2, -2), slice(1, -1), slice(None)
 
     # a dictionary of plot data, filled later on
-    plot_data = dict()
+    plot_data = {}
 
     # open the series of "workdir/BOUT.0.nc" files,
     # saving them in a list `datasets`
     datasets = []
     for workdir in workdirs:
-        boutmeshpath = workdir + "/" + f"BOUT.0.nc"
+        boutmeshpath = workdir + "/" + "BOUT.0.nc"
         boutinppath = workdir + "/" + "BOUT.inp"
         datasets.append(
             open_boutdataset(
@@ -143,7 +143,7 @@ def run_manufactured_solutions_test(test_input):
         l2norm = []
         nylist = []
         dylist = []
-        for m in range(0, ntest):
+        for m in range(ntest):
             numerical = collectvar(datasets, f"result_{i}", m)
             expected = collectvar(datasets, f"expected_result_{i}", m)
             xx = collectvar(datasets, "x_input", m)
@@ -206,14 +206,14 @@ def run_manufactured_solutions_test(test_input):
                 xaxis,
                 yaxis[0] * (xaxis / xaxis[0]) ** expected_slope,
                 "x-",
-                label="$\\propto \\Delta^{{{:.2f}}}$".format(expected_slope),
+                label=f"$\\propto \\Delta^{{{expected_slope:.2f}}}$",
             )
             if not fit is None:
                 plt.plot(
                     xaxis,
                     fit,
                     "x-",
-                    label="$e^{{{:.2f}}}\\Delta^{{{:.2f}}}$".format(offset, slope),
+                    label=f"$e^{{{offset:.2f}}}\\Delta^{{{slope:.2f}}}$",
                 )
             plt.xlabel("$\\Delta = 1/N_y$")
             plt.title(key)
@@ -308,7 +308,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
 
     workdirs = []
     # make test for each resolution based on template file
-    for i in range(0, ntest):
+    for i in range(ntest):
         workdir = f"{base_test_dir}/slab-mms-test-{i}"
         workdirs.append(workdir)
         # create directory
@@ -316,7 +316,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
             os.system("mkdir " + workdir)
         # copy template
         file = workdir + "/BOUT.inp"
-        os.system(f"cp BOUT.inp.neutral_mixed.template " + file)
+        os.system("cp BOUT.inp.neutral_mixed.template " + file)
         # update with mesh values for test
         nn = nnbase * (i + 1)  # number of points in each grid
         dd = 2.0 * np.pi / nn  # y z grid spacing, z, y on [0, 2pi]
@@ -405,7 +405,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
         cmd = "../.././hermes-3 -d " + workdir + " > " + workdir + "/output.txt"
         print(cmd)
         # Launch using MPI
-        s, out = launch_safe(cmd, nproc=1, mthread=1, pipe=True)
+        s, _out = launch_safe(cmd, nproc=1, mthread=1, pipe=True)
         if s != 0:
             print(f"Command exited with status {s}. STDOUT printed below:")
             with open(workdir + "/output.txt") as f:
@@ -424,13 +424,13 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
     sy = slice(1, -1)
     sz = slice(None)
     # a dictionary of plot data, filled later on
-    plot_data = dict()
+    plot_data = {}
 
     # open the series of "workdir/BOUT.0.nc" files,
     # saving them in a list `datasets`
     datasets = []
     for workdir in workdirs:
-        boutmeshpath = workdir + "/" + f"BOUT.dmp.0.nc"
+        boutmeshpath = workdir + "/" + "BOUT.dmp.0.nc"
         boutinppath = workdir + "/" + "BOUT.inp"
         datasets.append(
             open_boutdataset(
@@ -455,7 +455,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
         l2norm = []
         nylist = []
         dylist = []
-        for m in range(0, ntest):
+        for m in range(ntest):
             if varstring == "ddt(Pd)" and evolve_momentum and conservation_test:
                 NVd = collectvar(datasets, "NVd", m)
                 Nd = collectvar(datasets, "Nd", m)
@@ -537,14 +537,14 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
                 xaxis,
                 yaxis[0] * (xaxis / xaxis[0]) ** expected_slope,
                 "x-",
-                label="$\\propto \\Delta^{{{:.2f}}}$".format(expected_slope),
+                label=f"$\\propto \\Delta^{{{expected_slope:.2f}}}$",
             )
             if not fit is None:
                 plt.plot(
                     xaxis,
                     fit,
                     "x-",
-                    label="$e^{{{:.2f}}}\\Delta^{{{:.2f}}}$".format(offset, slope),
+                    label=f"$e^{{{offset:.2f}}}\\Delta^{{{slope:.2f}}}$",
                 )
             plt.xlabel("$\\Delta = 1/N_y$")
             plt.title(key)

@@ -141,9 +141,9 @@ def combine_data(dataset1, dataset2):
     Combine two datasets together. Returns a new dataset.
     """
     result = {}
-    for name in dataset1.keys():
+    for name in dataset1:
         result[name] = {}
-        for location in dataset1[name].keys():
+        for location in dataset1[name]:
             data1 = dataset1[name][location]
             data2 = dataset2[name][location]
 

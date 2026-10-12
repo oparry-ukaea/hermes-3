@@ -18,12 +18,10 @@ args = parser.parse_args()
 gridfile = args.gridfile
 path = args.datapath
 
-import matplotlib
 
 # matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from boutdata import collect
-from matplotlib.ticker import LogFormatter
 
 cmap_diverging = plt.cm.get_cmap("bwr")  # RdBu, bwr, seismic
 cmap_sequential = plt.cm.get_cmap("magma")  # magma

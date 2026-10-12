@@ -1,5 +1,3 @@
-from __future__ import division, print_function
-
 from math import pi
 
 from boutdata.mms import Div_par, Grad_par, Metric, cos, diff, exprToStr, sin, t, y

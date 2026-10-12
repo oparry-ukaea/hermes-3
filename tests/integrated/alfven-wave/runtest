@@ -12,7 +12,7 @@ import sys
 
 import numpy as np
 from boutdata import collect
-from boututils.run_wrapper import getmpirun, launch_safe, shell
+from boututils.run_wrapper import launch_safe, shell
 
 # Link to the executable
 shell("ln -s ../../../hermes-3 hermes-3")

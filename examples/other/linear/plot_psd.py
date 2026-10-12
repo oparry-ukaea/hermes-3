@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from boutdata import collect
 from scipy.signal import welch
-from scipy.stats import spearmanr
 
 paths = ["annulus-isothermal-d"]
 
@@ -49,7 +48,7 @@ time = 1e3 * np.concatenate(times) / collect("Omega_ci", path=paths[0])  # ms
 nt, nz = data.shape
 print("Size: {}", data.shape)
 
-print("Time range: {} - {}ms. Time samples: {}".format(time[0], time[-1], nt))
+print(f"Time range: {time[0]} - {time[-1]}ms. Time samples: {nt}")
 
 dt = time[1] - time[0]
 
@@ -61,7 +60,6 @@ for z in range(1, nz):
     psd += p
 psd /= nz
 
-import pickle
 
 with open("psd.pkl", "wb") as pkl:
     pickle.dump(f, pkl)
