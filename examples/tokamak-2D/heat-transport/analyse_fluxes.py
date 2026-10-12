@@ -102,7 +102,6 @@ def sheath_boundary_simple(
 
     J = bd["J"]
     dx = bd["dx"]
-    dy = bd["dy"]
     dz = bd["dz"]
     g_22 = bd["g_22"]
 

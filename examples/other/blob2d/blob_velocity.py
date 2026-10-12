@@ -25,8 +25,7 @@ def blob_velocity(n, method="COM", return_index=False):
 
     if method == "peak":
         for i in np.arange(size[0]):
-            nmax, nmin = np.amax((n[i, :, :])), np.amin((n[i, :, :]))
-            xpos, zpos = np.where(n[i, :, :] == nmax)
+            xpos, zpos = np.where(n[i, :, :] == np.amax(n[i, ...]))
             x[i] = xpos[0]
             z[i] = zpos[0]
 

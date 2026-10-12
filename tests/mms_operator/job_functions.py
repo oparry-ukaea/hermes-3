@@ -146,11 +146,7 @@ def run_manufactured_solutions_test(test_input):
         for m in range(ntest):
             numerical = collectvar(datasets, f"result_{i}", m)
             expected = collectvar(datasets, f"expected_result_{i}", m)
-            xx = collectvar(datasets, "x_input", m)
             yy = collectvar(datasets, "y_input", m)
-            zz = collectvar(datasets, "z_input", m)
-            ff = collectvar(datasets, "f", m)
-            aa = collectvar(datasets, "a", m)
 
             error_values = (numerical - expected)[s]
             thisl2 = np.sqrt(np.mean(error_values**2))
@@ -417,12 +413,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
     # need guard cells in x (assume 2 here) and guard cells in y (assume 1)
     # no guard cells in z
     s = slice(None), slice(2, -2), slice(1, -1), slice(None)
-    # s = slice(1, 2), slice(2, -2), slice(1, -1), slice(None)
-    sxyz = slice(2, -2), slice(1, -1), slice(None)
     sxy = slice(2, -2), slice(1, -1)
-    sx = slice(2, -2)
-    sy = slice(1, -1)
-    sz = slice(None)
     # a dictionary of plot data, filled later on
     plot_data = {}
 
