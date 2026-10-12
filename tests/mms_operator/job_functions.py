@@ -191,8 +191,7 @@ def run_manufactured_solutions_test(test_input):
     try:
         import matplotlib.pyplot as plt
 
-        ifig = 0
-        for key, variable_set in plot_data.items():
+        for ifig, (key, variable_set) in enumerate(plot_data.items()):
             (xaxis, yaxis, fit, slope, offset, expected_slope) = variable_set
             plt.figure()
             plt.plot(
@@ -223,7 +222,6 @@ def run_manufactured_solutions_test(test_input):
             if interactive_plots:
                 plt.show()
             plt.close()
-            ifig += 1
     except:
         # Plotting could fail for any number of reasons, and the actual
         # error raised may depend on, among other things, the current
@@ -519,8 +517,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
     try:
         import matplotlib.pyplot as plt
 
-        ifig = 0
-        for key, variable_set in plot_data.items():
+        for ifig, (key, variable_set) in enumerate(plot_data.items()):
             (xaxis, yaxis, fit, slope, offset, expected_slope) = variable_set
             plt.figure()
             plt.plot(xaxis, yaxis, "x-", label="$\\epsilon$ " + key)
@@ -549,7 +546,6 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
             if interactive_plots:
                 plt.show()
             plt.close()
-            ifig += 1
     except:
         # Plotting could fail for any number of reasons, and the actual
         # error raised may depend on, among other things, the current
