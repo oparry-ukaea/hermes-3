@@ -1,9 +1,10 @@
 # module to provide a test function for running the MMS tests of differential operators
 import os
-from xbout import open_boutdataset
+
 import numpy as np
-from scipy.optimize import curve_fit
 from boututils.run_wrapper import launch_safe
+from scipy.optimize import curve_fit
+from xbout import open_boutdataset
 
 
 def lin_func(x, b, a):

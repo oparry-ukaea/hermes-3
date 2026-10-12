@@ -1,6 +1,6 @@
-import xhermes
 import matplotlib.pyplot as plt
 import numpy as np
+import xhermes
 
 # Open the dataset
 bd = xhermes.open(".", geometry="toroidal", gridfilepath="eqd1031204007.00740.bout.nc")

@@ -2,10 +2,9 @@
 
 # Python script to run and analyse MMS test
 
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-
-from numpy import sqrt, max, abs, mean, array, log
+from boututils.run_wrapper import launch_safe, shell
+from numpy import abs, array, log, max, mean, sqrt
 
 # List of NY values to use
 nylist = [40, 80, 160, 320]  # , 640, 1280, 2560, 5120]

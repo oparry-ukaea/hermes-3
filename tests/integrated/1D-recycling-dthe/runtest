@@ -2,10 +2,11 @@
 
 # Test that a 1D-recyling-D-T-He example produces expected results
 
-from boututils.run_wrapper import launch
-import numpy
 import pathlib
+
+import numpy
 import xhermes
+from boututils.run_wrapper import launch
 from numpy.testing._private.utils import nulp_diff
 
 this_dir = pathlib.Path(__file__).parent

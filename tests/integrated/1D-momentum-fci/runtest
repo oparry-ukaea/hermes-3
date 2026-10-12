@@ -2,10 +2,11 @@
 
 # Python script to run and analyse MMS test
 
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
 from pathlib import Path
-from numpy import sqrt, max, abs, mean, array, log
+
+from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
+from numpy import abs, array, log, max, mean, sqrt
 
 gridpath = "../../../grids/MMS_slab_y/"
 

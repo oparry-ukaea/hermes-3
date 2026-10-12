@@ -5,11 +5,11 @@
 # References:
 # - M.V.Umansky et al. CPP 2008 https://doi.org/10.1002/ctpp.200810004
 
-import numpy as np
-from boututils.run_wrapper import shell, launch_safe
 import sys
 
 import analysis
+import numpy as np
+from boututils.run_wrapper import launch_safe, shell
 
 plotting = False
 

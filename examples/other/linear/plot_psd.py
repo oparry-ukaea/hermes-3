@@ -1,13 +1,13 @@
 # Calculate spatial correlation
 
 
-from boutdata import collect
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import spearmanr
 import pickle
 
+import matplotlib.pyplot as plt
+import numpy as np
+from boutdata import collect
 from scipy.signal import welch
+from scipy.stats import spearmanr
 
 paths = ["annulus-isothermal-d"]
 

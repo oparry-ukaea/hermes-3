@@ -2,11 +2,11 @@
 
 # Test that a 1D-recycling example produces expected results
 
-from boututils.run_wrapper import launch_safe
-import numpy
 import pathlib
-import xhermes
 
+import numpy
+import xhermes
+from boututils.run_wrapper import launch_safe
 from numpy.testing._private.utils import nulp_diff
 
 this_dir = pathlib.Path(__file__).parent

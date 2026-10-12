@@ -6,7 +6,6 @@ linestyles = ["-", "--"]
 
 import matplotlib.pyplot as plt
 import numpy as np
-
 from boutdata import collect
 
 cumulative_calls = []

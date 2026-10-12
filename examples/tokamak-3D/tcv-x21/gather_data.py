@@ -1,7 +1,8 @@
+import pickle
+
 import numpy as np
 from boutdata import collect
 from boututils.datafile import DataFile
-import pickle
 
 qe = 1.602e-19
 AA_me = 1.0 / 1836  # Electron mass divided by proton mass

@@ -8,10 +8,11 @@
 plotting = False
 fail_early = True  # Stop on the first failure?
 
-import numpy as np
-from boututils.run_wrapper import shell, launch_safe, getmpirun
 import sys
+
+import numpy as np
 from boutdata import collect
+from boututils.run_wrapper import getmpirun, launch_safe, shell
 
 # Link to the executable
 shell("ln -s ../../../hermes-3 hermes-3")

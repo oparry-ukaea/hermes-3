@@ -1,10 +1,11 @@
 input_path = "."
 input_options = "BOUT.inp"
 
-from boutdata.data import BoutOptionsFile, BoutOptions
-from boututils.datafile import DataFile
 import os
+
 import numpy as np
+from boutdata.data import BoutOptions, BoutOptionsFile
+from boututils.datafile import DataFile
 
 opts = BoutOptionsFile(input_options)
 

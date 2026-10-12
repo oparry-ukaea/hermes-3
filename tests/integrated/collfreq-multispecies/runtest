@@ -2,9 +2,9 @@
 
 # Python script to run and analyse MMS test
 
-from boututils.run_wrapper import launch_safe
-
 from pathlib import Path
+
+from boututils.run_wrapper import launch_safe
 
 # Remove old test results and symlink executable
 for file in [

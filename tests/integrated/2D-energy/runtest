@@ -2,10 +2,9 @@
 
 # Python script to run and analyse 2D energy test
 
-from boututils.run_wrapper import shell, launch_safe, getmpirun
-from boutdata.collect import collect
-
 import numpy as np
+from boutdata.collect import collect
+from boututils.run_wrapper import getmpirun, launch_safe, shell
 
 path = "data"
 nproc = 1

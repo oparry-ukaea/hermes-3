@@ -18,19 +18,19 @@ args = parser.parse_args()
 gridfile = args.gridfile
 path = args.datapath
 
-from boutdata import collect
 import matplotlib
 
 # matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from boutdata import collect
 from matplotlib.ticker import LogFormatter
 
 cmap_diverging = plt.cm.get_cmap("bwr")  # RdBu, bwr, seismic
 cmap_sequential = plt.cm.get_cmap("magma")  # magma
 
-from boututils.datafile import DataFile
-from boutdata.griddata import gridcontourf
 import numpy as np
+from boutdata.griddata import gridcontourf
+from boututils.datafile import DataFile
 
 #########################
 # Read normalisations, time
@@ -70,7 +70,7 @@ phi[:, -1, :, :] = 0.0
 
 def acdc(f):
     """Calculate DC (Z average) and AC (Z varying) components"""
-    from numpy import mean, copy
+    from numpy import copy, mean
 
     ftxy = mean(f, axis=-1)
     result = copy(f)

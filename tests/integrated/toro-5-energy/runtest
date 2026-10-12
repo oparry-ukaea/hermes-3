@@ -3,11 +3,12 @@
 # Toro's test problem #5
 #
 
-from math import sqrt
-import numpy as np
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
 import sys
+from math import sqrt
+
+import numpy as np
+from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 resolutions = [
     (100, "ob", 0.4),

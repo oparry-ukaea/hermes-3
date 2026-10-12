@@ -7,11 +7,12 @@
 #   https://www.mathworks.com/matlabcentral/fileexchange/46311-sod-shock-tube-problem-solver
 #
 
-from math import sqrt
-import numpy as np
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
 import sys
+from math import sqrt
+
+import numpy as np
+from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 resolutions = [
     (100, "ob", 0.05),

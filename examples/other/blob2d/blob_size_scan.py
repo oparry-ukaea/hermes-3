@@ -47,8 +47,9 @@ dataset = [
     ),
 ]
 
-from boutdata.data import BoutOptionsFile
 import os
+
+from boutdata.data import BoutOptionsFile
 
 
 def create_inputs(origin, destination, datasets):
@@ -132,9 +133,9 @@ def analyse_cases(destination, dataset):
       List of tuples with first element as the subdirectory
     """
 
+    import blob_velocity
     import numpy as np
     from boutdata.collect import collect
-    import blob_velocity
 
     deltas = []
     maxvelocity = []

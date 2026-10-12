@@ -1,7 +1,6 @@
+from boutdata.mms import identity, x, y, z
 from sympy import diff, sqrt
 from sympy.matrices import Matrix
-
-from boutdata.mms import identity, x, y, z
 
 
 # A class very similar to boutdata.mms.Metric
