@@ -94,7 +94,7 @@ def run_manufactured_solutions_test(test_input):
    """
             for i in range(n_operators):
                 mesh_string += f"""
-   differential_operator_name_{i} = {differential_operator_test_list[i][0]}          
+   differential_operator_name_{i} = {differential_operator_test_list[i][0]}
    expected_result_{i} = {differential_operator_test_list[i][1]}
    """
             file.write(mesh_string.replace("**", "^"))
@@ -323,7 +323,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
    symmetricGlobalX = true
    extrapolate_y = false
    extrapolate_x= false
-   
+
    nx = {nn}
    dx = {ddx}
    ny = {nn}
@@ -344,7 +344,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
    g_23 = {g_23_str}
    g_13 = {g_13_str}
    J = {J_str}
-   
+
    Nd_src = {source_Nd_string}
    Pd_src = {source_Pd_string}
    NVd_src = {source_NVd_string}
@@ -377,7 +377,7 @@ def run_neutral_mixed_manufactured_solutions_test(test_input):
    function = {Nd_string}
    bndry_core = neumann
    bndry_all = neumann
-   
+
    [Pd]
    function = {Pd_string}
    bndry_core = neumann
