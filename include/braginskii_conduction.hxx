@@ -9,7 +9,10 @@
 #include <bout/bout_types.hxx>
 #include <bout/field3d.hxx>
 #include <bout/options.hxx>
+
+#if BOUT_HAS_PETSC
 #include <bout/petsc_operators.hxx>
+#endif
 
 #include "component.hxx"
 
@@ -60,10 +63,12 @@ private:
   /// Save more diagnostics?
   std::map<std::string, bool> all_diagnose;
 
+#if BOUT_HAS_PETSC
   bool use_petsc_operator; ///< Use Petsc operators for parallel heat conduction?
 
   PetscOperators::Parallel
       petsc_parallel; ///< Petsc parallel operator object used for conduction
+#endif
 
   /// Calculate conduction of energy for each species where this has been turned on.
   ///

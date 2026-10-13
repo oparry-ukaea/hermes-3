@@ -126,9 +126,10 @@ BraginskiiConduction::BraginskiiConduction(const std::string& name, Options& all
     if (!mesh->isFci()) {
       throw BoutException("Used Petsc operator for Braginskii conduction without Fci!");
     }
-
+#if BOUT_HAS_PETSC
     PetscOperators ops(mesh);
     petsc_parallel = ops.getParallel();
+#endif
   }
 }
 
@@ -322,7 +323,9 @@ void BraginskiiConduction::transform_impl(GuardedOptions& state) {
 
     // Petsc can be used to calculate the divergence of the heat flux
     if (use_petsc_operator) {
+#if BOUT_HAS_PETSC
       add(species["energy_source"], petsc_parallel.Div_par_K_Grad_par(kappa_par, T));
+#endif
     } else {
       add(species["energy_source"],
           Div_par_K_Grad_par_mod(kappa_par, T, flow_ylow_conduction, false,
