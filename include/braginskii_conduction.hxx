@@ -63,9 +63,9 @@ private:
   /// Save more diagnostics?
   std::map<std::string, bool> all_diagnose;
 
-#if BOUT_HAS_PETSC
   bool use_petsc_operator; ///< Use Petsc operators for parallel heat conduction?
 
+#if BOUT_HAS_PETSC
   PetscOperators::Parallel
       petsc_parallel; ///< Petsc parallel operator object used for conduction
 #endif
