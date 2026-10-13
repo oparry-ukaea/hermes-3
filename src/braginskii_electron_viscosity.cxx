@@ -51,11 +51,9 @@ void BraginskiiElectronViscosity::transform_impl(GuardedOptions& state) {
 
   Coordinates* coord = P.getCoordinates();
 
-  // If not allocated calculated, otherwise skip as already done
-  if (!Bxy.isAllocated()) {
-    Bxy = coord->Bxy();
-  }
+  const bout::FieldMetricParallel Bxy = coord->Bxy();
 
+  // If not allocated calculate, otherwise skip as already done
   if (!sqrtB.isAllocated()) {
     sqrtB = sqrt(Bxy);
   }
