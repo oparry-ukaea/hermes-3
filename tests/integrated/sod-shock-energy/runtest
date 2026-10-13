@@ -23,6 +23,13 @@ resolutions = [
 
 plotting = False
 
+if plotting:
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.axes_grid1.inset_locator import (
+        InsetPosition,
+        mark_inset,
+    )
+
 # Semi-analytic Sod shock problem
 # 5 regions:
 #
@@ -75,16 +82,6 @@ cs2 = cs1 - ((gamma - 1) / 2) * u3
 pos23 = x0 + (u3 - cs2) * time
 
 if plotting:
-    try:
-        import matplotlib.pyplot as plt
-        from mpl_toolkits.axes_grid1.inset_locator import (
-            InsetPosition,
-            mark_inset,
-        )
-    except ImportError:
-        print("WARNING: Could not import Matplotlib")
-        plotting = False
-
     # Create x_exact and rho_exact for plotting
 
     # Region 1
