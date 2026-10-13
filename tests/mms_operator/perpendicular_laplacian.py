@@ -72,9 +72,7 @@ def Div_a_Grad_perp_f(a, f, metric=identity):
 
 def Div_par_k_Grad_par_f(a, f, metric=identity):
     J = metric.J
-    # use the metric internal variables for derivatives
-    _x, y, _z = metric.x, metric.y, metric.z
-    dfdy = diff(f, y)
+    dfdy = diff(f, metric.y)
     k_grad_par_f = a * J * dfdy / metric.g_22
-    div_par_k_grad_par_f = (1 / J) * (diff(k_grad_par_f, y))
+    div_par_k_grad_par_f = (1 / J) * (diff(k_grad_par_f, metric.y))
     return div_par_k_grad_par_f
