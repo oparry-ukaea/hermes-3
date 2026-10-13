@@ -19,9 +19,12 @@ number of output timesteps ``nout`` and the output timestep size
 Note that the solver timestep is adaptive and not user-settable.
 
 This is followed by ``[mesh]``, ``[solver]`` and ``[hermes]`` headers, where the ``[hermes]``
-section defines the list of components used. The component order doesn't
+section defines the list of components used. By default, the component order doesn't
 matter, as they will be sorted to ensure state variables are set
-before they are used.
+before they are used. This can be turned off by setting the option
+``autosort = false`` in the ``[hermes]`` section. In that case the
+components will be executed in the order listed. This should only be
+necessary if a bug is encountered when using the sorting algorithm.
 
 .. code-block:: ini
 

@@ -632,7 +632,8 @@ and then in `Hermes::rhs` the components are run by a call::
 
 The call to `ComponentScheduler::create` treats the "components"
 option as a comma-separated list of names. For each name in the list,
-the scheduler looks up the options under the section of that name. The
+the scheduler looks up the options under the section of that name. By
+default, the
 ``ComponentScheduler`` will use permission information stored by each
 component in `Component::state_variable_access` to work out the order
 to execute components. It will ensure that all writes to a variable
@@ -653,9 +654,9 @@ dependency then it will throw an exception.
 
    # options to control component2
 
-This would create two `Component` objects, of type `component1` and
-`component2`. Each time `Hermes::rhs` is run, the `transform`
-functions of `component1` and `component2` will be called, with the
+This would create two `Component` objects, of type ``component1`` and
+``component2``. Each time `Hermes::rhs` is run, the `transform`
+methods of ``component1`` and ``component2`` will be called, with the
 order depending on what state variables each reads and writes. This is
 followed by a call to their `finally` functions.
 
@@ -686,6 +687,23 @@ quantities each component reads or writes, are used to put the
 components in order. This means that grouped components may not run
 together: The scheduler may run `component1` then `component3` then
 `component2` if the inputs and outputs of the components require this.
+
+The user can optionally turn off automatic sorting of components:
+
+.. code-block:: ini
+   [hermes]
+   components = group1, component3
+   autosort = false
+
+In that case it is guaranteed that the `transform` methods of each
+component would be run in the order listed in the input file (i.e.,
+``component1``, then ``component2``, and then ``component2``). It
+becomes the responsibility of the user to ensure components are listed
+in a order that ensures variables are written and read in the
+sequence. In general they will not want to do this, but it might be
+necessary if there is a bug in the sorting algorithm or the access permissions
+of some component.
+
 
 .. doxygenclass:: ComponentScheduler
    :members:
