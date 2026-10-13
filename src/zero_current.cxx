@@ -77,8 +77,8 @@ void ZeroCurrent::transform_impl(GuardedOptions& state) {
 
   momentum = GET_VALUE(BoutReal, species["AA"]) * N * velocity;
 
-  if (bout::globals::mesh->isFci()) {
-    bout::globals::mesh->communicate(velocity, momentum);
+  if (velocity.isFci()) {
+    velocity.getMesh()->communicate(velocity, momentum);
     velocity.applyParallelBoundary("parallel_neumann_o2");
     momentum.applyParallelBoundary("parallel_neumann_o2");
   }
