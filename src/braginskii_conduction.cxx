@@ -128,7 +128,10 @@ BraginskiiConduction::BraginskiiConduction(const std::string& name, Options& all
     }
 #if BOUT_HAS_PETSC
     PetscOperators ops(mesh);
-    petsc_parallel = ops.getParallel();
+#else
+    throw BoutException("petsc_operator requires PETSc");
+#endif
+  }
 #endif
   }
 }
