@@ -47,8 +47,13 @@ if(HERMES_BUILD_BOUT)
   set(HERMES_BOUT_SRC
       "external/BOUT-dev"
       CACHE STRING "Directory of BOUT++ dir")
-  add_subdirectory(${HERMES_BOUT_SRC}
-                   ${CMAKE_CURRENT_BINARY_DIR}/external/BOUT-dev SYSTEM)
+  # Set a consistent variable for the build location with the `find_package`
+  # call when we're not building BOUT++ here
+  set(bout++_DIR
+      ${CMAKE_CURRENT_BINARY_DIR}/external/BOUT-dev
+      CACHE FILEPATH "BOUT++ build directory" FORCE)
+
+  add_subdirectory(${HERMES_BOUT_SRC} ${bout++_DIR} SYSTEM)
 else()
   find_package(bout++ REQUIRED)
 endif()
@@ -480,6 +485,8 @@ endif()
 
 configure_file(include/hermes_build_config.hxx.in
                include/hermes_build_config.hxx)
+
+configure_file(cmake/hermesconfig.py.in hermesconfig.py)
 
 # Installation
 if(BUILD_SHARED_LIBS)
