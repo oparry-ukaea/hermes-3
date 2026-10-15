@@ -82,9 +82,7 @@ try:
 
         plt.plot(dy, l2, "-o", label=r"$l_2$ (petsc=" + petsc + ")")
         plt.plot(dy, inf, "-x", label=r"$l_\infty$ (petsc=" + petsc + ")")
-        plt.plot(
-            dy, l2[-1] * (dy / dy[-1]) ** order, "--", label="Order %.1f" % (order)
-        )
+        plt.plot(dy, l2[-1] * (dy / dy[-1]) ** order, "--", label=f"Order {order:.1f}")
 
     plt.legend(loc="upper left")
     plt.grid()
