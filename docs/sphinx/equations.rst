@@ -854,12 +854,22 @@ This has three limits:
   can never become fully advective and improves simulation robustness during transients.
   The default value is set so that it has very little impact in steady state.
 
-Two sets of floor and ceiling parameters are used, because the gradients do not
-all have the same units. The particle and conduction limiters both divide by an
-inverse gradient length in :math:`m^{-1}` and share one pair, denoted :math:`R`
-above. The viscosity limiter divides by a velocity gradient in :math:`s^{-1}`
-and has its own pair, denoted :math:`R_{\eta}`. All four parameters are set in
-SI units.
+When separate limiters are used, special handling of the regularisation terms is required.
+The particle and conduction limiters divide by an inverse gradient length in
+:math:`m^{-1}`, while the viscosity limiter divides by a velocity gradient in
+:math:`s^{-1}`. In order for all three channels to share regularisation settings,
+the viscosity floor and ceiling are calculated from the shared settings by multiplying
+them by the local mean thermal speed :math:`\bar{v}_{n}`, which converts them from the
+inverse lengths used by the other channels into the velocity gradient units this limiter
+needs. That scaled pair is written :math:`R_{\eta}` above. The viscosity floor therefore
+follows the local neutral temperature rather than being a single value across the domain.
+
+Separating the limiters also introduces separate limitation for parallel and perpendicular
+conduction and viscosity. The parallel floor is derived from
+``limiter_gradient_floor`` by dividing it by the setting ``limiter_gradient_floor_ratio``,
+to account for the much shallower gradients typically seen in the parallel direction. This is
+set to 40 by default. The gradient ceiling is shared between the perpendicular and parallel
+directions.
 
 .. list-table::
    :header-rows: 1
@@ -878,13 +888,16 @@ SI units.
    * - :math:`\nabla_{\perp,\parallel} T_n / T_n`
      - :math:`\kappa_{n,\max}`
      - :math:`m^{-1}`
-     - ``limiter_gradient_floor`` (10)
+     - ``limiter_gradient_floor`` (10) for :math:`\perp`, divided by
+       ``limiter_gradient_floor_ratio`` (40) for :math:`\parallel`
      - ``limiter_gradient_ceiling`` (100)
-   * - :math:`\nabla_{\perp,\parallel} v_{\parallel n} / \bar{v}_n`
+   * - :math:`\nabla_{\perp,\parallel} v_{\parallel n}`
      - :math:`\eta_{n,\max}`
-     - :math:`m^{-1}`
-     - ``limiter_gradient_floor`` (10)
-     - ``limiter_gradient_ceiling`` (100)
+     - :math:`s^{-1}`
+     - ``limiter_gradient_floor`` (10) :math:`\times \bar{v}_n` for
+       :math:`\perp`, divided by ``limiter_gradient_floor_ratio`` (40) for
+       :math:`\parallel`
+     - ``limiter_gradient_ceiling`` (100) :math:`\times \bar{v}_n`
 
 Raising a floor or lowering a ceiling improves robustness but changes the
 answer, so both should be checked for convergence.

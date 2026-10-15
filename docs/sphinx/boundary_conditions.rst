@@ -516,7 +516,7 @@ The default settings are:
    * - ``Dnn``, ``kappa_n``, ``eta_n``
      - ``neumann``
      - ``dirichlet(0)``
-     - ``kappa_n`` and ``eta_n`` inherit ``Dnn`` setting by default. Disables diffusion, conduction and viscosity through sheath.
+     - ``kappa_n`` and ``eta_n`` inherit ``Dnn`` setting by default, but ``kappa_n`` and ``eta_n`` are additionally zeroed at the sheath by default.
    * - ``N``
      - ``neumann``
      - ``free_o2``
@@ -529,6 +529,10 @@ The default settings are:
      - ``neumann``
      - ``dirichlet(0)``
      - Disables viscosity through radial boundaries. Disables advection of N, P and NV through target.
+
+Allowing conduction and viscosity through the sheath boundary (defined by whether ``sheath_ydown`` or ``sheath_yup`` is set)
+is controlled using the ``zero_sheath_conductivity`` and ``zero_sheath_viscosity`` settings, both defaulting to ``true``.
+
 
 The transport of particles, energy or momentum through the core,
 SOL or PFR boundaries can be enabled by changing the radial boundary conditions.
