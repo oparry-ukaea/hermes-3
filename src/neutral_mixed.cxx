@@ -217,10 +217,10 @@ NeutralMixed::NeutralMixed(const std::string& name, Options& alloptions, Solver*
       / (meters * meters / seconds);
 
   conduction_limit = options["conduction_limit"]
-                         .doc("Upper limit on conduction coefficient kappa_n [m^-1 s^-1]"
-                              "<0 means off")
+                         .doc("Upper limit on conduction coefficient kappa_n "
+                              "[W m^-1 eV^-1]. <0 means off")
                          .withDefault(-1.0)
-                     / (Nnorm * meters * meters / seconds);
+                     / (SI::qe * Nnorm * meters * meters / seconds);
 
   viscosity_limit =
       options["viscosity_limit"]

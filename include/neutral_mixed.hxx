@@ -60,7 +60,7 @@ private:
   BoutReal limiter_gradient_floor_par;   ///< Parallel floor, derived from the two above
   BoutReal limiter_gradient_ceiling;     ///< Ceiling for gradient in every denominator
   BoutReal diffusion_limit;              ///< Explicit cap on Dnn [m^2/s]
-  BoutReal conduction_limit;             ///< Explicit cap on kappa_n [m^-1 s^-1]
+  BoutReal conduction_limit;             ///< Explicit cap on kappa_n [W m^-1 eV^-1]
   BoutReal viscosity_limit;              ///< Explicit cap on eta_n [Pa s]
   BoutReal neutral_lmax;                 ///< Used for collisionality floor
 

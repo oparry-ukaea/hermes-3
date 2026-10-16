@@ -1007,7 +1007,7 @@ Flux limiter options
      - Explicit cap on :math:`D_n` in :math:`m^{2} s^{-1}`
    * - ``conduction_limit``
      - -1
-     - Explicit cap on :math:`\kappa_n` in :math:`m^{-1} s^{-1}`
+     - Explicit cap on :math:`\kappa_n` in :math:`W\,m^{-1}\,eV^{-1}`
    * - ``viscosity_limit``
      - -1
      - Explicit cap on :math:`\eta_n` in :math:`Pa\,s`
