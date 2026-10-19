@@ -34,8 +34,7 @@ def run_examples(
         if category_name == "stellarator-3D":
             print("Skipping stellarator 3D examples in the CI")
             continue
-        else:
-            print(f"Working directory: {category}")
+        print(f"Working directory: {category}")
         os.chdir(category)
         json_link = category / "json_database"
         json_link.symlink_to(json_database)
