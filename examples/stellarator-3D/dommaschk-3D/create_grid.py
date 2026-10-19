@@ -32,7 +32,7 @@ yperiod = 2.0 * np.pi / symmetry
 
 # Grid size. Full torus results in ny = 40, while module simulations result in ny = 8
 nx = 64 + 4
-ny = int(5 * 8 / symmetry)
+ny = 5 * 8 // symmetry
 nz = 512
 
 # Generate the actual magnetic field

@@ -28,6 +28,14 @@ PETSC can either be supplied by compiling it yourself or via module systems at t
 The last remaining step is to create a directory that includes the generated grid and the input file also given in this example folder.
 # Running the simulation
 Simulations in Fci are usually more expensive. This is in part due to the requirement of higher resolutions because of the interpolation for parallel derivatives. It is advised to run the simulation on at least 8 cores.
+
+# Post processing
+You can load the data with:
+```python
+simdir = "dommaschk-3D"
+ds = xbout.open_boutdataset(f"{simdir}/BOUT.dmp.*.nc", gridfilepath=simdir, geometry="fci")
+```
+
 Below is displayed the output of the simulation. The magnetic islands are clearly visible in the profiles.
 
 <p align="center">
