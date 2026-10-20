@@ -148,35 +148,36 @@ NeutralMixed::NeutralMixed(const std::string& name, Options& alloptions, Solver*
 
   limiter_gradient_floor_par = limiter_gradient_floor / limiter_gradient_floor_ratio;
 
-  flux_limit_adv =
-      options["flux_limit"]
-          .doc("Limit advective perpendicular fluxes to fraction of thermal speed. <0 "
-               "means no limit applied.")
-          .withDefault(0.5);
+  flux_limit_adv = options["flux_limit"]
+                       .doc("Limit diffusive fluxes to fraction of thermal speed. "
+                            "Can be overridden for conduction and viscosity when "
+                            "combined_limiters = false. "
+                            "<0 means no limit applied.")
+                       .withDefault(0.5);
 
   flux_limit_cond_perp =
       options["flux_limit_cond_perp"]
           .doc("Limit conductive perpendicular fluxes to fraction of free-streaming. "
-               "Defaults to same as advection limiter. <0 means no limit applied.")
+               "Defaults to same as flux_limit. <0 means no limit applied.")
           .withDefault(flux_limit_adv);
 
   flux_limit_cond_par =
       options["flux_limit_cond_par"]
           .doc("Limit conductive parallel fluxes to fraction of free-streaming. Defaults "
-               "to same as conduction perpendicular limiter value. <0 means no limit "
+               "to same as flux_limit_cond_perp. <0 means no limit "
                "applied.")
           .withDefault(flux_limit_cond_perp);
 
   flux_limit_visc_perp =
       options["flux_limit_visc_perp"]
           .doc("Limit viscous perpendicular fluxes to fraction of free-streaming. "
-               "Defaults to same as advection limiter value. <0 means no limit applied.")
+               "Defaults to same as flux_limit. <0 means no limit applied.")
           .withDefault(flux_limit_adv);
 
   flux_limit_visc_par =
       options["flux_limit_visc_par"]
           .doc("Limit viscous parallel fluxes to fraction of free-streaming. Defaults to "
-               "same as viscous perpendicular limiter value. <0 means no limit applied.")
+               "same as flux_limit_visc_perp. <0 means no limit applied.")
           .withDefault(flux_limit_visc_perp);
 
   combined_limiters = options["combined_limiters"]
