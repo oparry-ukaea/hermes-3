@@ -699,7 +699,7 @@ TEST_F(NeutralMixedTest, DmaxRegularisationLimits) {
 
 namespace {
 
-// Test for zero at boundary
+// Test for zero flux at boundary
 void expectZeroedAtTarget(const Field3D& f) {
   Mesh* localmesh = f.getMesh();
   for (int x = localmesh->xstart; x <= localmesh->xend; ++x) {
@@ -711,7 +711,7 @@ void expectZeroedAtTarget(const Field3D& f) {
   }
 }
 
-// Test for greater than zero at boundary
+// Test for greater than zero flux at boundary
 void expectNotZeroedAtTarget(const Field3D& f) {
   Mesh* localmesh = f.getMesh();
   for (int x = localmesh->xstart; x <= localmesh->xend; ++x) {
