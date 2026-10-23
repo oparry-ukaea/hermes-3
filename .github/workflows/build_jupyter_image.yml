@@ -40,7 +40,7 @@ jobs:
       # The steps here are just apt/pip installs, so emulation is cheap enough
       # that a native-runner matrix is unnecessary for this image.
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       # Set up BuildKit Docker container builder to be able to build
       # multi-platform images and export cache
