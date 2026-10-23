@@ -28,7 +28,7 @@ Tnorm = 5
 type = evolve_density, fixed_velocity, fixed_temperature
 charge = 1.0
 AA = 1.0
-dissipative = false
+
 temperature = 1.0
 velocity = 2188.56455992991*sin(y)/(0.1*sin(2.0*y) + 1)
 [Nh+]

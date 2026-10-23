@@ -35,7 +35,7 @@ dissipation_settings = ["True", "False"]
 success = True
 for dissipation in dissipation_settings:
     for ny in nylist:
-        args = f"mesh:file={gridname(ny)} nout={nout} timestep={timestep} `h+`:dissipative={dissipation}"
+        args = f"mesh:file={gridname(ny)} nout={nout} timestep={timestep} h+:dissipative={dissipation}"
 
         print("Running with " + args)
 
