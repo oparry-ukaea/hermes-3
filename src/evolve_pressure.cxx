@@ -170,6 +170,10 @@ EvolvePressure::EvolvePressure(std::string name, Options& alloptions, Solver* so
                                   .doc("Include heating due to numerical viscosity?")
                                   .withDefault<bool>(false);
 
+  if (mesh->isFci() && numerical_viscous_heating) {
+    throw BoutException("Div_par_fvv_heating is not correctly implemented for Fci!");
+  }
+
   if (numerical_viscous_heating) {
     fix_momentum_boundary_flux =
         options["fix_momentum_boundary_flux"]
