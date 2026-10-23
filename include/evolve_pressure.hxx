@@ -28,7 +28,7 @@ struct EvolvePressure : public NamedComponent<EvolvePressure> {
   ///                          enabled.
   ///   - p_div_v              Use p * Div(v) form? Default is v * Grad(p) form
   ///   - thermal_conduction   Include parallel heat conduction? Default is true
-  ///   - dissipative    Add dissipation for parallel advection in Fci
+  ///   - dissipative          Add dissipation for parallel advection in Fci
   ///
   /// - P<name>  e.g. "Pe", "Pd+"
   ///   - source     Source of pressure [Pa / s].
