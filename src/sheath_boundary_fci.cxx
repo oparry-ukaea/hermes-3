@@ -267,6 +267,13 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
       const BoutReal phi_wall = wall_potential[i];
       pnt.current(phi) += phi_wall;
       pnt.next(phi) = pnt.current(phi);
+      if (pnt.dir() > 0) {
+        const auto iyp = i.yp();
+        phi.yup()[iyp] = pnt.current(phi);
+      } else {
+        const auto iym = i.ym();
+        phi.ydown()[iym] = pnt.current(phi);
+      }
     }); // End of yboundary.iter
 
   } // End of loop that calculates the phi if it is not set
