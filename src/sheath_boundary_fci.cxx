@@ -188,7 +188,9 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
   Field3DParallel phi;
   if (IS_SET_NOBOUNDARY(state["fields"]["phi"])) {
     phi = getNoBoundary<Field3D>(state["fields"]["phi"]);
+    do_phi_extrapolation = true;
   } else {
+    do_phi_extrapolation = false;
     // Calculate potential phi assuming zero current
 
     // Need to sum  n_i Z_i C_i over all ion species
@@ -267,13 +269,6 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
       const BoutReal phi_wall = wall_potential[i];
       pnt.current(phi) += phi_wall;
       pnt.next(phi) = pnt.current(phi);
-      if (pnt.dir() > 0) {
-        const auto iyp = i.yp();
-        phi.yup()[iyp] = pnt.current(phi);
-      } else {
-        const auto iym = i.ym();
-        phi.ydown()[iym] = pnt.current(phi);
-      }
     }); // End of yboundary.iter
 
   } // End of loop that calculates the phi if it is not set
@@ -297,7 +292,8 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
     pnt.next(Te) = limitFree(pnt.prev(Te), pnt.current(Te), temperature_boundary_mode);
     pnt.next(Pe) = limitFree(pnt.prev(Pe), pnt.current(Pe), pressure_boundary_mode);
 
-    pnt.next(phi) = 2.0 * pnt.current(phi) - pnt.prev(phi);
+    pnt.next(phi) = do_phi_extrapolation ? (2.0 * pnt.current(phi) - pnt.prev(phi))
+                                         : pnt.current(phi);
 
     const BoutReal nesheath = 0.5 * (pnt.next(Ne) + pnt.current(Ne));
     const BoutReal tesheath = 0.5 * (pnt.next(Te) + pnt.current(Te));
@@ -410,8 +406,8 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
 
       // Calculate sheath values at half-way points (cell edge)
       const BoutReal nisheath = 0.5 * (pnt.current(Ni) + pnt.next(Ni));
-      const BoutReal tesheath = 0.5 * floor(pnt.current(Te) + pnt.next(Te), 1e-5);
-      const BoutReal tisheath = 0.5 * floor(pnt.current(Ti) + pnt.next(Ti), 1e-5);
+      const BoutReal tesheath = floor(0.5 * (pnt.current(Te) + pnt.next(Te)), 1e-5);
+      const BoutReal tisheath = floor(0.5 * (pnt.current(Ti) + pnt.next(Ti)), 1e-5);
 
       // Ion speed into sheath
       BoutReal C_i_sq = (sheath_ion_polytropic * tisheath + Zi * tesheath) / Mi;
