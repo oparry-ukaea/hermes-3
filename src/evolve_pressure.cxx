@@ -292,7 +292,7 @@ void EvolvePressure::finally(const Options& state) {
     if (p_div_v) {
       // Use the P * Div(V) form
       ddt(P) -= FV::Div_par_mod<hermes::Limiter>(P, V, fastest_wave, flow_ylow_advection,
-                                                 true, dissipative);
+                                                 dissipative = dissipative);
 
       // Work done. This balances energetically a term in the momentum equation
       E_PdivV = -Pfloor * Div_par(V.asField3DParallel());
@@ -305,7 +305,7 @@ void EvolvePressure::finally(const Options& state) {
       //       Caused heating of charged species near sheath like p_div_v
       ddt(P) -= (5. / 3)
                 * FV::Div_par_mod<hermes::Limiter>(
-                    P, V, fastest_wave, flow_ylow_advection, true, dissipative);
+                    P, V, fastest_wave, flow_ylow_advection, dissipative = dissipative);
       E_VgradP = V * Grad_par(P.asField3DParallel());
       ddt(P) += (2. / 3) * E_VgradP;
     }
