@@ -69,10 +69,14 @@ for dissipation in dissipation_settings:
         print(f"Convergence order {var} = {order:f}")
 
         # Fails when it achieves convergence with dissipation, or when it fails to converge even though the dissipation is off
-        if (order < 1.8 and dissipation == "False") or (
-            order > 1.8 and dissipation == "True"
-        ):
+        if order < 1.8 and dissipation == "False":
             success = False
+            print("No convergence even though dissipation is off!")
+
+        if order > 1.8 and dissipation == "True":
+            success = False
+            print("Convergence even though dissipation is on!")
+
 
 # plot errors
 try:
