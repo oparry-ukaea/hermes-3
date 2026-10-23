@@ -403,8 +403,8 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
 
       // Calculate sheath values at half-way points (cell edge)
       const BoutReal nisheath = 0.5 * (pnt.current(Ni) + pnt.next(Ni));
-      const BoutReal tesheath = floor(pnt.current(Te) + pnt.next(Te), 1e-5);
-      const BoutReal tisheath = floor(pnt.current(Ti) + pnt.next(Ti), 1e-5);
+      const BoutReal tesheath = 0.5 * floor(pnt.current(Te) + pnt.next(Te), 1e-5);
+      const BoutReal tisheath = 0.5 * floor(pnt.current(Ti) + pnt.next(Ti), 1e-5);
 
       // Ion speed into sheath
       BoutReal C_i_sq = (sheath_ion_polytropic * tisheath + Zi * tesheath) / Mi;
