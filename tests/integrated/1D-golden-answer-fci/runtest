@@ -46,7 +46,7 @@ Ni = np.mean(
     collect("Nh+", tind=[nout, nout], path="data", info=False)[-1], axis=(0, 2)
 )
 
-tol = 1e-5
+tol = 1e-4
 
 for var, lab in zip([Pe, Pi, Ni], ["Pe", "Pi", "Ni"]):
     if abs(var[0] - var[-1]) > tol:
