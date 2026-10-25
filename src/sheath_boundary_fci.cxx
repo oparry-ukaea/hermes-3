@@ -10,6 +10,10 @@ using bout::globals::mesh;
 
 namespace {
 
+BoutReal smoothmax(const BoutReal a, const BoutReal b, const BoutReal eps) {
+  return 0.5 * (a + b + sqrt(SQ(a - b) + eps));
+}
+
 /// Limited free gradient of log of a quantity
 /// This ensures that the guard cell values remain positive
 /// while also ensuring that the quantity never increases
@@ -21,7 +25,6 @@ namespace {
 /// Mode 0: default (exponential extrapolation if decreases, Neumann if increases)
 /// Mode 1: always exponential extrapolation
 /// Mode 2: always linear extrapolation
-
 BoutReal limitFree(BoutReal fm, BoutReal fc, BoutReal mode) {
   if ((fm < fc) && (mode == 0)) {
     return fc; // Neumann rather than increasing into boundary
@@ -234,11 +237,8 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
         BoutReal C_i_sq = (sheath_ion_polytropic * tisheath + Zi * tesheath) / Mi;
 
         BoutReal visheath;
-        if (pnt.dir() > 0) {
-          visheath = std::max(pnt.current(Vi), pnt.dir() * sqrt(C_i_sq));
-        } else {
-          visheath = std::min(pnt.current(Vi), pnt.dir() * sqrt(C_i_sq));
-        }
+        const BoutReal C_i = sqrt(C_i_sq);
+        visheath = pnt.dir() * smoothmax(std::abs(pnt.current(Vi)), C_i, 1e-1 * C_i_sq);
 
         pnt.current(ion_sum) += pnt.dir() * Zi * nisheath * visheath;
       }); // End of yboundary.iter
@@ -413,11 +413,8 @@ void SheathBoundaryFci::transform_impl(GuardedOptions& state) {
       BoutReal C_i_sq = (sheath_ion_polytropic * tisheath + Zi * tesheath) / Mi;
 
       BoutReal visheath;
-      if (pnt.dir() > 0) {
-        visheath = std::max(pnt.current(Vi), pnt.dir() * sqrt(C_i_sq));
-      } else {
-        visheath = std::min(pnt.current(Vi), pnt.dir() * sqrt(C_i_sq));
-      }
+      const BoutReal C_i = sqrt(C_i_sq);
+      visheath = pnt.dir() * smoothmax(std::abs(pnt.current(Vi)), C_i, 1e-1 * C_i_sq);
 
       pnt.next(Vi) = 2.0 * visheath - pnt.current(Vi);
       pnt.next(NVi) = 2.0 * Mi * nisheath * visheath - pnt.current(NVi);
