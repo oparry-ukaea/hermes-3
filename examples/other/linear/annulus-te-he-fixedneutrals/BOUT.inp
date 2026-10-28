@@ -6,8 +6,8 @@
 #   https://aip.scitation.org/doi/10.1063/1.3527987
 #
 
-nout = 500
-timestep = 50
+nout = 10
+timestep = 1
 
 [mesh]
 
