@@ -101,7 +101,6 @@ LU preconditioning (recipe SNES-MUMPS-3):
 .. code-block:: ini
 
    [solver]
-   diagnose = true
    type = snes
    snes_type = newtonls
    ksp_type = fgmres
